@@ -1,12 +1,12 @@
-FROM node:20-alpine
+FROM node:20
 
 WORKDIR /app
 
-# Copy entire backend first
+# Copy backend files
 COPY backend/ ./
 
-# Install dependencies (without postinstall prisma generate yet)
-RUN npm install --ignore-scripts
+# Install dependencies
+RUN npm install
 
 # Generate Prisma client
 RUN npx prisma generate
