@@ -1,85 +1,44 @@
 # Gadai Service
 
-Sistem Gadai (Pawn) dari nol dengan Node.js + PostgreSQL + Angular, di-deploy ke Railway.
+Sistem Gadai (Pawn) dengan Next.js + PostgreSQL, deployed ke Railway.
 
 ## Tech Stack
 
-- **Backend:** Node.js + Express + Prisma + PostgreSQL
-- **Frontend:** Angular 18 (Standalone Components)
-- **Deploy:** Railway (Backend + PostgreSQL + Static Hosting)
+- **Framework:** Next.js 14 (App Router)
+- **Database:** PostgreSQL via Prisma
+- **Styling:** Tailwind CSS
+- **Deployment:** Railway
 
 ## Project Structure
 
 ```
 gadai-service/
-├── backend/           # API Server
-│   ├── prisma/       # Database schema
-│   ├── src/          # Source code
-│   └── package.json
-└── frontend/         # Angular App
-    └── src/app/      # Pages, services, models
+├── prisma/              # Database schema
+├── src/
+│   ├── app/            # Next.js App Router
+│   │   ├── api/        # API Routes
+│   │   ├── admin/      # Admin pages
+│   │   ├── create/     # Public create page
+│   │   └── track/      # Public track page
+│   ├── lib/            # Utilities (prisma, auth, helpers)
+│   └── types/          # TypeScript types
+└── railway.json        # Railway config
 ```
 
-## Quick Start (Development)
-
-### Backend
+## Development
 
 ```bash
-cd backend
+# Install dependencies
 npm install
-npx prisma generate
-npx prisma db push    # Setup local DB
-npm run dev           # Start on port 3000
-```
 
-### Frontend
+# Generate Prisma client
+npm run db:generate
 
-```bash
-cd frontend
-npm install
-npm start             # Start on port 4200
-```
+# Push schema to database
+npm run db:push
 
-## Deployment ke Railway
-
-### 1. Buat Project Baru
-
-1. Buka [railway.app](https://railway.app)
-2. Login dengan GitHub
-3. New Project → Deploy from GitHub repo
-
-### 2. Setup Backend
-
-1. Add PostgreSQL database
-2. Set environment variables:
-   - `DATABASE_URL`: PostgreSQL connection string
-   - `JWT_SECRET`: Secret key untuk JWT (generate random string)
-   - `PORT`: 3000
-3. Connect GitHub repo → select backend folder
-4. Railway auto-detect Node.js
-
-### 3. Setup Frontend (Static Hosting)
-
-1. Build Angular:
-   ```bash
-   cd frontend
-   npm install
-   npm run build
-   ```
-2. Deploy ke Vercel/Netlify (lebih mudah untuk static):
-   ```bash
-   npx vercel --prod
-   ```
-3. Set environment variable untuk API URL
-
-### 4. Update Environment
-
-Update `environment.prod.ts` dengan Railway URL:
-```typescript
-export const environment = {
-  production: true,
-  apiBaseUrl: 'https://your-railway-url.up.railway.app/api'
-};
+# Run development server
+npm run dev
 ```
 
 ## API Endpoints
@@ -89,24 +48,39 @@ export const environment = {
 - `POST /api/auth/register` - Register admin pertama
 - `GET /api/auth/profile` - Get admin profile
 
-### Admin Gadai (Auth Required)
-- `GET /api/gadai` - List gadai (paginated)
+### Gadai (Auth Required)
+- `GET /api/gadai` - List gadai
+- `GET /api/gadai/summary` - Statistics
 - `GET /api/gadai/:id` - Detail gadai
 - `POST /api/gadai` - Create gadai
 - `PUT /api/gadai/:id` - Update gadai
 - `PUT /api/gadai/:id/status` - Update status
 - `DELETE /api/gadai/:id` - Delete gadai
-- `GET /api/gadai/summary` - Statistics
 
 ### Public (No Auth)
 - `POST /api/public/gadai` - Submit gadai baru
-- `GET /api/public/gadai/track?phone=` - Track by phone
-- `GET /api/public/gadai/:id` - Detail gadai
+- `GET /api/public/track?phone=` - Track by phone
 
 ### Payment (Auth Required)
 - `POST /api/payment` - Process payment
 - `POST /api/payment/extend` - Extend gadai
 - `GET /api/payment/history/:gadaiId` - Payment history
+
+## Deployment ke Railway
+
+1. Buat project baru di [railway.app](https://railway.app)
+2. Add PostgreSQL database
+3. Set environment variables:
+   - `DATABASE_URL`: PostgreSQL connection string
+   - `JWT_SECRET`: Secret key untuk JWT
+4. Deploy dari GitHub repo
+5. Railway auto-detect Next.js
+
+## First Admin Setup
+
+1. Buka `/admin/login`
+2. Klik "Daftar" untuk registrasi admin pertama
+3. Login dengan kredensial yang sudah dibuat
 
 ## Gadai Status
 
@@ -119,13 +93,6 @@ export const environment = {
 | LUNAS | Lunas |
 | DITOLAK | Ditolak |
 | DIPERPANJANG | Diperpanjang |
-
-## First Admin Setup
-
-1. Buka `/admin/login`
-2. Karena belum ada admin, akan muncul opsi "Daftar"
-3. Isi form registrasi → admin pertama dibuat
-4. Login dengan kredensial yang sudah dibuat
 
 ## License
 

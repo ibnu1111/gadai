@@ -1,0 +1,67 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Customer {
+  id        Int      @id @default(autoincrement())
+  nama      String
+  noHp      String   @unique
+  fotoKtp   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  gadais    Gadai[]
+}
+
+model Gadai {
+  gadaiID         Int       @id @default(autoincrement())
+  customerID      Int
+  customer        Customer  @relation(fields: [customerID], references: [id])
+  kategoriBarang  String
+  namaBarang      String
+  nominalPinjam   Decimal   @db.Decimal(18, 2)
+  bungaPersentase Decimal   @default(20) @db.Decimal(5, 2)
+  fee             Decimal   @db.Decimal(18, 2)
+  tanggalPinjam   DateTime
+  tanggalKembali  DateTime
+  atributTinggal  String
+  deskripsi       String?
+  fotoBarang      String
+  fotoPendukung   String?
+  status          String    @default("PENDING")
+  totalPembayaran Decimal   @default(0) @db.Decimal(18, 2)
+  parentGadaiID   Int?
+  parentGadai     Gadai?    @relation("GadaiExtension", fields: [parentGadaiID], references: [gadaiID])
+  extensions      Gadai[]   @relation("GadaiExtension")
+  perpanjanganKe  Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  createdBy       String?
+  payments        Payment[]
+}
+
+model Payment {
+  id          Int      @id @default(autoincrement())
+  gadaiID     Int
+  gadai       Gadai    @relation(fields: [gadaiID], references: [gadaiID])
+  jumlahBayar Decimal  @db.Decimal(18, 2)
+  tipeBayar   String
+  catatan     String?
+  createdAt   DateTime @default(now())
+  createdBy   String?
+}
+
+model Admin {
+  id        Int      @id @default(autoincrement())
+  nama      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+}
