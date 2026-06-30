@@ -2,313 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import Lottie from 'lottie-react'
-
-// Animation data for coins/money
-const coinAnimation = {
-  v: "5.7.4",
-  fr: 30,
-  ip: 0,
-  op: 90,
-  w: 200,
-  h: 200,
-  nm: "Coins",
-  ddd: 0,
-  assets: [],
-  layers: [
-    {
-      ddd: 0,
-      ind: 1,
-      ty: 4,
-      nm: "Coin",
-      sr: 1,
-      ks: {
-        o: { a: 1, k: [{ i: { x: [0.833], y: [0.833] }, o: { x: [0.167], y: [0.167] }, t: 0, s: [0] }, { t: 30, s: [100] }] },
-        r: { a: 1, k: [{ i: { x: [0.833], y: [0.833] }, o: { x: [0.167], y: [0.167] }, t: 0, s: [0] }, { t: 90, s: [360] }] },
-        p: { a: 1, k: [{ i: { x: 0.833, y: 0.833 }, o: { x: 0.167, y: 0.167 }, t: 0, s: [100, 150, 0] }, { i: { x: 0.167, y: 0.167 }, o: { x: 0.833, y: 0.833 }, t: 45, s: [100, 80, 0] }, { t: 90, s: [100, 150, 0] }] },
-        s: { a: 0, k: [100, 100, 100] }
-      },
-      shapes: [
-        {
-          ty: "el",
-          s: { a: 0, k: [80, 80] },
-          p: { a: 0, k: [0, 0] },
-          nm: "Circle"
-        },
-        {
-          ty: "fl",
-          c: { a: 0, k: [1, 0.84, 0, 1] },
-          o: { a: 0, k: 100 }
-        },
-        {
-          ty: "st",
-          c: { a: 0, k: [0.86, 0.72, 0, 1] },
-          o: { a: 0, k: 100 },
-          w: { a: 0, k: 4 }
-        }
-      ]
-    }
-  ]
-}
-
-// Animation for phone
-const phoneAnimation = {
-  v: "5.7.4",
-  fr: 30,
-  ip: 0,
-  op: 60,
-  w: 100,
-  h: 100,
-  nm: "Phone",
-  ddd: 0,
-  assets: [],
-  layers: [
-    {
-      ddd: 0,
-      ind: 1,
-      ty: 4,
-      nm: "Phone",
-      sr: 1,
-      ks: {
-        o: { a: 0, k: 100 },
-        r: { a: 1, k: [{ i: { x: [0.833], y: [0.833] }, o: { x: [0.167], y: [0.167] }, t: 0, s: [-5] }, { i: { x: 0.167, y: 0.167 }, o: { x: 0.833, y: 0.833 }, t: 30, s: [5] }, { t: 60, s: [-5] }] },
-        p: { a: 0, k: [50, 50, 0] },
-        s: { a: 0, k: [100, 100, 100] }
-      },
-      shapes: [
-        {
-          ty: "rc",
-          s: { a: 0, k: [40, 70] },
-          p: { a: 0, k: [0, 0] },
-          r: { a: 0, k: 8 },
-          nm: "Phone Body"
-        },
-        {
-          ty: "fl",
-          c: { a: 0, k: [0.2, 0.2, 0.2, 1] },
-          o: { a: 0, k: 100 }
-        },
-        {
-          ty: "rc",
-          s: { a: 0, k: [32, 55] },
-          p: { a: 0, k: [0, -3] },
-          r: { a: 0, k: 4 },
-          nm: "Screen"
-        },
-        {
-          ty: "fl",
-          c: { a: 0, k: [0.13, 0.59, 0.95, 1] },
-          o: { a: 0, k: 100 }
-        }
-      ]
-    }
-  ]
-}
-
-// Animation for shield
-const shieldAnimation = {
-  v: "5.7.4",
-  fr: 30,
-  ip: 0,
-  op: 60,
-  w: 100,
-  h: 100,
-  nm: "Shield",
-  ddd: 0,
-  assets: [],
-  layers: [
-    {
-      ddd: 0,
-      ind: 1,
-      ty: 4,
-      nm: "Shield",
-      sr: 1,
-      ks: {
-        o: { a: 0, k: 100 },
-        r: { a: 0, k: 0 },
-        p: { a: 0, k: [50, 50, 0] },
-        s: { a: 1, k: [{ i: { x: [0.667], y: [1] }, o: { x: [0.333], y: [0] }, t: 0, s: [0, 0, 100] }, { i: { x: [0.667], y: [1] }, o: { x: [0.333], y: [0] }, t: 15, s: [120, 120, 100] }, { t: 30, s: [100, 100, 100] }] }
-      },
-      shapes: [
-        {
-          ty: "sr",
-          sy: 1,
-          d: 1,
-          pt: { a: 0, k: 6 },
-          p: { a: 0, k: [0, 0] },
-          or: { a: 0, k: 0 },
-          ir: { a: 0, k: 25 },
-          is: { a: 0, k: 0 },
-          os: { a: 0, k: 0 },
-          nm: "Shield"
-        },
-        {
-          ty: "fl",
-          c: { a: 0, k: [0.13, 0.59, 0.95, 1] },
-          o: { a: 0, k: 100 }
-        },
-        {
-          ty: "st",
-          c: { a: 0, k: [0.1, 0.4, 0.8, 1] },
-          o: { a: 0, k: 100 },
-          w: { a: 0, k: 3 }
-        }
-      ]
-    }
-  ]
-}
-
-// Animation for clock
-const clockAnimation = {
-  v: "5.7.4",
-  fr: 30,
-  ip: 0,
-  op: 120,
-  w: 100,
-  h: 100,
-  nm: "Clock",
-  ddd: 0,
-  assets: [],
-  layers: [
-    {
-      ddd: 0,
-      ind: 1,
-      ty: 4,
-      nm: "Clock",
-      sr: 1,
-      ks: {
-        o: { a: 0, k: 100 },
-        r: { a: 0, k: 0 },
-        p: { a: 0, k: [50, 50, 0] },
-        s: { a: 0, k: [100, 100, 100] }
-      },
-      shapes: [
-        {
-          ty: "el",
-          s: { a: 0, k: [70, 70] },
-          p: { a: 0, k: [0, 0] },
-          nm: "Circle"
-        },
-        {
-          ty: "fl",
-          c: { a: 0, k: [1, 1, 1, 1] },
-          o: { a: 0, k: 100 }
-        },
-        {
-          ty: "st",
-          c: { a: 0, k: [0.13, 0.59, 0.95, 1] },
-          o: { a: 0, k: 100 },
-          w: { a: 0, k: 4 }
-        },
-        {
-          ty: "sh",
-          d: 1,
-          s: { a: 0, k: [20, 4] },
-          p: { a: 0, k: [0, -8] },
-          r: { a: 0, k: 0 },
-          nm: "Hour Hand"
-        },
-        {
-          ty: "sh",
-          d: 1,
-          s: { a: 0, k: [25, 3] },
-          p: { a: 0, k: [0, -12] },
-          r: { a: 1, k: [{ i: { x: [0.833], y: [0.833] }, o: { x: [0.167], y: [0.167] }, t: 0, s: [0] }, { t: 60, s: [360] }] },
-          nm: "Minute Hand"
-        }
-      ]
-    }
-  ]
-}
-
-// Animation for money bag
-const moneyBagAnimation = {
-  v: "5.7.4",
-  fr: 30,
-  ip: 0,
-  op: 60,
-  w: 120,
-  h: 120,
-  nm: "Money Bag",
-  ddd: 0,
-  assets: [],
-  layers: [
-    {
-      ddd: 0,
-      ind: 1,
-      ty: 4,
-      nm: "Bag",
-      sr: 1,
-      ks: {
-        o: { a: 0, k: 100 },
-        r: { a: 0, k: 0 },
-        p: { a: 1, k: [{ i: { x: 0.833, y: 0.833 }, o: { x: 0.167, y: 0.167 }, t: 0, s: [60, 80, 0] }, { i: { x: 0.167, y: 0.167 }, o: { x: 0.833, y: 0.833 }, t: 30, s: [60, 70, 0] }, { t: 60, s: [60, 80, 0] }] },
-        s: { a: 0, k: [100, 100, 100] }
-      },
-      shapes: [
-        {
-          ty: "el",
-          s: { a: 0, k: [60, 70] },
-          p: { a: 0, k: [0, 0] },
-          nm: "Bag Body"
-        },
-        {
-          ty: "fl",
-          c: { a: 0, k: [1, 0.84, 0, 1] },
-          o: { a: 0, k: 100 }
-        },
-        {
-          ty: "rc",
-          s: { a: 0, k: [30, 15] },
-          p: { a: 0, k: [0, -35] },
-          r: { a: 0, k: 0 },
-          nm: "Bag Top"
-        },
-        {
-          ty: "fl",
-          c: { a: 0, k: [0.86, 0.72, 0, 1] },
-          o: { a: 0, k: 100 }
-        }
-      ]
-    }
-  ]
-}
-
-// Simple Lottie animation component
-function SimpleAnimation({ type }: { type: 'coin' | 'phone' | 'shield' | 'clock' | 'money' }) {
-  const [animation, setAnimation] = useState<any>(null)
-
-  useEffect(() => {
-    switch (type) {
-      case 'coin':
-        setAnimation(coinAnimation)
-        break
-      case 'phone':
-        setAnimation(phoneAnimation)
-        break
-      case 'shield':
-        setAnimation(shieldAnimation)
-        break
-      case 'clock':
-        setAnimation(clockAnimation)
-        break
-      case 'money':
-        setAnimation(moneyBagAnimation)
-        break
-    }
-  }, [type])
-
-  if (!animation) return null
-
-  return (
-    <Lottie
-      animationData={animation}
-      loop={true}
-      autoplay={true}
-      style={{ width: 40, height: 40 }}
-    />
-  )
-}
 
 // Animated counter component
 function AnimatedCounter({ end, duration = 2000 }: { end: number; duration?: number }) {
@@ -349,47 +42,6 @@ function AnimatedCounter({ end, duration = 2000 }: { end: number; duration?: num
   }, [isVisible, end, duration])
 
   return <div ref={ref}>{count}+</div>
-}
-
-// WhatsApp animation
-const whatsappAnimation = {
-  v: "5.7.4",
-  fr: 30,
-  ip: 0,
-  op: 60,
-  w: 100,
-  h: 100,
-  nm: "WhatsApp",
-  ddd: 0,
-  assets: [],
-  layers: [
-    {
-      ddd: 0,
-      ind: 1,
-      ty: 4,
-      nm: "Pulse",
-      sr: 1,
-      ks: {
-        o: { a: 1, k: [{ i: { x: [0.833], y: [0.833] }, o: { x: [0.167], y: [0.167] }, t: 0, s: [100] }, { i: { x: 0.167, y: 0.167 }, o: { x: 0.833, y: 0.833 }, t: 30, s: [0] }, { t: 60, s: [100] }] },
-        r: { a: 0, k: 0 },
-        p: { a: 0, k: [50, 50, 0] },
-        s: { a: 1, k: [{ i: { x: [0.833], y: [0.833] }, o: { x: [0.167], y: [0.167] }, t: 0, s: [100, 100, 100] }, { i: { x: 0.167, y: 0.167 }, o: { x: 0.833, y: 0.833 }, t: 30, s: [150, 150, 100] }, { t: 60, s: [100, 100, 100] }] }
-      },
-      shapes: [
-        {
-          ty: "el",
-          s: { a: 0, k: [60, 60] },
-          p: { a: 0, k: [0, 0] },
-          nm: "Circle"
-        },
-        {
-          ty: "fl",
-          c: { a: 0, k: [0.25, 0.8, 0.2, 0.3] },
-          o: { a: 0, k: 100 }
-        }
-      ]
-    }
-  ]
 }
 
 // FAQ Item Component with animation
@@ -561,7 +213,9 @@ export default function Home() {
                   href="#pengajuan"
                   className="group bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-300 hover:to-yellow-400 text-gray-900 px-8 py-4 rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl hover:scale-105 transition-all inline-flex items-center justify-center gap-2"
                 >
-                  <SimpleAnimation type="money" />
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
                   <span>Gadai Sekarang</span>
                   <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -581,23 +235,35 @@ export default function Home() {
               </div>
 
               {/* Quick Stats */}
-              <div className="flex flex-wrap gap-6 justify-center lg:justify-start">
+              <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
                 <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3">
-                  <SimpleAnimation type="clock" />
+                  <div className="w-10 h-10 bg-blue-500/30 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
                   <div>
                     <p className="font-bold text-white">15 Menit</p>
                     <p className="text-blue-200 text-xs">Proses Cepat</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3">
-                  <SimpleAnimation type="shield" />
+                  <div className="w-10 h-10 bg-green-500/30 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                  </div>
                   <div>
                     <p className="font-bold text-white">100% Aman</p>
                     <p className="text-blue-200 text-xs">Terjamin</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3">
-                  <SimpleAnimation type="coin" />
+                  <div className="w-10 h-10 bg-yellow-500/30 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
                   <div>
                     <p className="font-bold text-white">Bunga 2%</p>
                     <p className="text-blue-200 text-xs">Per Bulan</p>
@@ -887,13 +553,13 @@ export default function Home() {
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 max-w-4xl mx-auto">
             {[
-              { num: 1, title: 'Hubungi Kami', desc: 'Via WhatsApp', icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' },
-              { num: 2, title: 'Kirim Foto', desc: 'Barang & dokumen', icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' },
-              { num: 3, title: 'Taksiran', desc: 'Tim kami kasih penawaran', icon: 'M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z' },
-              { num: 4, title: 'Survey', desc: 'Jika diperlukan', icon: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z' },
-              { num: 5, title: 'Dana Cair', desc: 'Transfer ke rekening', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0 8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' }
+              { num: 1, title: 'Hubungi Kami', desc: 'Via WhatsApp' },
+              { num: 2, title: 'Kirim Foto', desc: 'Barang & dokumen' },
+              { num: 3, title: 'Taksiran', desc: 'Tim kami kasih penawaran' },
+              { num: 4, title: 'Survey', desc: 'Jika diperlukan' },
+              { num: 5, title: 'Dana Cair', desc: 'Transfer ke rekening' }
             ].map((step, i) => (
-              <div key={i} className="text-center relative group">
+              <div key={i} className="text-center relative">
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl flex items-center justify-center text-xl font-bold mx-auto mb-4 shadow-lg shadow-blue-200 group-hover:scale-110 transition-transform">
                   {step.num}
                 </div>
@@ -922,13 +588,13 @@ export default function Home() {
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
             {[
-              { name: 'Kota Yogyakarta', desc: 'Pusat Kota', emoji: '🏛️', color: 'blue' },
-              { name: 'Sleman', desc: 'Depok, Mlati, Ngaglik', emoji: '🏔️', color: 'green' },
-              { name: 'Bantul', desc: 'Sewon, Kasihan, Pandak', emoji: '🌾', color: 'yellow' },
-              { name: 'Kulon Progo', desc: 'Wates, Sentolo', emoji: '🌊', color: 'orange' },
-              { name: 'Gunung Kidul', desc: 'Wonosari', emoji: '⛰️', color: 'red' }
+              { name: 'Kota Yogyakarta', desc: 'Pusat Kota', emoji: '🏛️' },
+              { name: 'Sleman', desc: 'Depok, Mlati, Ngaglik', emoji: '🏔️' },
+              { name: 'Bantul', desc: 'Sewon, Kasihan, Pandak', emoji: '🌾' },
+              { name: 'Kulon Progo', desc: 'Wates, Sentolo', emoji: '🌊' },
+              { name: 'Gunung Kidul', desc: 'Wonosari', emoji: '⛰️' }
             ].map((area, i) => (
-              <div key={i} className={`bg-white rounded-2xl p-5 border border-gray-200 text-center hover:shadow-lg transition-all hover:-translate-y-1 hover:border-${area.color}-300`}>
+              <div key={i} className="bg-white rounded-2xl p-5 border border-gray-200 text-center hover:shadow-lg transition-all hover:-translate-y-1">
                 <div className="text-4xl mb-3">{area.emoji}</div>
                 <h3 className="font-bold text-gray-900 mb-1">{area.name}</h3>
                 <p className="text-gray-600 text-xs">{area.desc}</p>
