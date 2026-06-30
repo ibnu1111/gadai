@@ -1,129 +1,506 @@
-import type { Metadata } from 'next'
+'use client'
+
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import Lottie from 'lottie-react'
 
-export const metadata: Metadata = {
-  title: 'Gadai Jogja - Gadai Online Terpercaya di Yogyakarta | Proses Cepat & Aman',
-  description: 'Gadai Jogja adalah platform gadai online terpercaya di Yogyakarta. Layanan gadai HP, laptop, motor, dan mobil dengan proses 15 menit, bunga mulai 2%, dan tanpa biaya admin tersembunyi.',
-  keywords: 'gadai jogja, gadai online jogja, gadai hp jogja, gadai motor jogja, gadai laptop jogja, gadai mobil jogja, tempat gadai jogja, gadai 24 jam jogja',
-  openGraph: {
-    title: 'Gadai Jogja - Gadai Online Terpercaya di Yogyakarta',
-    description: 'Layanan gadai HP, laptop, motor, mobil dengan proses cepat 15 menit. Bunga mulai 2%. Tanpa biaya admin.',
-    url: 'https://gadaijogja.com',
-    siteName: 'Gadai Jogja',
-    locale: 'id_ID',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Gadai Jogja - Gadai Online Terpercaya',
-    description: 'Layanan gadai terpercaya di Yogyakarta. Proses cepat, bunga rendah.',
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-}
-
-const structuredData = {
-  '@context': 'https://schema.org',
-  '@type': 'LocalBusiness',
-  'name': 'Gadai Jogja',
-  'description': 'Layanan gadai online terpercaya di Yogyakarta untuk HP, laptop, motor, dan mobil.',
-  'url': 'https://gadaijogja.com',
-  'telephone': '+6282299748978',
-  'email': 'cs@gadaijogja.com',
-  'address': {
-    '@type': 'PostalAddress',
-    'addressLocality': 'Yogyakarta',
-    'addressRegion': 'DI Yogyakarta',
-    'addressCountry': 'ID'
-  },
-  'areaServed': [
-    { '@type': 'City', 'name': 'Kota Yogyakarta' },
-    { '@type': 'AdministrativeArea', 'name': 'Sleman' },
-    { '@type': 'AdministrativeArea', 'name': 'Bantul' },
-    { '@type': 'AdministrativeArea', 'name': 'Kulon Progo' },
-    { '@type': 'AdministrativeArea', 'name': 'Gunung Kidul' }
-  ],
-  'openingHours': 'Mo-Su 00:00-23:59',
-  'priceRange': '$$',
-  'sameAs': [
-    'https://wa.me/6282299748978'
+// Animation data for coins/money
+const coinAnimation = {
+  v: "5.7.4",
+  fr: 30,
+  ip: 0,
+  op: 90,
+  w: 200,
+  h: 200,
+  nm: "Coins",
+  ddd: 0,
+  assets: [],
+  layers: [
+    {
+      ddd: 0,
+      ind: 1,
+      ty: 4,
+      nm: "Coin",
+      sr: 1,
+      ks: {
+        o: { a: 1, k: [{ i: { x: [0.833], y: [0.833] }, o: { x: [0.167], y: [0.167] }, t: 0, s: [0] }, { t: 30, s: [100] }] },
+        r: { a: 1, k: [{ i: { x: [0.833], y: [0.833] }, o: { x: [0.167], y: [0.167] }, t: 0, s: [0] }, { t: 90, s: [360] }] },
+        p: { a: 1, k: [{ i: { x: 0.833, y: 0.833 }, o: { x: 0.167, y: 0.167 }, t: 0, s: [100, 150, 0] }, { i: { x: 0.167, y: 0.167 }, o: { x: 0.833, y: 0.833 }, t: 45, s: [100, 80, 0] }, { t: 90, s: [100, 150, 0] }] },
+        s: { a: 0, k: [100, 100, 100] }
+      },
+      shapes: [
+        {
+          ty: "el",
+          s: { a: 0, k: [80, 80] },
+          p: { a: 0, k: [0, 0] },
+          nm: "Circle"
+        },
+        {
+          ty: "fl",
+          c: { a: 0, k: [1, 0.84, 0, 1] },
+          o: { a: 0, k: 100 }
+        },
+        {
+          ty: "st",
+          c: { a: 0, k: [0.86, 0.72, 0, 1] },
+          o: { a: 0, k: 100 },
+          w: { a: 0, k: 4 }
+        }
+      ]
+    }
   ]
 }
 
-const faqs = [
-  {
-    question: 'Berapa lama proses gadai di Gadai Jogja?',
-    answer: 'Proses gadai kami sangat cepat, hanya membutuhkan waktu 10-15 menit dari pengajuan hingga pencairan dana langsung ke rekening Anda. Untuk gadai motor/mobil mungkin butuh survey lokasi terlebih dahulu.'
-  },
-  {
-    question: 'Apakah ada biaya admin atau biaya tersembunyi?',
-    answer: 'Tidak ada biaya admin atau biaya tersembunyi sama sekali. Yang Anda bayar hanya bunga sesuai kesepakatan di awal. Semua transparan dan tertulis jelas di bukti gadai.'
-  },
-  {
-    question: 'Berapa bunga gadai di Gadai Jogja?',
-    answer: 'Bunga gadai kami mulai dari 2% per bulan tergantung jenis barang dan nilai gadai. Ini sangat kompetitif dibanding tempat gadai lain. Bunga dihitung per bulan, bukan per hari.'
-  },
-  {
-    question: 'Apakah barang gadai dijamin aman?',
-    answer: 'Sangat aman! Semua barang gadai disimpan di tempat yang aman dengan sistem keamanan 24 jam. Kami juga memberikan bukti gadai resmi sebagai jaminan.'
-  },
-  {
-    question: 'Bagaimana cara menebus barang gadai?',
-    answer: 'Hubungi kami via WhatsApp 0822-9974-8978, bayar pokok pinjaman + bunga, dan barang bisa langsung diambil. Proses tebus sangat cepat, bisa dalam hitungan menit.'
-  },
-  {
-    question: 'Berapa nilai maksimal yang bisa dipinjam?',
-    answer: 'Nilai pinjaman tergantung taksiran barang. Untuk HP/laptop bisa hingga 80% dari harga pasaran. Untuk motor/mobil bisa hingga 70% dari nilai NJKB. Tidak ada batasan maksimal.'
-  }
-]
+// Animation for phone
+const phoneAnimation = {
+  v: "5.7.4",
+  fr: 30,
+  ip: 0,
+  op: 60,
+  w: 100,
+  h: 100,
+  nm: "Phone",
+  ddd: 0,
+  assets: [],
+  layers: [
+    {
+      ddd: 0,
+      ind: 1,
+      ty: 4,
+      nm: "Phone",
+      sr: 1,
+      ks: {
+        o: { a: 0, k: 100 },
+        r: { a: 1, k: [{ i: { x: [0.833], y: [0.833] }, o: { x: [0.167], y: [0.167] }, t: 0, s: [-5] }, { i: { x: 0.167, y: 0.167 }, o: { x: 0.833, y: 0.833 }, t: 30, s: [5] }, { t: 60, s: [-5] }] },
+        p: { a: 0, k: [50, 50, 0] },
+        s: { a: 0, k: [100, 100, 100] }
+      },
+      shapes: [
+        {
+          ty: "rc",
+          s: { a: 0, k: [40, 70] },
+          p: { a: 0, k: [0, 0] },
+          r: { a: 0, k: 8 },
+          nm: "Phone Body"
+        },
+        {
+          ty: "fl",
+          c: { a: 0, k: [0.2, 0.2, 0.2, 1] },
+          o: { a: 0, k: 100 }
+        },
+        {
+          ty: "rc",
+          s: { a: 0, k: [32, 55] },
+          p: { a: 0, k: [0, -3] },
+          r: { a: 0, k: 4 },
+          nm: "Screen"
+        },
+        {
+          ty: "fl",
+          c: { a: 0, k: [0.13, 0.59, 0.95, 1] },
+          o: { a: 0, k: 100 }
+        }
+      ]
+    }
+  ]
+}
 
-const testimonials = [
-  {
-    name: 'Andi Pratama',
-    location: 'Sleman',
-    message: 'Proses sangat cepat! Saya gadai iPhone hanya 10 menit langsung cair. Pelayanan ramah dan profesional. Recommended!',
-    initials: 'AP',
-    color: '#3b82f6'
-  },
-  {
-    name: 'Rini Wijayanti',
-    location: 'Bantul',
-    message: 'Bunga lebih rendah dari tempat lain. Pencairan langsung ke rekening. Sangat membantu untuk kebutuhan mendesak!',
-    initials: 'RW',
-    color: '#8b5cf6'
-  },
-  {
-    name: 'Budi Santoso',
-    location: 'Yogyakarta',
-    message: 'Sudah langganan gadai di sini. Terpercaya, barang aman, dan proses tebus mudah. Top markotop!',
-    initials: 'BS',
-    color: '#10b981'
-  }
-]
+// Animation for shield
+const shieldAnimation = {
+  v: "5.7.4",
+  fr: 30,
+  ip: 0,
+  op: 60,
+  w: 100,
+  h: 100,
+  nm: "Shield",
+  ddd: 0,
+  assets: [],
+  layers: [
+    {
+      ddd: 0,
+      ind: 1,
+      ty: 4,
+      nm: "Shield",
+      sr: 1,
+      ks: {
+        o: { a: 0, k: 100 },
+        r: { a: 0, k: 0 },
+        p: { a: 0, k: [50, 50, 0] },
+        s: { a: 1, k: [{ i: { x: [0.667], y: [1] }, o: { x: [0.333], y: [0] }, t: 0, s: [0, 0, 100] }, { i: { x: [0.667], y: [1] }, o: { x: [0.333], y: [0] }, t: 15, s: [120, 120, 100] }, { t: 30, s: [100, 100, 100] }] }
+      },
+      shapes: [
+        {
+          ty: "sr",
+          sy: 1,
+          d: 1,
+          pt: { a: 0, k: 6 },
+          p: { a: 0, k: [0, 0] },
+          or: { a: 0, k: 0 },
+          ir: { a: 0, k: 25 },
+          is: { a: 0, k: 0 },
+          os: { a: 0, k: 0 },
+          nm: "Shield"
+        },
+        {
+          ty: "fl",
+          c: { a: 0, k: [0.13, 0.59, 0.95, 1] },
+          o: { a: 0, k: 100 }
+        },
+        {
+          ty: "st",
+          c: { a: 0, k: [0.1, 0.4, 0.8, 1] },
+          o: { a: 0, k: 100 },
+          w: { a: 0, k: 3 }
+        }
+      ]
+    }
+  ]
+}
+
+// Animation for clock
+const clockAnimation = {
+  v: "5.7.4",
+  fr: 30,
+  ip: 0,
+  op: 120,
+  w: 100,
+  h: 100,
+  nm: "Clock",
+  ddd: 0,
+  assets: [],
+  layers: [
+    {
+      ddd: 0,
+      ind: 1,
+      ty: 4,
+      nm: "Clock",
+      sr: 1,
+      ks: {
+        o: { a: 0, k: 100 },
+        r: { a: 0, k: 0 },
+        p: { a: 0, k: [50, 50, 0] },
+        s: { a: 0, k: [100, 100, 100] }
+      },
+      shapes: [
+        {
+          ty: "el",
+          s: { a: 0, k: [70, 70] },
+          p: { a: 0, k: [0, 0] },
+          nm: "Circle"
+        },
+        {
+          ty: "fl",
+          c: { a: 0, k: [1, 1, 1, 1] },
+          o: { a: 0, k: 100 }
+        },
+        {
+          ty: "st",
+          c: { a: 0, k: [0.13, 0.59, 0.95, 1] },
+          o: { a: 0, k: 100 },
+          w: { a: 0, k: 4 }
+        },
+        {
+          ty: "sh",
+          d: 1,
+          s: { a: 0, k: [20, 4] },
+          p: { a: 0, k: [0, -8] },
+          r: { a: 0, k: 0 },
+          nm: "Hour Hand"
+        },
+        {
+          ty: "sh",
+          d: 1,
+          s: { a: 0, k: [25, 3] },
+          p: { a: 0, k: [0, -12] },
+          r: { a: 1, k: [{ i: { x: [0.833], y: [0.833] }, o: { x: [0.167], y: [0.167] }, t: 0, s: [0] }, { t: 60, s: [360] }] },
+          nm: "Minute Hand"
+        }
+      ]
+    }
+  ]
+}
+
+// Animation for money bag
+const moneyBagAnimation = {
+  v: "5.7.4",
+  fr: 30,
+  ip: 0,
+  op: 60,
+  w: 120,
+  h: 120,
+  nm: "Money Bag",
+  ddd: 0,
+  assets: [],
+  layers: [
+    {
+      ddd: 0,
+      ind: 1,
+      ty: 4,
+      nm: "Bag",
+      sr: 1,
+      ks: {
+        o: { a: 0, k: 100 },
+        r: { a: 0, k: 0 },
+        p: { a: 1, k: [{ i: { x: 0.833, y: 0.833 }, o: { x: 0.167, y: 0.167 }, t: 0, s: [60, 80, 0] }, { i: { x: 0.167, y: 0.167 }, o: { x: 0.833, y: 0.833 }, t: 30, s: [60, 70, 0] }, { t: 60, s: [60, 80, 0] }] },
+        s: { a: 0, k: [100, 100, 100] }
+      },
+      shapes: [
+        {
+          ty: "el",
+          s: { a: 0, k: [60, 70] },
+          p: { a: 0, k: [0, 0] },
+          nm: "Bag Body"
+        },
+        {
+          ty: "fl",
+          c: { a: 0, k: [1, 0.84, 0, 1] },
+          o: { a: 0, k: 100 }
+        },
+        {
+          ty: "rc",
+          s: { a: 0, k: [30, 15] },
+          p: { a: 0, k: [0, -35] },
+          r: { a: 0, k: 0 },
+          nm: "Bag Top"
+        },
+        {
+          ty: "fl",
+          c: { a: 0, k: [0.86, 0.72, 0, 1] },
+          o: { a: 0, k: 100 }
+        }
+      ]
+    }
+  ]
+}
+
+// Simple Lottie animation component
+function SimpleAnimation({ type }: { type: 'coin' | 'phone' | 'shield' | 'clock' | 'money' }) {
+  const [animation, setAnimation] = useState<any>(null)
+
+  useEffect(() => {
+    switch (type) {
+      case 'coin':
+        setAnimation(coinAnimation)
+        break
+      case 'phone':
+        setAnimation(phoneAnimation)
+        break
+      case 'shield':
+        setAnimation(shieldAnimation)
+        break
+      case 'clock':
+        setAnimation(clockAnimation)
+        break
+      case 'money':
+        setAnimation(moneyBagAnimation)
+        break
+    }
+  }, [type])
+
+  if (!animation) return null
+
+  return (
+    <Lottie
+      animationData={animation}
+      loop={true}
+      autoplay={true}
+      style={{ width: 40, height: 40 }}
+    />
+  )
+}
+
+// Animated counter component
+function AnimatedCounter({ end, duration = 2000 }: { end: number; duration?: number }) {
+  const [count, setCount] = useState(0)
+  const [isVisible, setIsVisible] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true)
+        }
+      },
+      { threshold: 0.1 }
+    )
+
+    if (ref.current) {
+      observer.observe(ref.current)
+    }
+
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (!isVisible) return
+
+    let startTime: number
+    const animate = (timestamp: number) => {
+      if (!startTime) startTime = timestamp
+      const progress = Math.min((timestamp - startTime) / duration, 1)
+      setCount(Math.floor(progress * end))
+      if (progress < 1) {
+        requestAnimationFrame(animate)
+      }
+    }
+    requestAnimationFrame(animate)
+  }, [isVisible, end, duration])
+
+  return <div ref={ref}>{count}+</div>
+}
+
+// WhatsApp animation
+const whatsappAnimation = {
+  v: "5.7.4",
+  fr: 30,
+  ip: 0,
+  op: 60,
+  w: 100,
+  h: 100,
+  nm: "WhatsApp",
+  ddd: 0,
+  assets: [],
+  layers: [
+    {
+      ddd: 0,
+      ind: 1,
+      ty: 4,
+      nm: "Pulse",
+      sr: 1,
+      ks: {
+        o: { a: 1, k: [{ i: { x: [0.833], y: [0.833] }, o: { x: [0.167], y: [0.167] }, t: 0, s: [100] }, { i: { x: 0.167, y: 0.167 }, o: { x: 0.833, y: 0.833 }, t: 30, s: [0] }, { t: 60, s: [100] }] },
+        r: { a: 0, k: 0 },
+        p: { a: 0, k: [50, 50, 0] },
+        s: { a: 1, k: [{ i: { x: [0.833], y: [0.833] }, o: { x: [0.167], y: [0.167] }, t: 0, s: [100, 100, 100] }, { i: { x: 0.167, y: 0.167 }, o: { x: 0.833, y: 0.833 }, t: 30, s: [150, 150, 100] }, { t: 60, s: [100, 100, 100] }] }
+      },
+      shapes: [
+        {
+          ty: "el",
+          s: { a: 0, k: [60, 60] },
+          p: { a: 0, k: [0, 0] },
+          nm: "Circle"
+        },
+        {
+          ty: "fl",
+          c: { a: 0, k: [0.25, 0.8, 0.2, 0.3] },
+          o: { a: 0, k: 100 }
+        }
+      ]
+    }
+  ]
+}
+
+// FAQ Item Component with animation
+function FaqItem({ question, answer, isOpen, onClick }: { question: string; answer: string; isOpen: boolean; onClick: () => void }) {
+  return (
+    <div
+      className={`bg-white rounded-2xl overflow-hidden transition-all duration-300 ${
+        isOpen ? 'shadow-lg ring-2 ring-blue-100' : 'shadow-sm hover:shadow-md'
+      }`}
+    >
+      <button
+        onClick={onClick}
+        className="w-full px-6 py-5 flex items-center justify-between text-left"
+      >
+        <span className="font-semibold text-gray-900 pr-4">{question}</span>
+        <svg
+          className={`w-5 h-5 text-gray-500 flex-shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      <div
+        className={`overflow-hidden transition-all duration-300 ${
+          isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+        }`}
+      >
+        <div className="px-6 pb-5 text-gray-600">
+          {answer}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function Home() {
+  const [openFaq, setOpenFaq] = useState<number | null>(0)
+  const [isLoaded, setIsLoaded] = useState(false)
+
+  useEffect(() => {
+    setIsLoaded(true)
+  }, [])
+
+  const faqs = [
+    {
+      question: 'Berapa lama proses gadai di Gadai Jogja?',
+      answer: 'Proses gadai kami sangat cepat, hanya membutuhkan waktu 10-15 menit dari pengajuan hingga pencairan dana langsung ke rekening Anda. Untuk gadai motor/mobil mungkin butuh survey lokasi terlebih dahulu.'
+    },
+    {
+      question: 'Apakah ada biaya admin atau biaya tersembunyi?',
+      answer: 'Tidak ada biaya admin atau biaya tersembunyi sama sekali. Yang Anda bayar hanya bunga sesuai kesepakatan di awal. Semua transparan dan tertulis jelas di bukti gadai.'
+    },
+    {
+      question: 'Berapa bunga gadai di Gadai Jogja?',
+      answer: 'Bunga gadai kami mulai dari 2% per bulan tergantung jenis barang dan nilai gadai. Ini sangat kompetitif dibanding tempat gadai lain. Bunga dihitung per bulan, bukan per hari.'
+    },
+    {
+      question: 'Apakah barang gadai dijamin aman?',
+      answer: 'Sangat aman! Semua barang gadai disimpan di tempat yang aman dengan sistem keamanan 24 jam. Kami juga memberikan bukti gadai resmi sebagai jaminan.'
+    },
+    {
+      question: 'Bagaimana cara menebus barang gadai?',
+      answer: 'Hubungi kami via WhatsApp 0822-9974-8978, bayar pokok pinjaman + bunga, dan barang bisa langsung diambil. Proses tebus sangat cepat, bisa dalam hitungan menit.'
+    },
+    {
+      question: 'Berapa nilai maksimal yang bisa dipinjam?',
+      answer: 'Nilai pinjaman tergantung taksiran barang. Untuk HP/laptop bisa hingga 80% dari harga pasaran. Untuk motor/mobil bisa hingga 70% dari nilai NJKB. Tidak ada batasan maksimal.'
+    }
+  ]
+
+  const testimonials = [
+    {
+      name: 'Andi Pratama',
+      location: 'Sleman',
+      message: 'Proses sangat cepat! Saya gadai iPhone hanya 10 menit langsung cair. Pelayanan ramah dan profesional. Recommended!',
+      initials: 'AP',
+      color: '#3b82f6'
+    },
+    {
+      name: 'Rini Wijayanti',
+      location: 'Bantul',
+      message: 'Bunga lebih rendah dari tempat lain. Pencairan langsung ke rekening. Sangat membantu untuk kebutuhan mendesak!',
+      initials: 'RW',
+      color: '#8b5cf6'
+    },
+    {
+      name: 'Budi Santoso',
+      location: 'Yogyakarta',
+      message: 'Sudah langganan gadai di sini. Terpercaya, barang aman, dan proses tebus mudah. Top markotop!',
+      initials: 'BS',
+      color: '#10b981'
+    }
+  ]
+
   return (
     <div className="min-h-screen bg-white">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
-      />
-
       {/* Header */}
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-50">
+      <header className="bg-white border-b border-gray-100 sticky top-0 z-50 backdrop-blur-lg bg-white/90">
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
               <div>
-                <span className="text-lg font-bold text-gray-900">Gadai Jogja</span>
-                <span className="hidden sm:block text-xs text-gray-500">gadaijogja.com</span>
+                <span className="text-lg font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">Gadai Jogja</span>
+                <span className="hidden sm:block text-xs text-gray-400">gadaijogja.com</span>
               </div>
             </div>
             <nav className="hidden lg:flex items-center gap-1">
@@ -140,8 +517,11 @@ export default function Home() {
                 href="https://wa.me/6282299748978?text=Halo%20Gadai%20Jogja,%20saya%20ingin%20konsultasi"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-semibold text-sm transition shadow-lg shadow-blue-200"
+                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-5 py-2.5 rounded-lg font-semibold text-sm transition shadow-lg shadow-blue-200 flex items-center gap-2"
               >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                </svg>
                 Hubungi Kami
               </a>
             </div>
@@ -151,23 +531,25 @@ export default function Home() {
 
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-white rounded-full blur-3xl"></div>
-          <div className="absolute bottom-10 right-20 w-96 h-96 bg-yellow-400 rounded-full blur-3xl"></div>
+        {/* Animated Background */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-white/5 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-10 right-20 w-96 h-96 bg-yellow-400/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-400/10 rounded-full blur-3xl"></div>
         </div>
 
         <div className="relative max-w-6xl mx-auto px-4 py-16 md:py-24">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left Content */}
-            <div className="text-center lg:text-left">
+            <div className={`text-center lg:text-left transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
               <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-2 rounded-full mb-6">
                 <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
                 <span className="text-white/90 text-sm font-medium">Terpercaya sejak 2020</span>
               </div>
 
-              <h1 className="text-4xl md:text-5xl font-extrabold text-white leading-tight mb-6">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-6">
                 Butuh Dana Cepat?
-                <span className="block mt-2 text-yellow-400">Gadai Aja!</span>
+                <span className="block mt-2 bg-gradient-to-r from-yellow-300 to-yellow-400 bg-clip-text text-transparent">Gadai Aja!</span>
               </h1>
 
               <p className="text-lg text-blue-100 mb-6 max-w-xl mx-auto lg:mx-0">
@@ -177,10 +559,11 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8">
                 <a
                   href="#pengajuan"
-                  className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-300 hover:to-yellow-400 text-gray-900 px-8 py-4 rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl hover:scale-105 transition-all inline-flex items-center justify-center gap-2"
+                  className="group bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-300 hover:to-yellow-400 text-gray-900 px-8 py-4 rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl hover:scale-105 transition-all inline-flex items-center justify-center gap-2"
                 >
+                  <SimpleAnimation type="money" />
                   <span>Gadai Sekarang</span>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                   </svg>
                 </a>
@@ -188,10 +571,10 @@ export default function Home() {
                   href="https://wa.me/6282299748978?text=Halo%20Gadai%20Jogja,%20saya%20ingin%20konsultasi"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white hover:text-blue-700 transition-all inline-flex items-center justify-center gap-2"
+                  className="group bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white hover:text-blue-700 transition-all inline-flex items-center justify-center gap-2"
                 >
                   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
                   </svg>
                   <span>Chat WhatsApp</span>
                 </a>
@@ -199,22 +582,22 @@ export default function Home() {
 
               {/* Quick Stats */}
               <div className="flex flex-wrap gap-6 justify-center lg:justify-start">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">⚡</span>
+                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3">
+                  <SimpleAnimation type="clock" />
                   <div>
                     <p className="font-bold text-white">15 Menit</p>
                     <p className="text-blue-200 text-xs">Proses Cepat</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">🛡️</span>
+                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3">
+                  <SimpleAnimation type="shield" />
                   <div>
                     <p className="font-bold text-white">100% Aman</p>
                     <p className="text-blue-200 text-xs">Terjamin</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">💰</span>
+                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3">
+                  <SimpleAnimation type="coin" />
                   <div>
                     <p className="font-bold text-white">Bunga 2%</p>
                     <p className="text-blue-200 text-xs">Per Bulan</p>
@@ -224,7 +607,7 @@ export default function Home() {
             </div>
 
             {/* Right Content - Quick Form */}
-            <div id="pengajuan" className="bg-white rounded-3xl shadow-2xl p-6 md:p-8 border border-gray-100">
+            <div id="pengajuan" className={`bg-white rounded-3xl shadow-2xl p-6 md:p-8 border border-gray-100 transition-all duration-700 delay-300 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <p className="text-gray-500 text-sm">Layanan Gadai Online</p>
@@ -267,7 +650,7 @@ export default function Home() {
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition" />
                 </div>
 
-                <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold text-lg transition shadow-lg shadow-blue-200 mt-2">
+                <button type="submit" className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-4 rounded-xl font-bold text-lg transition shadow-lg shadow-blue-200 mt-2">
                   Lanjutkan Pengajuan
                 </button>
               </form>
@@ -295,19 +678,27 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div className="group">
-              <div className="text-3xl sm:text-4xl font-extrabold text-yellow-400 group-hover:scale-110 transition-transform">1000+</div>
+              <div className="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-yellow-300 to-yellow-400 bg-clip-text text-transparent group-hover:scale-110 transition-transform">
+                <AnimatedCounter end={1000} />
+              </div>
               <div className="text-gray-400 text-sm mt-2">Total Transaksi</div>
             </div>
             <div className="group">
-              <div className="text-3xl sm:text-4xl font-extrabold text-yellow-400 group-hover:scale-110 transition-transform">15 Min</div>
-              <div className="text-gray-400 text-sm mt-2">Proses Tercepat</div>
+              <div className="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-yellow-300 to-yellow-400 bg-clip-text text-transparent group-hover:scale-110 transition-transform">
+                <AnimatedCounter end={15} />
+              </div>
+              <div className="text-gray-400 text-sm mt-2">Menit Proses</div>
             </div>
             <div className="group">
-              <div className="text-3xl sm:text-4xl font-extrabold text-yellow-400 group-hover:scale-110 transition-transform">24/7</div>
+              <div className="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-yellow-300 to-yellow-400 bg-clip-text text-transparent group-hover:scale-110 transition-transform">
+                24<span className="text-lg">/</span>7
+              </div>
               <div className="text-gray-400 text-sm mt-2">Layanan Online</div>
             </div>
             <div className="group">
-              <div className="text-3xl sm:text-4xl font-extrabold text-yellow-400 group-hover:scale-110 transition-transform">2%</div>
+              <div className="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-yellow-300 to-yellow-400 bg-clip-text text-transparent group-hover:scale-110 transition-transform">
+                <AnimatedCounter end={2} />%
+              </div>
               <div className="text-gray-400 text-sm mt-2">Bunga Per Bulan</div>
             </div>
           </div>
@@ -331,9 +722,11 @@ export default function Home() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* HP Card */}
-            <div className="group bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-xl hover:border-blue-300 transition-all cursor-pointer text-center">
-              <div className="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center mb-4 mx-auto group-hover:bg-blue-600 transition-colors">
-                <span className="text-3xl group-hover:scale-110 transition-transform">📱</span>
+            <div className="group bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-xl hover:border-blue-300 transition-all cursor-pointer text-center hover:-translate-y-2">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-2xl flex items-center justify-center mb-4 mx-auto group-hover:from-blue-500 group-hover:to-blue-600 transition-all">
+                <svg className="w-8 h-8 text-blue-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">Gadai HP</h3>
               <p className="text-gray-600 text-sm mb-4">iPhone, Samsung, OPPO, Vivo, Xiaomi dan semua merk</p>
@@ -343,9 +736,11 @@ export default function Home() {
             </div>
 
             {/* Laptop Card */}
-            <div className="group bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-xl hover:border-purple-300 transition-all cursor-pointer text-center">
-              <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center mb-4 mx-auto group-hover:bg-purple-600 transition-colors">
-                <span className="text-3xl group-hover:scale-110 transition-transform">💻</span>
+            <div className="group bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-xl hover:border-purple-300 transition-all cursor-pointer text-center hover:-translate-y-2">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-purple-200 rounded-2xl flex items-center justify-center mb-4 mx-auto group-hover:from-purple-500 group-hover:to-purple-600 transition-all">
+                <svg className="w-8 h-8 text-purple-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-purple-600 transition-colors">Gadai Laptop</h3>
               <p className="text-gray-600 text-sm mb-4">MacBook, Asus, HP, Dell, gaming dan kantor</p>
@@ -355,9 +750,11 @@ export default function Home() {
             </div>
 
             {/* Motor Card */}
-            <div className="group bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-xl hover:border-green-300 transition-all cursor-pointer text-center">
-              <div className="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center mb-4 mx-auto group-hover:bg-green-600 transition-colors">
-                <span className="text-3xl group-hover:scale-110 transition-transform">🏍️</span>
+            <div className="group bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-xl hover:border-green-300 transition-all cursor-pointer text-center hover:-translate-y-2">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-green-200 rounded-2xl flex items-center justify-center mb-4 mx-auto group-hover:from-green-500 group-hover:to-green-600 transition-all">
+                <svg className="w-8 h-8 text-green-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                </svg>
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-green-600 transition-colors">Gadai Motor</h3>
               <p className="text-gray-600 text-sm mb-4">Unit + STNK/BPKB, bisa bawa pulang</p>
@@ -367,9 +764,12 @@ export default function Home() {
             </div>
 
             {/* Mobil Card */}
-            <div className="group bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-xl hover:border-orange-300 transition-all cursor-pointer text-center">
-              <div className="w-14 h-14 bg-orange-100 rounded-xl flex items-center justify-center mb-4 mx-auto group-hover:bg-orange-600 transition-colors">
-                <span className="text-3xl group-hover:scale-110 transition-transform">🚗</span>
+            <div className="group bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-xl hover:border-orange-300 transition-all cursor-pointer text-center hover:-translate-y-2">
+              <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-2xl flex items-center justify-center mb-4 mx-auto group-hover:from-orange-500 group-hover:to-orange-600 transition-all">
+                <svg className="w-8 h-8 text-orange-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
+                </svg>
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-orange-600 transition-colors">Gadai Mobil</h3>
               <p className="text-gray-600 text-sm mb-4">Unit + STNK/BPKB dengan nilai maksimal</p>
@@ -394,9 +794,9 @@ export default function Home() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="bg-white rounded-xl p-6 flex items-start gap-4 border border-gray-100">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white rounded-xl p-6 flex items-start gap-4 border border-gray-100 hover:shadow-lg transition-all hover:-translate-y-1">
+              <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-200">
+                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
@@ -406,9 +806,9 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl p-6 flex items-start gap-4 border border-gray-100">
-              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white rounded-xl p-6 flex items-start gap-4 border border-gray-100 hover:shadow-lg transition-all hover:-translate-y-1">
+              <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-green-200">
+                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
@@ -418,9 +818,9 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl p-6 flex items-start gap-4 border border-gray-100">
-              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white rounded-xl p-6 flex items-start gap-4 border border-gray-100 hover:shadow-lg transition-all hover:-translate-y-1">
+              <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-purple-200">
+                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
               </div>
@@ -430,9 +830,9 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl p-6 flex items-start gap-4 border border-gray-100">
-              <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white rounded-xl p-6 flex items-start gap-4 border border-gray-100 hover:shadow-lg transition-all hover:-translate-y-1">
+              <div className="w-14 h-14 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-yellow-200">
+                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
               </div>
@@ -442,9 +842,9 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl p-6 flex items-start gap-4 border border-gray-100">
-              <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white rounded-xl p-6 flex items-start gap-4 border border-gray-100 hover:shadow-lg transition-all hover:-translate-y-1">
+              <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-red-200">
+                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                 </svg>
               </div>
@@ -454,9 +854,9 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl p-6 flex items-start gap-4 border border-gray-100">
-              <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white rounded-xl p-6 flex items-start gap-4 border border-gray-100 hover:shadow-lg transition-all hover:-translate-y-1">
+              <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-200">
+                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
@@ -485,36 +885,25 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-5 gap-4 max-w-4xl mx-auto">
-            <div className="text-center relative">
-              <div className="w-14 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4 shadow-lg">1</div>
-              <h3 className="font-bold text-gray-900 mb-2 text-sm">Hubungi Kami</h3>
-              <p className="text-gray-600 text-xs">Via WhatsApp</p>
-              <div className="hidden md:block absolute top-7 left-[60%] w-[80%] h-0.5 bg-blue-200"></div>
-            </div>
-            <div className="text-center relative">
-              <div className="w-14 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4 shadow-lg">2</div>
-              <h3 className="font-bold text-gray-900 mb-2 text-sm">Kirim Foto</h3>
-              <p className="text-gray-600 text-xs">Barang & dokumen</p>
-              <div className="hidden md:block absolute top-7 left-[60%] w-[80%] h-0.5 bg-blue-200"></div>
-            </div>
-            <div className="text-center relative">
-              <div className="w-14 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4 shadow-lg">3</div>
-              <h3 className="font-bold text-gray-900 mb-2 text-sm">Taksiran Harga</h3>
-              <p className="text-gray-600 text-xs">Tim kami kasih penawaran</p>
-              <div className="hidden md:block absolute top-7 left-[60%] w-[80%] h-0.5 bg-blue-200"></div>
-            </div>
-            <div className="text-center relative">
-              <div className="w-14 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4 shadow-lg">4</div>
-              <h3 className="font-bold text-gray-900 mb-2 text-sm">Survey</h3>
-              <p className="text-gray-600 text-xs">Jika diperlukan</p>
-              <div className="hidden md:block absolute top-7 left-[60%] w-[80%] h-0.5 bg-blue-200"></div>
-            </div>
-            <div className="text-center">
-              <div className="w-14 h-14 bg-green-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4 shadow-lg">5</div>
-              <h3 className="font-bold text-gray-900 mb-2 text-sm">Dana Cair</h3>
-              <p className="text-gray-600 text-xs">Transfer ke rekening</p>
-            </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 max-w-4xl mx-auto">
+            {[
+              { num: 1, title: 'Hubungi Kami', desc: 'Via WhatsApp', icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' },
+              { num: 2, title: 'Kirim Foto', desc: 'Barang & dokumen', icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' },
+              { num: 3, title: 'Taksiran', desc: 'Tim kami kasih penawaran', icon: 'M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z' },
+              { num: 4, title: 'Survey', desc: 'Jika diperlukan', icon: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z' },
+              { num: 5, title: 'Dana Cair', desc: 'Transfer ke rekening', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0 8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' }
+            ].map((step, i) => (
+              <div key={i} className="text-center relative group">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl flex items-center justify-center text-xl font-bold mx-auto mb-4 shadow-lg shadow-blue-200 group-hover:scale-110 transition-transform">
+                  {step.num}
+                </div>
+                <h3 className="font-bold text-gray-900 mb-1 text-sm">{step.title}</h3>
+                <p className="text-gray-600 text-xs">{step.desc}</p>
+                {i < 4 && (
+                  <div className="hidden md:block absolute top-8 left-[60%] w-[80%] h-0.5 bg-gradient-to-r from-blue-300 to-blue-200"></div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -531,42 +920,20 @@ export default function Home() {
             </h2>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div className="bg-white rounded-xl p-5 border border-gray-200 text-center">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <span className="text-2xl">🏛️</span>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+            {[
+              { name: 'Kota Yogyakarta', desc: 'Pusat Kota', emoji: '🏛️', color: 'blue' },
+              { name: 'Sleman', desc: 'Depok, Mlati, Ngaglik', emoji: '🏔️', color: 'green' },
+              { name: 'Bantul', desc: 'Sewon, Kasihan, Pandak', emoji: '🌾', color: 'yellow' },
+              { name: 'Kulon Progo', desc: 'Wates, Sentolo', emoji: '🌊', color: 'orange' },
+              { name: 'Gunung Kidul', desc: 'Wonosari', emoji: '⛰️', color: 'red' }
+            ].map((area, i) => (
+              <div key={i} className={`bg-white rounded-2xl p-5 border border-gray-200 text-center hover:shadow-lg transition-all hover:-translate-y-1 hover:border-${area.color}-300`}>
+                <div className="text-4xl mb-3">{area.emoji}</div>
+                <h3 className="font-bold text-gray-900 mb-1">{area.name}</h3>
+                <p className="text-gray-600 text-xs">{area.desc}</p>
               </div>
-              <h3 className="font-bold text-gray-900 mb-1">Kota Yogyakarta</h3>
-              <p className="text-gray-600 text-xs">Pusat Kota</p>
-            </div>
-            <div className="bg-white rounded-xl p-5 border border-gray-200 text-center">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <span className="text-2xl">🏔️</span>
-              </div>
-              <h3 className="font-bold text-gray-900 mb-1">Sleman</h3>
-              <p className="text-gray-600 text-xs">Depok, Mlati, Ngaglik</p>
-            </div>
-            <div className="bg-white rounded-xl p-5 border border-gray-200 text-center">
-              <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <span className="text-2xl">🌾</span>
-              </div>
-              <h3 className="font-bold text-gray-900 mb-1">Bantul</h3>
-              <p className="text-gray-600 text-xs">Sewon, Kasihan, Pandak</p>
-            </div>
-            <div className="bg-white rounded-xl p-5 border border-gray-200 text-center">
-              <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <span className="text-2xl">🌊</span>
-              </div>
-              <h3 className="font-bold text-gray-900 mb-1">Kulon Progo</h3>
-              <p className="text-gray-600 text-xs">Wates, Sentolo</p>
-            </div>
-            <div className="bg-white rounded-xl p-5 border border-gray-200 text-center">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <span className="text-2xl">⛰️</span>
-              </div>
-              <h3 className="font-bold text-gray-900 mb-1">Gunung Kidul</h3>
-              <p className="text-gray-600 text-xs">Wonosari</p>
-            </div>
+            ))}
           </div>
         </div>
       </section>
@@ -585,7 +952,7 @@ export default function Home() {
 
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {testimonials.map((testimonial, index) => (
-              <div key={index} className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+              <div key={index} className="bg-gray-50 rounded-2xl p-6 border border-gray-100 hover:shadow-xl transition-all hover:-translate-y-1">
                 <div className="flex gap-1 mb-4">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <svg key={star} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
@@ -596,7 +963,7 @@ export default function Home() {
                 <p className="text-gray-600 mb-4 italic">"{testimonial.message}"</p>
                 <div className="flex items-center gap-3">
                   <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm"
+                    className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
                     style={{ backgroundColor: testimonial.color }}
                   >
                     {testimonial.initials}
@@ -626,17 +993,13 @@ export default function Home() {
 
           <div className="space-y-4">
             {faqs.map((faq, index) => (
-              <details key={index} className="bg-white rounded-xl overflow-hidden group">
-                <summary className="px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 list-none">
-                  <span className="font-semibold text-gray-900">{faq.question}</span>
-                  <svg className="w-5 h-5 text-gray-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </summary>
-                <div className="px-6 pb-4 text-gray-600">
-                  {faq.answer}
-                </div>
-              </details>
+              <FaqItem
+                key={index}
+                question={faq.question}
+                answer={faq.answer}
+                isOpen={openFaq === index}
+                onClick={() => setOpenFaq(openFaq === index ? null : index)}
+              />
             ))}
           </div>
 
@@ -646,10 +1009,10 @@ export default function Home() {
               href="https://wa.me/6282299748978?text=Halo%20Gadai%20Jogja,%20saya%20ingin%20bertanya"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-semibold transition"
+              className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-semibold transition shadow-lg shadow-green-200"
             >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
               </svg>
               Tanya via WhatsApp
             </a>
@@ -658,8 +1021,12 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-blue-600 to-blue-700">
-        <div className="max-w-4xl mx-auto px-4 text-center">
+      <section className="py-16 bg-gradient-to-r from-blue-600 to-blue-700 relative overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute top-0 left-1/4 w-72 h-72 bg-white/5 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-yellow-400/10 rounded-full blur-3xl"></div>
+        </div>
+        <div className="relative max-w-4xl mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Siap Memulai Gadai?
           </h2>
@@ -669,7 +1036,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
               href="#pengajuan"
-              className="bg-yellow-400 hover:bg-yellow-300 text-gray-900 px-8 py-4 rounded-xl font-bold text-lg transition inline-flex items-center justify-center gap-2"
+              className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-300 hover:to-yellow-400 text-gray-900 px-8 py-4 rounded-xl font-bold text-lg transition inline-flex items-center justify-center gap-2 shadow-xl"
             >
               Gadai Sekarang
             </a>
@@ -680,7 +1047,7 @@ export default function Home() {
               className="border-2 border-white text-white hover:bg-white hover:text-blue-700 px-8 py-4 rounded-xl font-semibold text-lg transition inline-flex items-center justify-center gap-2"
             >
               <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
               </svg>
               Hubungi WhatsApp
             </a>
@@ -694,7 +1061,7 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
                   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
