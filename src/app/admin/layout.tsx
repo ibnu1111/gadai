@@ -33,50 +33,67 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <nav className="bg-white shadow-sm">
+    <div className="min-h-screen bg-stone-50">
+      <header className="bg-white border-b border-stone-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <Link href="/admin/gadai" className="text-xl font-bold text-purple-600">
-                Gadai Service
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center gap-6">
+              <Link href="/admin/gadai" className="flex items-center gap-2">
+                <div className="w-9 h-9 bg-amber-600 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
+                </div>
+                <span className="text-lg font-semibold text-stone-800">Gadai Jaya</span>
               </Link>
-              <div className="ml-10 flex space-x-4">
+              <nav className="hidden md:flex items-center gap-1">
                 <Link
                   href="/admin/gadai"
-                  className={`px-3 py-2 rounded-md text-sm font-medium ${
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
                     pathname === '/admin/gadai'
-                      ? 'bg-purple-100 text-purple-700'
-                      : 'text-gray-600 hover:text-gray-900'
+                      ? 'bg-stone-100 text-stone-900'
+                      : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
                   }`}
                 >
-                  Daftar Gadai
+                  Dashboard
                 </Link>
                 <Link
                   href="/track"
-                  className="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-gray-900"
+                  target="_blank"
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition"
                 >
                   Lacak Gadai
                 </Link>
-              </div>
+                <Link
+                  href="/"
+                  target="_blank"
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition"
+                >
+                  Lihat Website
+                </Link>
+              </nav>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center gap-4">
               {admin && (
-                <span className="text-sm text-gray-600">
-                  {admin.nama}
-                </span>
+                <div className="hidden sm:block text-right">
+                  <p className="text-sm font-medium text-stone-800">{admin.nama}</p>
+                  <p className="text-xs text-stone-500">{admin.email}</p>
+                </div>
               )}
               <button
                 onClick={handleLogout}
-                className="text-sm text-red-600 hover:text-red-800"
+                className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition"
               >
-                Logout
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                <span>Keluar</span>
               </button>
             </div>
           </div>
         </div>
-      </nav>
-      <main className="max-w-7xl mx-auto py-6 px-4">{children}</main>
+      </header>
+      <main className="max-w-7xl mx-auto px-4 py-6">{children}</main>
     </div>
   )
 }
