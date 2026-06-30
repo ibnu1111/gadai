@@ -40,9 +40,8 @@ next-env.d.ts
 # Railway
 .railway/
 
-# Backend old files (migrated to Next.js)
-backend/
-frontend/
+# Old migrated files (backup)
+old-backup/
 
 # IDE
 .vscode/
