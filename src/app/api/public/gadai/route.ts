@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const {
       customerName, phone, fotoKtp, kategoriBarang, namaBarang,
-      deskripsi, atributTinggal, fotoBarang, fotoPendukung, jangkaWaktu, nominalPinjam
+      deskripsi, atributTinggal, fotoBarang: fotoBarang || '-', fotoPendukung, jangkaWaktu, nominalPinjam
     } = body
 
     if (!customerName || !phone || !kategoriBarang || !namaBarang ||
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
         tanggalKembali,
         atributTinggal: atributTinggal || '-',
         deskripsi: deskripsi || null,
-        fotoBarang,
+        fotoBarang: fotoBarang || '-',
         fotoPendukung: fotoPendukung || null,
         status: 'PENDING'
       },
@@ -129,3 +129,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, message: 'Failed to submit gadai' }, { status: 500 })
   }
 }
+
