@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     default: 'Gadai Jogja - Gadai Online Terpercaya di Yogyakarta | Proses Cepat & Aman',
     template: '%s | Gadai Jogja',
   },
-  description: 'Gadai Jogja - Platform gadai online terpercaya di Yogyakarta. Layanan gadai HP, laptop, motor, dan mobil dengan proses 15 menit, bunga mulai 2%, tanpa biaya admin tersembunyi.',
+  description: 'Gadai Jogja - Platform gadai online terpercaya di Yogyakarta. Layanan gadai HP, laptop, motor, dan mobil dengan proses 15 menit, jasa 10%, terima utuh tanpa potongan.',
   keywords: [
     'gadai jogja',
     'gadai online jogja',
@@ -24,16 +24,20 @@ export const metadata: Metadata = {
   authors: [{ name: 'Gadai Jogja' }],
   creator: 'Gadai Jogja',
   publisher: 'Gadai Jogja',
+  icons: {
+    icon: '/favicon-gadai.png',
+    apple: '/favicon-gadai.png',
+  },
   openGraph: {
     type: 'website',
     locale: 'id_ID',
     url: 'https://gadaijogja.com',
     siteName: 'Gadai Jogja',
     title: 'Gadai Jogja - Gadai Online Terpercaya di Yogyakarta',
-    description: 'Layanan gadai HP, laptop, motor, mobil dengan proses cepat 15 menit. Bunga mulai 2%. Tanpa biaya admin.',
+    description: 'Layanan gadai HP, laptop, motor, mobil dengan proses cepat 15 menit. Jasa 10%, terima utuh tanpa potongan.',
     images: [
       {
-        url: '/og-image.png',
+        url: '/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'Gadai Jogja - Gadai Online Terpercaya',
@@ -43,8 +47,8 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Gadai Jogja - Gadai Online Terpercaya di Yogyakarta',
-    description: 'Layanan gadai terpercaya di Yogyakarta. Proses cepat, bunga rendah.',
-    images: ['/og-image.png'],
+    description: 'Layanan gadai terpercaya di Yogyakarta. Proses cepat, jasa transparan.',
+    images: ['/og-image.jpg'],
   },
   robots: {
     index: true,
@@ -58,7 +62,7 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    google: 'your-google-verification-code', // Tambahkan kode verifikasi Google Search Console
+    google: 'your-google-verification-code',
   },
 }
 
@@ -68,11 +72,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="id">
+    <html lang="id" className="scroll-smooth">
       <head>
         <link rel="canonical" href="https://gadaijogja.com" />
       </head>
-      <body className="min-h-screen bg-white antialiased">{children}</body>
+      <body className="min-h-screen bg-white antialiased scroll-smooth">{children}</body>
     </html>
   )
 }

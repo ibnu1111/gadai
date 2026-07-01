@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     } = body
 
     if (!customerName || !phone || !kategoriBarang || !namaBarang ||
-        !fotoBarang || !jangkaWaktu || !nominalPinjam) {
+        !jangkaWaktu || !nominalPinjam) {
       return NextResponse.json({
         success: false,
         message: 'Required fields are missing'
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
       `📱 HP: ${phone}\n` +
       `📦 Barang: ${namaBarang}\n` +
       `💰 Nominal: Rp ${parseFloat(nominalPinjam).toLocaleString('id-ID')}\n` +
-      `📊 Bunga: ${bungaPersentase}%\n` +
+      `📊 Jasa: ${bungaPersentase}%\n` +
       `💵 Fee: Rp ${fee.toLocaleString('id-ID')}\n\n` +
       `Mohon untuk meninjau pengajuan di sistem.`
     )

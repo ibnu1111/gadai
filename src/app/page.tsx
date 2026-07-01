@@ -82,35 +82,54 @@ function FaqItem({ question, answer, isOpen, onClick }: { question: string; answ
 export default function Home() {
   const [openFaq, setOpenFaq] = useState<number | null>(0)
   const [isLoaded, setIsLoaded] = useState(false)
+  const [amountDisplay, setAmountDisplay] = useState('')
 
   useEffect(() => {
     setIsLoaded(true)
   }, [])
 
+  const formatAmount = (value: string) => {
+    const number = value.replace(/\D/g, '')
+    return number.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  }
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatAmount(e.target.value)
+    setAmountDisplay(formatted)
+  }
+
   const faqs = [
     {
       question: 'Berapa lama proses gadai di Gadai Jogja?',
-      answer: 'Proses gadai kami sangat cepat, hanya membutuhkan waktu 10-15 menit dari pengajuan hingga pencairan dana langsung ke rekening Anda. Untuk gadai motor/mobil mungkin butuh survey lokasi terlebih dahulu.'
+      answer: 'Proses gadai kami sangat cepat, hanya membutuhkan waktu 10-15 menit dari pengajuan hingga pencairan dana langsung ke rekening Anda. Untuk motor & mobil, kepemilikan harus jelas dan akan ditaksir di tempat kami.'
     },
     {
       question: 'Apakah ada biaya admin atau biaya tersembunyi?',
-      answer: 'Tidak ada biaya admin atau biaya tersembunyi sama sekali. Yang Anda bayar hanya bunga sesuai kesepakatan di awal. Semua transparan dan tertulis jelas di bukti gadai.'
+      answer: 'Tidak ada biaya admin atau biaya tersembunyi sama sekali. Yang Anda bayar hanya jasa sesuai kesepakatan di awal. Semua transparan dan tertulis jelas di bukti gadai.'
     },
     {
-      question: 'Berapa bunga gadai di Gadai Jogja?',
-      answer: 'Bunga gadai kami mulai dari 2% per bulan tergantung jenis barang dan nilai gadai. Ini sangat kompetitif dibanding tempat gadai lain. Bunga dihitung per bulan, bukan per hari.'
+      question: 'Berapa jasa gadai di Gadai Jogja?',
+      answer: 'Jasa gadai kami 10% per 2 minggu, terima utuh tanpa potongan. Proses cepat dan transparan.'
     },
     {
       question: 'Apakah barang gadai dijamin aman?',
-      answer: 'Sangat aman! Semua barang gadai disimpan di tempat yang aman dengan sistem keamanan 24 jam. Kami juga memberikan bukti gadai resmi sebagai jaminan.'
+      answer: 'Sangat aman! Semua barang gadai disimpan di tempat yang aman dengan sistem keamanan 24 jam. Bukti gadai dikirim dalam bentuk elektronik dengan rincian sesuai akad awal.'
     },
     {
       question: 'Bagaimana cara menebus barang gadai?',
-      answer: 'Hubungi kami via WhatsApp 0822-9974-8978, bayar pokok pinjaman + bunga, dan barang bisa langsung diambil. Proses tebus sangat cepat, bisa dalam hitungan menit.'
+      answer: 'Hubungi kami via WhatsApp 0822-9974-8978, bayar pokok pinjaman + jasa, dan barang bisa langsung diambil. Proses tebus sangat cepat, bisa dalam hitungan menit.'
+    },
+    {
+      question: 'Bagaimana jika belum bisa menebus barang?',
+      answer: 'Jika belum bisa menebus, barang bisa diperpanjang cukup dengan bayar jasa saja. Hubungi kami via WhatsApp untuk perpanjangan.'
+    },
+    {
+      question: 'Bagaimana jika tidak diperpanjang atau tidak diambil?',
+      answer: 'Jika tidak diperpanjang atau tidak diambil, barang berpotensi akan dilelang. Toleransi keterlambatan maksimal 3 hari.'
     },
     {
       question: 'Berapa nilai maksimal yang bisa dipinjam?',
-      answer: 'Nilai pinjaman tergantung taksiran barang. Untuk HP/laptop bisa hingga 80% dari harga pasaran. Untuk motor/mobil bisa hingga 70% dari nilai NJKB. Tidak ada batasan maksimal.'
+      answer: 'Nilai pinjaman tergantung taksiran barang. Bisa hingga 85% dari harga pasaran. Tidak ada batasan maksimal.'
     }
   ]
 
@@ -145,14 +164,9 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              </div>
-              <div>
-                <span className="text-lg font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">Gadai Jogja</span>
-                <span className="hidden sm:block text-xs text-gray-400">gadaijogja.com</span>
+              <img src="/logo-gadai.png" alt="Gadai Jogja" className="h-10 w-auto" />
+              <div className="hidden sm:block">
+                <span className="text-xs text-gray-400">gadaijogja.com</span>
               </div>
             </div>
             <nav className="hidden lg:flex items-center gap-1">
@@ -181,152 +195,81 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero Section */}
+      {/* Hero Section - Minimalis */}
       <section className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 overflow-hidden">
         {/* Animated Background */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-white/5 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-10 right-20 w-96 h-96 bg-yellow-400/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-400/10 rounded-full blur-3xl"></div>
+          <div className="absolute top-20 left-1/4 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-yellow-400/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
         </div>
 
-        <div className="relative max-w-6xl mx-auto px-4 py-16 md:py-24">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Left Content */}
-            <div className={`text-center lg:text-left transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-2 rounded-full mb-6">
-                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                <span className="text-white/90 text-sm font-medium">Terpercaya sejak 2020</span>
-              </div>
+        <div className="relative max-w-4xl mx-auto px-4 py-20 md:py-28 text-center">
+          {/* Badge */}
+          <div className={`inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-2 rounded-full mb-8 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+            <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+            <span className="text-white/90 text-sm font-medium">Terpercaya sejak 2020</span>
+          </div>
 
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-6">
-                Butuh Dana Cepat?
-                <span className="block mt-2 bg-gradient-to-r from-yellow-300 to-yellow-400 bg-clip-text text-transparent">Gadai Aja!</span>
-              </h1>
+          {/* Headline */}
+          <div className={`transition-all duration-700 delay-100 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-white leading-tight mb-6">
+              Butuh Dana Cepat?
+              <span className="block mt-2 bg-gradient-to-r from-yellow-300 to-yellow-400 bg-clip-text text-transparent">Gadai Aja!</span>
+            </h1>
+            <p className="text-xl text-blue-100 mb-10 max-w-2xl mx-auto">
+              Gadai online terpercaya di Yogyakarta. Proses 15 menit, jasa 10% per 2 minggu, terima utuh tanpa potongan.
+            </p>
+          </div>
 
-              <p className="text-lg text-blue-100 mb-6 max-w-xl mx-auto lg:mx-0">
-                Solusi gadai online terpercaya di Yogyakarta. Proses cepat 15 menit, bunga mulai 2%, tanpa biaya admin tersembunyi.
-              </p>
+          {/* CTA Buttons */}
+          <div className={`flex flex-col sm:flex-row gap-4 justify-center transition-all duration-700 delay-200 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+            <a
+              href="#form"
+              className="group bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-300 hover:to-yellow-400 text-gray-900 px-10 py-4 rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl hover:scale-105 transition-all inline-flex items-center justify-center gap-2"
+            >
+              Gadai Sekarang
+              <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </a>
+            <a
+              href="https://wa.me/6282299748978?text=Halo%20Gadai%20Jogja,%20saya%20ingin%20konsultasi"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white px-10 py-4 rounded-xl font-semibold text-lg hover:bg-white hover:text-blue-700 transition-all inline-flex items-center justify-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+              </svg>
+              Chat WhatsApp
+            </a>
+          </div>
 
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8">
-                <a
-                  href="#pengajuan"
-                  className="group bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-300 hover:to-yellow-400 text-gray-900 px-8 py-4 rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl hover:scale-105 transition-all inline-flex items-center justify-center gap-2"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span>Gadai Sekarang</span>
-                  <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                </a>
-                <a
-                  href="https://wa.me/6282299748978?text=Halo%20Gadai%20Jogja,%20saya%20ingin%20konsultasi"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white hover:text-blue-700 transition-all inline-flex items-center justify-center gap-2"
-                >
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-                  </svg>
-                  <span>Chat WhatsApp</span>
-                </a>
-              </div>
-
-              {/* Quick Stats */}
-              <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
-                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3">
-                  <div className="w-10 h-10 bg-blue-500/30 rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-bold text-white">15 Menit</p>
-                    <p className="text-blue-200 text-xs">Proses Cepat</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3">
-                  <div className="w-10 h-10 bg-green-500/30 rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-bold text-white">100% Aman</p>
-                    <p className="text-blue-200 text-xs">Terjamin</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3">
-                  <div className="w-10 h-10 bg-yellow-500/30 rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-bold text-white">Bunga 2%</p>
-                    <p className="text-blue-200 text-xs">Per Bulan</p>
-                  </div>
-                </div>
-              </div>
+          {/* Quick Features */}
+          <div className={`flex flex-wrap justify-center gap-6 mt-12 transition-all duration-700 delay-300 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="text-white/80 text-sm">15 Menit Cair</span>
             </div>
-
-            {/* Right Content - Quick Form */}
-            <div id="pengajuan" className={`bg-white rounded-3xl shadow-2xl p-6 md:p-8 border border-gray-100 transition-all duration-700 delay-300 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <p className="text-gray-500 text-sm">Layanan Gadai Online</p>
-                  <h3 className="text-xl font-bold text-gray-900">Ajukan Gadai Sekarang</h3>
-                </div>
-                <div className="flex items-center gap-2 bg-green-100 text-green-700 px-3 py-1.5 rounded-full">
-                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                  <span className="text-xs font-semibold">Online 24/7</span>
-                </div>
-              </div>
-
-              <form action="/create" method="GET" className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Nama Lengkap</label>
-                  <input type="text" name="name" placeholder="Masukkan nama Anda" required
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition" />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Nomor WhatsApp</label>
-                  <input type="tel" name="phone" placeholder="08xxxxxxxxxx" required
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition" />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Kategori Barang</label>
-                  <select name="category" required
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-gray-600">
-                    <option value="">Pilih kategori</option>
-                    <option value="HP">HP / Smartphone</option>
-                    <option value="Laptop">Laptop / Komputer</option>
-                    <option value="Motor">Motor</option>
-                    <option value="Mobil">Mobil</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Estimasi Nilai (Rp)</label>
-                  <input type="number" name="amount" placeholder="Contoh: 500000" min="100000" required
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition" />
-                </div>
-
-                <button type="submit" className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-4 rounded-xl font-bold text-lg transition shadow-lg shadow-blue-200 mt-2">
-                  Lanjutkan Pengajuan
-                </button>
-              </form>
-
-              <p className="text-xs text-gray-400 text-center mt-4">
-                Atau hubungi langsung via{' '}
-                <a href="https://wa.me/6282299748978" target="_blank" rel="noopener noreferrer" className="text-green-600 font-medium hover:underline">
-                  WhatsApp 0822-9974-8978
-                </a>
-              </p>
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="text-white/80 text-sm">Jasa 10% (2 Minggu)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="text-white/80 text-sm">Terima Utuh</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="text-white/80 text-sm">100% Aman</span>
             </div>
           </div>
         </div>
@@ -336,6 +279,137 @@ export default function Home() {
           <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-16 md:h-20">
             <path d="M0,40 C320,100 640,0 960,60 C1280,120 1360,40 1440,60 L1440,120 L0,120 Z" fill="white"/>
           </svg>
+        </div>
+      </section>
+
+      {/* Form Section with Tabs */}
+      <section id="form" className="py-16 bg-white">
+        <div className="max-w-xl mx-auto px-4">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Ajukan Gadai Sekarang</h2>
+            <p className="text-gray-500">Isi form atau lihat cara kerja kami</p>
+          </div>
+
+          <div className="bg-gray-50 rounded-3xl overflow-hidden shadow-lg border border-gray-100">
+            {/* Tab Headers */}
+            <div className="flex border-b border-gray-200">
+              <button
+                onClick={() => setOpenFaq(0)}
+                className={`flex-1 px-6 py-4 text-center font-semibold transition-colors ${
+                  openFaq === 0 ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                Ajukan
+              </button>
+              <button
+                onClick={() => setOpenFaq(1)}
+                className={`flex-1 px-6 py-4 text-center font-semibold transition-colors ${
+                  openFaq === 1 ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                Cara Kerja
+              </button>
+            </div>
+
+            {/* Tab Content */}
+            <div className="p-6">
+              {openFaq === 0 ? (
+                /* Form Tab */
+                <div>
+                  <form action="/create" method="GET" className="space-y-4">
+                    <div>
+                      <input type="text" name="name" placeholder="Nama Lengkap" required
+                        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition" />
+                    </div>
+
+                    <div>
+                      <input type="tel" name="phone" placeholder="Nomor WhatsApp" required
+                        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition" />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <select name="category" required
+                        className="px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-gray-600">
+                        <option value="">Kategori</option>
+                        <option value="HP">HP</option>
+                        <option value="Laptop">Laptop</option>
+                        <option value="Motor">Motor</option>
+                        <option value="Mobil">Mobil</option>
+                      </select>
+
+                      <div className="relative">
+                        <input type="hidden" name="amount" value={amountDisplay.replace(/\./g, '')} />
+                        <input type="text" placeholder="1.000.000" onChange={handleAmountChange} value={amountDisplay}
+                          className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-right" />
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">Rp</span>
+                      </div>
+                    </div>
+
+                    <button type="submit" className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-4 rounded-xl font-bold text-lg transition shadow-lg shadow-blue-200 mt-4">
+                      Lanjutkan Pengajuan
+                    </button>
+                  </form>
+
+                  <p className="text-center text-gray-400 text-sm mt-4">
+                    atau hubungi via{' '}
+                    <a href="https://wa.me/6282299748978" target="_blank" rel="noopener noreferrer" className="text-green-600 font-medium hover:underline">
+                      WhatsApp 0822-9974-8978
+                    </a>
+                  </p>
+                </div>
+              ) : (
+                /* Cara Kerja Tab */
+                <div className="space-y-4">
+                  <div className="flex gap-4">
+                    <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-blue-600 font-bold">1</span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">Hubungi via WhatsApp</h4>
+                      <p className="text-gray-600 text-sm">Hubungi via WhatsApp atau isi form di website untuk taksir harga</p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4">
+                    <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-blue-600 font-bold">2</span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">Setuju Harga</h4>
+                      <p className="text-gray-600 text-sm">Jika setuju dengan taksiran, datang ke lokasi dengan barang</p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4">
+                    <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-blue-600 font-bold">3</span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">Verifikasi & Cair</h4>
+                      <p className="text-gray-600 text-sm">Cek barang, dana langsung cair</p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4">
+                    <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                      <span className="text-green-600 font-bold">4</span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">Tebus / Perpanjang</h4>
+                      <p className="text-gray-600 text-sm">Bayar jasa + pokok untuk menebus barang</p>
+                    </div>
+                  </div>
+
+                  <a href="https://wa.me/6282299748978?text=Halo%20Gadai%20Jogja,%20saya%20ingin%20bertanya"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3 rounded-xl font-bold text-center transition shadow-lg mt-4">
+                    Tanya via WhatsApp
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -363,16 +437,16 @@ export default function Home() {
             </div>
             <div className="group">
               <div className="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-yellow-300 to-yellow-400 bg-clip-text text-transparent group-hover:scale-110 transition-transform">
-                <AnimatedCounter end={2} />%
+                10<span className="text-lg">%</span>
               </div>
-              <div className="text-gray-400 text-sm mt-2">Bunga Per Bulan</div>
+              <div className="text-gray-400 text-sm mt-2">Jasa (2 Minggu)</div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Layanan Section */}
-      <section id="layanan" className="py-16 bg-white">
+      {/* Layanan Section with Images */}
+      <section id="layanan" className="py-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-12">
             <span className="inline-block bg-blue-100 text-blue-600 px-4 py-2 rounded-full text-sm font-semibold mb-4">
@@ -386,61 +460,69 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4">
             {/* HP Card */}
-            <div className="group bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-xl hover:border-blue-300 transition-all cursor-pointer text-center hover:-translate-y-2">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-2xl flex items-center justify-center mb-4 mx-auto group-hover:from-blue-500 group-hover:to-blue-600 transition-all">
-                <svg className="w-8 h-8 text-blue-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
+            <div className="group relative h-64 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all cursor-pointer">
+              <img src="/images/4.jpeg" alt="Gadai HP" className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+              <div className="absolute bottom-0 left-0 right-0 p-4">
+                <div className="inline-block bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full mb-2">
+                  Jasa 10%
+                </div>
+                <h3 className="text-lg font-bold text-white mb-1">Gadai HP</h3>
+                <p className="text-white/80 text-xs">HP tidak dipakai</p>
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">Gadai HP</h3>
-              <p className="text-gray-600 text-sm mb-4">iPhone, Samsung, OPPO, Vivo, Xiaomi dan semua merk</p>
-              <div className="flex items-center justify-center text-blue-600 font-semibold text-sm">
-                <span>Bunga 2%</span>
+            </div>
+
+            {/* Smartwatch Card */}
+            <div className="group relative h-64 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all cursor-pointer">
+              <img src="/images/2.jpeg" alt="Gadai Smartwatch" className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+              <div className="absolute bottom-0 left-0 right-0 p-4">
+                <div className="inline-block bg-pink-500 text-white text-xs font-bold px-2 py-1 rounded-full mb-2">
+                  Jasa 10%
+                </div>
+                <h3 className="text-lg font-bold text-white mb-1">Smartwatch</h3>
+                <p className="text-white/80 text-xs">Tidak dipakai</p>
               </div>
             </div>
 
             {/* Laptop Card */}
-            <div className="group bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-xl hover:border-purple-300 transition-all cursor-pointer text-center hover:-translate-y-2">
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-purple-200 rounded-2xl flex items-center justify-center mb-4 mx-auto group-hover:from-purple-500 group-hover:to-purple-600 transition-all">
-                <svg className="w-8 h-8 text-purple-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-purple-600 transition-colors">Gadai Laptop</h3>
-              <p className="text-gray-600 text-sm mb-4">MacBook, Asus, HP, Dell, gaming dan kantor</p>
-              <div className="flex items-center justify-center text-purple-600 font-semibold text-sm">
-                <span>Bunga 2%</span>
+            <div className="group relative h-64 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all cursor-pointer">
+              <img src="/images/6.jpeg" alt="Gadai Laptop" className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+              <div className="absolute bottom-0 left-0 right-0 p-4">
+                <div className="inline-block bg-purple-500 text-white text-xs font-bold px-2 py-1 rounded-full mb-2">
+                  Jasa 10%
+                </div>
+                <h3 className="text-lg font-bold text-white mb-1">Gadai Laptop</h3>
+                <p className="text-white/80 text-xs">Laptop tidak dipakai</p>
               </div>
             </div>
 
             {/* Motor Card */}
-            <div className="group bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-xl hover:border-green-300 transition-all cursor-pointer text-center hover:-translate-y-2">
-              <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-green-200 rounded-2xl flex items-center justify-center mb-4 mx-auto group-hover:from-green-500 group-hover:to-green-600 transition-all">
-                <svg className="w-8 h-8 text-green-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-green-600 transition-colors">Gadai Motor</h3>
-              <p className="text-gray-600 text-sm mb-4">Unit + STNK/BPKB, bisa bawa pulang</p>
-              <div className="flex items-center justify-center text-green-600 font-semibold text-sm">
-                <span>Survey Cepat</span>
+            <div className="group relative h-64 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all cursor-pointer">
+              <img src="/images/7.jpeg" alt="Gadai Motor" className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+              <div className="absolute bottom-0 left-0 right-0 p-4">
+                <div className="inline-block bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full mb-2">
+                  Jasa 10%
+                </div>
+                <h3 className="text-lg font-bold text-white mb-1">Gadai Motor</h3>
+                <p className="text-white/80 text-xs">Unit 100% parkir</p>
               </div>
             </div>
 
             {/* Mobil Card */}
-            <div className="group bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-xl hover:border-orange-300 transition-all cursor-pointer text-center hover:-translate-y-2">
-              <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-2xl flex items-center justify-center mb-4 mx-auto group-hover:from-orange-500 group-hover:to-orange-600 transition-all">
-                <svg className="w-8 h-8 text-orange-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-orange-600 transition-colors">Gadai Mobil</h3>
-              <p className="text-gray-600 text-sm mb-4">Unit + STNK/BPKB dengan nilai maksimal</p>
-              <div className="flex items-center justify-center text-orange-600 font-semibold text-sm">
-                <span>Survey Cepat</span>
+            <div className="group relative h-64 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all cursor-pointer">
+              <img src="/images/8.jpeg" alt="Gadai Mobil" className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+              <div className="absolute bottom-0 left-0 right-0 p-4">
+                <div className="inline-block bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full mb-2">
+                  Jasa 10%
+                </div>
+                <h3 className="text-lg font-bold text-white mb-1">Gadai Mobil</h3>
+                <p className="text-white/80 text-xs">Unit 100% parkir</p>
               </div>
             </div>
           </div>
@@ -479,8 +561,8 @@ export default function Home() {
                 </svg>
               </div>
               <div>
-                <h3 className="font-bold text-gray-900 mb-1">Bunga Rendah</h3>
-                <p className="text-gray-600 text-sm">Mulai dari 2% per bulan, lebih rendah dari kompetitor.</p>
+                <h3 className="font-bold text-gray-900 mb-1">Jasa Transparan</h3>
+                <p className="text-gray-600 text-sm">10% per 2 minggu, terima utuh tanpa potongan.</p>
               </div>
             </div>
 
@@ -701,7 +783,7 @@ export default function Home() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
-              href="#pengajuan"
+              href="/create"
               className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-300 hover:to-yellow-400 text-gray-900 px-8 py-4 rounded-xl font-bold text-lg transition inline-flex items-center justify-center gap-2 shadow-xl"
             >
               Gadai Sekarang
@@ -721,21 +803,31 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Floating WhatsApp Button */}
+      <a
+        href="https://wa.me/6282299748978?text=Halo%20Gadai%20Jogja,%20saya%20ingin%20bertanya"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-6 right-6 z-50 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 animate-bounce"
+        style={{ animationDuration: '2s' }}
+      >
+        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+        </svg>
+        {/* Pulse Ring */}
+        <span className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-30"></span>
+      </a>
+
       {/* Footer */}
       <footer className="bg-gray-900 py-12">
         <div className="max-w-6xl mx-auto px-4">
           <div className="grid md:grid-cols-3 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                </div>
-                <span className="text-xl font-bold text-white">Gadai Jogja</span>
+                <img src="/logo-gadai.png" alt="Gadai Jogja" className="h-10 w-auto" />
               </div>
               <p className="text-gray-400 text-sm">
-                Solusi gadai online terpercaya di Yogyakarta. Proses cepat, bunga rendah, tanpa biaya tersembunyi.
+                Solusi gadai online terpercaya di Yogyakarta. Proses cepat, jasa 10% per 2 minggu, tanpa biaya tersembunyi.
               </p>
             </div>
             <div>
