@@ -33,7 +33,7 @@ model Gadai {
   tanggalKembali  DateTime
   atributTinggal  String
   deskripsi       String?
-  fotoBarang      String
+  fotoBarang      String?
   fotoPendukung   String?
   status          String    @default("PENDING")
   totalPembayaran Decimal   @default(0) @db.Decimal(18, 2)
