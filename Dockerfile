@@ -34,14 +34,13 @@ ENV NODE_ENV=production
 
 RUN groupadd --system --gid 1001 nodejs && useradd --system --uid 1001 nextjs
 
-# Set the correct permission for prerender cache
-RUN mkdir .next && chown nextjs:nodejs .next
-
-# Copy standalone output
+# Copy standalone output with public folder
 COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/public ./public
 
-# Copy static files (if exists, otherwise create empty)
-RUN if [ -d "/app/public" ]; then cp -r /app/public ./public; else mkdir -p ./public; fi
+# Copy static files (fallback)
+RUN if [ ! -d "./public" ]; then mkdir -p ./public; fi
+
 RUN chown -R nextjs:nodejs ./public
 
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
