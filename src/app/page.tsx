@@ -191,7 +191,7 @@ export default function Home() {
         </div>
 
         <div className="relative max-w-6xl mx-auto px-4 py-16 md:py-24">
-          <div className="grid lg:grid-cols-5 gap-12 items-center">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left Content */}
             <div className={`text-center lg:text-left transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
               <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-2 rounded-full mb-6">
@@ -272,59 +272,61 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right Content - Image Gallery */}
-            <div id="pengajuan" className={`transition-all duration-700 delay-300 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-              <div className="grid grid-cols-3 grid-rows-2 gap-3 h-[320px] md:h-[380px]">
-                {/* Large image - spans 2 rows */}
-                <div className="col-span-2 row-span-2 relative group overflow-hidden rounded-2xl shadow-xl">
-                  <img src="/images/7.jpeg" alt="Gadai Motor & Mobil" className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                  <div className="absolute bottom-4 left-4 right-4">
-                    <p className="text-white font-bold text-lg">Gadai Motor & Mobil</p>
-                    <p className="text-white/80 text-sm">STNK + BPKB</p>
-                  </div>
+            {/* Right Content - Quick Form */}
+            <div id="pengajuan" className={`bg-white rounded-3xl shadow-2xl p-6 md:p-8 border border-gray-100 transition-all duration-700 delay-300 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <p className="text-gray-500 text-sm">Layanan Gadai Online</p>
+                  <h3 className="text-xl font-bold text-gray-900">Ajukan Gadai Sekarang</h3>
                 </div>
-
-                {/* Small image - top right */}
-                <div className="relative group overflow-hidden rounded-2xl shadow-xl">
-                  <img src="/images/1.jpeg" alt="Gadai iPad" className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                  <div className="absolute bottom-3 left-3 right-3">
-                    <p className="text-white font-semibold text-sm">iPad</p>
-                  </div>
-                </div>
-
-                {/* Small image - middle right */}
-                <div className="relative group overflow-hidden rounded-2xl shadow-xl">
-                  <img src="/images/6.jpeg" alt="Gadai Laptop" className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                  <div className="absolute bottom-3 left-3 right-3">
-                    <p className="text-white font-semibold text-sm">Laptop</p>
-                  </div>
-                </div>
-
-                {/* Small image - bottom right */}
-                <div className="relative group overflow-hidden rounded-2xl shadow-xl">
-                  <img src="/images/2.jpeg" alt="Gadai Smartwatch" className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                  <div className="absolute bottom-3 left-3 right-3">
-                    <p className="text-white font-semibold text-sm">Smartwatch</p>
-                  </div>
+                <div className="flex items-center gap-2 bg-green-100 text-green-700 px-3 py-1.5 rounded-full">
+                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                  <span className="text-xs font-semibold">Online 24/7</span>
                 </div>
               </div>
 
-              {/* CTA Card */}
-              <div className="mt-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-white font-semibold">Siap Gadai?</p>
-                    <p className="text-white/70 text-sm">Proses 15 menit, bunga 2%</p>
-                  </div>
-                  <a href="/create" className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-300 hover:to-yellow-400 text-gray-900 px-5 py-2.5 rounded-xl font-bold text-sm transition shadow-lg">
-                    Gadai Sekarang
-                  </a>
+              <form action="/create" method="GET" className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Nama Lengkap</label>
+                  <input type="text" name="name" placeholder="Masukkan nama Anda" required
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition" />
                 </div>
-              </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Nomor WhatsApp</label>
+                  <input type="tel" name="phone" placeholder="08xxxxxxxxxx" required
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition" />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Kategori Barang</label>
+                  <select name="category" required
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-gray-600">
+                    <option value="">Pilih kategori</option>
+                    <option value="HP">HP / Smartphone</option>
+                    <option value="Laptop">Laptop / Komputer</option>
+                    <option value="Motor">Motor</option>
+                    <option value="Mobil">Mobil</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Estimasi Nilai (Rp)</label>
+                  <input type="number" name="amount" placeholder="Contoh: 500000" min="100000" required
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition" />
+                </div>
+
+                <button type="submit" className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-4 rounded-xl font-bold text-lg transition shadow-lg shadow-blue-200 mt-2">
+                  Lanjutkan Pengajuan
+                </button>
+              </form>
+
+              <p className="text-xs text-gray-400 text-center mt-4">
+                Atau hubungi langsung via{' '}
+                <a href="https://wa.me/6282299748978" target="_blank" rel="noopener noreferrer" className="text-green-600 font-medium hover:underline">
+                  WhatsApp 0822-9974-8978
+                </a>
+              </p>
             </div>
           </div>
         </div>
