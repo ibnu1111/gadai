@@ -350,6 +350,7 @@ function CreateForm() {
                 onChange={handleKtpChange}
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-blue-100 file:text-blue-700 file:text-sm file:font-medium"
               />
+              <p className="text-xs text-gray-500 mt-1.5">KTP asli wajib dibawa saat mengantar barang jaminan.</p>
               {uploadingKtp && <p className="text-xs text-blue-500 mt-1.5">Mengunggah foto KTP...</p>}
               {formData.fotoKtp && !uploadingKtp && (
                 <p className="text-xs text-green-600 mt-1.5">✓ Foto KTP berhasil diunggah</p>
