@@ -147,7 +147,7 @@ function CreateForm() {
           `📦 Barang: ${formData.namaBarang}\n` +
           `📂 Kategori: ${formData.kategoriBarang}\n` +
           `💰 Nominal: Rp ${parseFloat(formData.nominalPinjam).toLocaleString('id-ID')}\n` +
-          `📊 Paket: ${bungaLabel}\n` +
+          `📊 Tempo: ${bungaLabel}\n` +
           `💵 Total Bayar: Rp ${totalBayar.toLocaleString('id-ID')}\n` +
           (formData.fotoKtp ? `🪪 Foto KTP: ${formData.fotoKtp}\n` : '') +
           (formData.fotoStnk ? `🛵 Foto STNK: ${formData.fotoStnk}\n` : '') +
