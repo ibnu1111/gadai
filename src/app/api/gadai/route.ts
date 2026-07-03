@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getAdminFromRequest } from '@/lib/auth'
+import { normalizePhoneNumber } from '@/lib/helpers'
 
 const VALID_KATEGORI = ['Mobil', 'Motor', 'Elektronik', 'HP', 'Laptop', 'Perhiasan', 'Lainnya']
 
@@ -76,13 +77,48 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    let {
+      customerID
+    } = body
     const {
-      customerID, kategoriBarang, namaBarang, nominalPinjam,
+      customerName, customerPhone, fotoKtp,
+      kategoriBarang, namaBarang, nominalPinjam,
       bungaPersentase, tanggalPinjam, tanggalKembali, atributTinggal,
       deskripsi, fotoBarang, fotoPendukung
     } = body
 
-    if (!customerID || !kategoriBarang || !namaBarang || !nominalPinjam ||
+    // Allow creating on behalf of a walk-in customer by name + phone
+    // (find-or-create), in addition to referencing an existing customerID.
+    if (!customerID) {
+      if (!customerName || !customerPhone) {
+        return NextResponse.json({
+          success: false,
+          message: 'customerID atau (customerName & customerPhone) wajib diisi'
+        }, { status: 400 })
+      }
+
+      const normalizedPhone = normalizePhoneNumber(customerPhone)
+      if (!normalizedPhone) {
+        return NextResponse.json({ success: false, message: 'Nomor HP tidak valid' }, { status: 400 })
+      }
+
+      let customer = await prisma.customer.findUnique({ where: { noHp: normalizedPhone } })
+      if (!customer) {
+        customer = await prisma.customer.create({
+          data: { nama: customerName, noHp: normalizedPhone, fotoKtp: fotoKtp || null }
+        })
+      } else {
+        const customerUpdate: { nama?: string; fotoKtp?: string } = {}
+        if (customer.nama !== customerName) customerUpdate.nama = customerName
+        if (fotoKtp && customer.fotoKtp !== fotoKtp) customerUpdate.fotoKtp = fotoKtp
+        if (Object.keys(customerUpdate).length > 0) {
+          customer = await prisma.customer.update({ where: { id: customer.id }, data: customerUpdate })
+        }
+      }
+      customerID = customer.id
+    }
+
+    if (!kategoriBarang || !namaBarang || !nominalPinjam ||
         !tanggalPinjam || !tanggalKembali || !atributTinggal || !fotoBarang) {
       return NextResponse.json({ success: false, message: 'Required fields are missing' }, { status: 400 })
     }

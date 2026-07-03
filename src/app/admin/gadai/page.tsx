@@ -48,16 +48,18 @@ export default function AdminGadaiPage() {
   const [summary, setSummary] = useState<Summary | null>(null)
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState({ status: '', search: '' })
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 })
 
   useEffect(() => {
-    fetchData()
+    fetchData(1)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.status, filters.search])
 
-  const fetchData = async () => {
+  const fetchData = async (page: number) => {
     setLoading(true)
     try {
       const token = localStorage.getItem('adminToken')
-      const params = new URLSearchParams()
+      const params = new URLSearchParams({ page: String(page), limit: '10' })
       if (filters.status) params.set('status', filters.status)
       if (filters.search) params.set('search', filters.search)
 
@@ -73,7 +75,14 @@ export default function AdminGadaiPage() {
       const gadaiData = await gadaiRes.json()
       const summaryData = await summaryRes.json()
 
-      if (gadaiData.success) setGadais(gadaiData.data)
+      if (gadaiData.success) {
+        setGadais(gadaiData.data)
+        setPagination({
+          page: gadaiData.pagination.page,
+          totalPages: gadaiData.pagination.totalPages,
+          total: gadaiData.pagination.total
+        })
+      }
       if (summaryData.success) setSummary(summaryData.data)
     } catch (error) {
       console.error('Error fetching data:', error)
@@ -102,8 +111,8 @@ export default function AdminGadaiPage() {
     <div>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-stone-800">Dashboard</h1>
-          <p className="text-stone-500 text-sm mt-1">Kelola semua pengajuan gadai</p>
+          <h1 className="text-2xl font-bold text-stone-800">Pengajuan</h1>
+          <p className="text-stone-500 text-sm mt-1">Kelola semua pengajuan gadai ({pagination.total} total)</p>
         </div>
         <Link
           href="/admin/gadai/create"
@@ -251,6 +260,25 @@ export default function AdminGadaiPage() {
             </tbody>
           </table>
         </div>
+        {pagination.totalPages > 1 && (
+          <div className="flex justify-between items-center px-4 py-3 border-t border-stone-100">
+            <button
+              disabled={pagination.page <= 1}
+              onClick={() => fetchData(pagination.page - 1)}
+              className="px-3 py-1.5 text-sm rounded-lg border border-stone-200 text-stone-600 disabled:opacity-40 hover:bg-stone-50"
+            >
+              &larr; Sebelumnya
+            </button>
+            <span className="text-sm text-stone-500">Halaman {pagination.page} dari {pagination.totalPages}</span>
+            <button
+              disabled={pagination.page >= pagination.totalPages}
+              onClick={() => fetchData(pagination.page + 1)}
+              className="px-3 py-1.5 text-sm rounded-lg border border-stone-200 text-stone-600 disabled:opacity-40 hover:bg-stone-50"
+            >
+              Berikutnya &rarr;
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

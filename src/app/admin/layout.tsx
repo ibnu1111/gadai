@@ -38,7 +38,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-6">
-              <Link href="/admin/gadai" className="flex items-center gap-2">
+              <Link href="/admin/dashboard" className="flex items-center gap-2">
                 <div className="w-9 h-9 bg-amber-600 rounded-lg flex items-center justify-center">
                   <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
@@ -48,14 +48,34 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </Link>
               <nav className="hidden md:flex items-center gap-1">
                 <Link
-                  href="/admin/gadai"
+                  href="/admin/dashboard"
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                    pathname === '/admin/gadai'
+                    pathname === '/admin/dashboard'
                       ? 'bg-stone-100 text-stone-900'
                       : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
                   }`}
                 >
                   Dashboard
+                </Link>
+                <Link
+                  href="/admin/gadai"
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                    pathname === '/admin/gadai' || pathname.startsWith('/admin/gadai/')
+                      ? 'bg-stone-100 text-stone-900'
+                      : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
+                  }`}
+                >
+                  Pengajuan
+                </Link>
+                <Link
+                  href="/admin/customer"
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                    pathname === '/admin/customer' || pathname.startsWith('/admin/customer/')
+                      ? 'bg-stone-100 text-stone-900'
+                      : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
+                  }`}
+                >
+                  Customer
                 </Link>
                 <Link
                   href="/track"

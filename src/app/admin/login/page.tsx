@@ -25,7 +25,7 @@ export default function AdminLogin() {
       if (data.success) {
         localStorage.setItem('adminToken', data.data.token)
         localStorage.setItem('adminData', JSON.stringify(data.data.admin))
-        router.push('/admin/gadai')
+        router.push('/admin/dashboard')
       } else {
         alert(data.message || 'Login gagal')
       }
