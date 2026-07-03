@@ -35,10 +35,57 @@ function CreateForm() {
     deskripsi: '',
     atributTinggal: '',
     jangkaWaktu: '',
-    nominalPinjam: ''
+    nominalPinjam: '',
+    fotoKtp: '',
+    fotoStnk: ''
   })
   const [result, setResult] = useState<any>(null)
   const [error, setError] = useState('')
+  const [uploadingKtp, setUploadingKtp] = useState(false)
+  const [uploadingStnk, setUploadingStnk] = useState(false)
+
+  const needsStnk = formData.kategoriBarang === 'Motor' || formData.kategoriBarang === 'Mobil'
+
+  const uploadPhoto = async (file: File): Promise<string> => {
+    const body = new FormData()
+    body.append('file', file)
+    const res = await fetch('/api/upload', { method: 'POST', body })
+    const data = await res.json()
+    if (!res.ok || !data.success) {
+      throw new Error(data.message || 'Gagal mengunggah foto')
+    }
+    return data.url as string
+  }
+
+  const handleKtpChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setError('')
+    setUploadingKtp(true)
+    try {
+      const url = await uploadPhoto(file)
+      setFormData(prev => ({ ...prev, fotoKtp: url }))
+    } catch (err: any) {
+      setError(err.message || 'Gagal mengunggah foto KTP')
+    } finally {
+      setUploadingKtp(false)
+    }
+  }
+
+  const handleStnkChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setError('')
+    setUploadingStnk(true)
+    try {
+      const url = await uploadPhoto(file)
+      setFormData(prev => ({ ...prev, fotoStnk: url }))
+    } catch (err: any) {
+      setError(err.message || 'Gagal mengunggah foto STNK')
+    } finally {
+      setUploadingStnk(false)
+    }
+  }
 
   useEffect(() => {
     const name = searchParams.get('name') || ''
@@ -62,15 +109,28 @@ function CreateForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
     setError('')
+
+    if (!formData.fotoKtp) {
+      setError('Foto KTP wajib diunggah')
+      return
+    }
+    if (needsStnk && !formData.fotoStnk) {
+      setError('Foto STNK wajib diunggah untuk kategori Motor/Mobil')
+      return
+    }
+
+    setLoading(true)
     setResult(null)
 
     try {
       const res = await fetch('/api/public/gadai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          fotoPendukung: formData.fotoStnk || undefined
+        })
       })
 
       const data = await res.json()
@@ -92,8 +152,10 @@ function CreateForm() {
           `📂 Kategori: ${formData.kategoriBarang}\n` +
           `💰 Nominal: Rp ${parseFloat(formData.nominalPinjam).toLocaleString('id-ID')}\n` +
           `📊 Paket: ${bungaLabel}\n` +
-          `💵 Total Bayar: Rp ${totalBayar.toLocaleString('id-ID')}\n\n` +
-          `🔗 Lacak pengajuan: ${trackLink}`
+          `💵 Total Bayar: Rp ${totalBayar.toLocaleString('id-ID')}\n` +
+          `🪪 Foto KTP: ${formData.fotoKtp}\n` +
+          (formData.fotoStnk ? `🛵 Foto STNK: ${formData.fotoStnk}\n` : '') +
+          `\n🔗 Lacak pengajuan: ${trackLink}`
         )
 
         // Redirect to WhatsApp
@@ -118,12 +180,20 @@ function CreateForm() {
       deskripsi: '',
       atributTinggal: '',
       jangkaWaktu: '',
-      nominalPinjam: ''
+      nominalPinjam: '',
+      fotoKtp: '',
+      fotoStnk: ''
     })
     setResult(null)
   }
 
-  const totalBayar = parseFloat(formData.nominalPinjam || '0') + calculateFee()
+  const totalBayar = Number.parseFloat(formData.nominalPinjam || '0') + calculateFee()
+  let submitButtonLabel = 'Ajukan Gadai'
+  if (loading) {
+    submitButtonLabel = 'Mengirim...'
+  } else if (uploadingKtp || uploadingStnk) {
+    submitButtonLabel = 'Menunggu unggahan foto...'
+  }
 
   if (result) {
     return (
@@ -277,6 +347,21 @@ function CreateForm() {
             </div>
 
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Foto KTP</label>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/heic"
+                onChange={handleKtpChange}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-blue-100 file:text-blue-700 file:text-sm file:font-medium"
+                required={!formData.fotoKtp}
+              />
+              {uploadingKtp && <p className="text-xs text-blue-500 mt-1.5">Mengunggah foto KTP...</p>}
+              {formData.fotoKtp && !uploadingKtp && (
+                <p className="text-xs text-green-600 mt-1.5">✓ Foto KTP berhasil diunggah</p>
+              )}
+            </div>
+
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Kategori Barang</label>
               <select
                 value={formData.kategoriBarang}
@@ -290,6 +375,23 @@ function CreateForm() {
                 ))}
               </select>
             </div>
+
+            {needsStnk && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Foto STNK</label>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/heic"
+                  onChange={handleStnkChange}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-blue-100 file:text-blue-700 file:text-sm file:font-medium"
+                  required={!formData.fotoStnk}
+                />
+                {uploadingStnk && <p className="text-xs text-blue-500 mt-1.5">Mengunggah foto STNK...</p>}
+                {formData.fotoStnk && !uploadingStnk && (
+                  <p className="text-xs text-green-600 mt-1.5">✓ Foto STNK berhasil diunggah</p>
+                )}
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Nama Barang</label>
@@ -376,10 +478,10 @@ function CreateForm() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || uploadingKtp || uploadingStnk}
               className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 text-white py-4 rounded-xl font-bold text-lg transition shadow-lg shadow-blue-200 mt-2"
             >
-              {loading ? 'Mengirim...' : 'Ajukan Gadai'}
+              {submitButtonLabel}
             </button>
           </form>
         </div>

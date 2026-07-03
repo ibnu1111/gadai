@@ -40,6 +40,11 @@ next-env.d.ts
 # Railway
 .railway/
 
+# User-uploaded photos (KTP/STNK) - not committed, served via /api/uploads from
+# UPLOAD_DIR (local dev default: ./uploads; production: Railway Volume mount)
+/uploads/
+public/uploads/
+
 # Old migrated files (backup)
 old-backup/
 

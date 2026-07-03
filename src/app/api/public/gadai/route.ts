@@ -39,6 +39,13 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
+    if (!fotoKtp) {
+      return NextResponse.json({
+        success: false,
+        message: 'Foto KTP wajib diunggah'
+      }, { status: 400 })
+    }
+
     const nominalNum = Number.parseFloat(nominalPinjam)
     if (Number.isNaN(nominalNum) || nominalNum < 100000) {
       return NextResponse.json({
@@ -72,6 +79,13 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
+    if ((dbKategori === 'Motor' || dbKategori === 'Mobil') && !fotoPendukung) {
+      return NextResponse.json({
+        success: false,
+        message: 'Foto STNK wajib diunggah untuk kategori Motor/Mobil'
+      }, { status: 400 })
+    }
+
     const feeNum = (nominalNum * bungaPersentase) / 100
     const tanggalPinjam = new Date()
     const tanggalKembali = calculateTanggalKembali(tanggalPinjam, jangkaWaktu)
@@ -88,11 +102,16 @@ export async function POST(request: NextRequest) {
           fotoKtp: fotoKtp
         }
       })
-    } else if (customer.nama !== customerName) {
-      customer = await prisma.customer.update({
-        where: { id: customer.id },
-        data: { nama: customerName }
-      })
+    } else {
+      const customerUpdate: { nama?: string; fotoKtp?: string } = {}
+      if (customer.nama !== customerName) customerUpdate.nama = customerName
+      if (fotoKtp && customer.fotoKtp !== fotoKtp) customerUpdate.fotoKtp = fotoKtp
+      if (Object.keys(customerUpdate).length > 0) {
+        customer = await prisma.customer.update({
+          where: { id: customer.id },
+          data: customerUpdate
+        })
+      }
     }
 
     const gadai = await prisma.gadai.create({
@@ -121,8 +140,10 @@ export async function POST(request: NextRequest) {
       `📦 Barang: ${namaBarang}\n` +
       `💰 Nominal: Rp ${nominalNum.toLocaleString('id-ID')}\n` +
       `📊 Jasa: ${bungaPersentase}%\n` +
-      `💵 Fee: Rp ${feeNum.toLocaleString('id-ID')}\n\n` +
-      `Mohon untuk meninjau pengajuan di sistem.`
+      `💵 Fee: Rp ${feeNum.toLocaleString('id-ID')}\n` +
+      `🪪 Foto KTP: ${fotoKtp}\n` +
+      (fotoPendukung ? `🛵 Foto STNK: ${fotoPendukung}\n` : '') +
+      `\nMohon untuk meninjau pengajuan di sistem.`
     )
     const waLink = `https://wa.me/?text=${waMessage}`
 
