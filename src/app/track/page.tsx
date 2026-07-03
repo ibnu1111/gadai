@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
 const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
@@ -19,14 +19,25 @@ export default function TrackPage() {
   const [error, setError] = useState('')
   const [result, setResult] = useState<any>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  // Auto-submit if phone is in URL params
+  useEffect(() => {
+    const params = new URLSearchParams(globalThis.location.search)
+    const phoneParam = params.get('phone')
+    if (phoneParam) {
+      // Convert 62xx back to 08xx for display
+      const formattedPhone = phoneParam.startsWith('62') ? '0' + phoneParam.substring(2) : phoneParam
+      setPhone(formattedPhone)
+      handleSearch(formattedPhone)
+    }
+  }, [])
+
+  const handleSearch = async (searchPhone?: string) => {
+    const phoneToSearch = searchPhone || phone
     setLoading(true)
     setError('')
-    setResult(null)
 
     try {
-      const res = await fetch(`/api/public/track?phone=${phone}`)
+      const res = await fetch(`/api/public/track?phone=${encodeURIComponent(phoneToSearch)}`)
       const data = await res.json()
 
       if (data.success) {
@@ -39,6 +50,11 @@ export default function TrackPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    handleSearch()
   }
 
   const formatRupiah = (num: number) => {

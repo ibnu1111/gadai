@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import {
   normalizePhoneNumber,
   mapKategoriBarang,
   calculateTanggalKembali,
-  getStatusLabel,
-  getStatusColor
 } from '@/lib/helpers'
 
-const VALID_KATEGORI = ['Mobil', 'Motor', 'Elektronik', 'HP', 'Laptop', 'Perhiasan', 'Lainnya']
+const VALID_KATEGORI = new Set(['Mobil', 'Motor', 'Elektronik', 'HP', 'Laptop', 'Perhiasan', 'Lainnya'])
 const VALID_BUNGA: Record<string, number> = {
   '2minggu': 10,
   '1bulan': 20
@@ -16,12 +15,21 @@ const VALID_BUNGA: Record<string, number> = {
 
 // POST /api/public/gadai - Create public gadai submission
 export async function POST(request: NextRequest) {
+  let customerName: string, phone: string, kategoriBarang: string, namaBarang: string
+  let deskripsi: string | null, atributTinggal: string, fotoBarang: string, fotoPendukung: string | null
+  let jangkaWaktu: string, nominalPinjam: string, fotoKtp: string | null
+
   try {
     const body = await request.json()
-    const {
-      customerName, phone, fotoKtp, kategoriBarang, namaBarang,
-      deskripsi, atributTinggal, fotoBarang: fotoBarang || '-', fotoPendukung, jangkaWaktu, nominalPinjam
-    } = body
+    ;({
+      customerName, phone, kategoriBarang, namaBarang,
+      deskripsi, atributTinggal, fotoBarang, fotoPendukung, jangkaWaktu, nominalPinjam
+    } = body)
+
+    fotoBarang = fotoBarang || '-'
+    deskripsi = deskripsi || null
+    atributTinggal = atributTinggal || '-'
+    fotoKtp = body.fotoKtp || null
 
     if (!customerName || !phone || !kategoriBarang || !namaBarang ||
         !jangkaWaktu || !nominalPinjam) {
@@ -31,7 +39,8 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    if (parseFloat(nominalPinjam) < 100000) {
+    const nominalNum = Number.parseFloat(nominalPinjam)
+    if (Number.isNaN(nominalNum) || nominalNum < 100000) {
       return NextResponse.json({
         success: false,
         message: 'Nominal minimum adalah Rp 100.000'
@@ -47,29 +56,36 @@ export async function POST(request: NextRequest) {
     }
 
     const normalizedPhone = normalizePhoneNumber(phone)
+    if (!normalizedPhone) {
+      return NextResponse.json({
+        success: false,
+        message: 'Nomor HP tidak valid'
+      }, { status: 400 })
+    }
+
     const dbKategori = mapKategoriBarang(kategoriBarang)
 
-    if (!VALID_KATEGORI.includes(dbKategori)) {
+    if (!VALID_KATEGORI.has(dbKategori)) {
       return NextResponse.json({
         success: false,
         message: 'Kategori barang tidak valid'
       }, { status: 400 })
     }
 
-    const fee = (parseFloat(nominalPinjam) * bungaPersentase) / 100
+    const feeNum = (nominalNum * bungaPersentase) / 100
     const tanggalPinjam = new Date()
     const tanggalKembali = calculateTanggalKembali(tanggalPinjam, jangkaWaktu)
 
     let customer = await prisma.customer.findUnique({
-      where: { noHp: normalizedPhone! }
+      where: { noHp: normalizedPhone }
     })
 
     if (!customer) {
       customer = await prisma.customer.create({
         data: {
           nama: customerName,
-          noHp: normalizedPhone!,
-          fotoKtp: fotoKtp || null
+          noHp: normalizedPhone,
+          fotoKtp: fotoKtp
         }
       })
     } else if (customer.nama !== customerName) {
@@ -84,15 +100,15 @@ export async function POST(request: NextRequest) {
         customerID: customer.id,
         kategoriBarang: dbKategori,
         namaBarang,
-        nominalPinjam: parseFloat(nominalPinjam),
-        bungaPersentase,
-        fee,
+        nominalPinjam: new Prisma.Decimal(nominalNum.toFixed(2)),
+        bungaPersentase: new Prisma.Decimal(bungaPersentase.toFixed(2)),
+        fee: new Prisma.Decimal(feeNum.toFixed(2)),
         tanggalPinjam,
         tanggalKembali,
-        atributTinggal: atributTinggal || '-',
-        deskripsi: deskripsi || null,
-        fotoBarang: fotoBarang || '-',
-        fotoPendukung: fotoPendukung || null,
+        atributTinggal,
+        deskripsi,
+        fotoBarang,
+        fotoPendukung,
         status: 'PENDING'
       },
       include: { customer: true }
@@ -103,9 +119,9 @@ export async function POST(request: NextRequest) {
       `👤 Nama: ${customerName}\n` +
       `📱 HP: ${phone}\n` +
       `📦 Barang: ${namaBarang}\n` +
-      `💰 Nominal: Rp ${parseFloat(nominalPinjam).toLocaleString('id-ID')}\n` +
+      `💰 Nominal: Rp ${nominalNum.toLocaleString('id-ID')}\n` +
       `📊 Jasa: ${bungaPersentase}%\n` +
-      `💵 Fee: Rp ${fee.toLocaleString('id-ID')}\n\n` +
+      `💵 Fee: Rp ${feeNum.toLocaleString('id-ID')}\n\n` +
       `Mohon untuk meninjau pengajuan di sistem.`
     )
     const waLink = `https://wa.me/?text=${waMessage}`
@@ -117,16 +133,17 @@ export async function POST(request: NextRequest) {
         gadaiId: gadai.gadaiID,
         customerId: customer.id,
         status: gadai.status,
-        nominalPengajuan: parseFloat(nominalPinjam),
+        nominalPengajuan: nominalNum,
         bungaPersentase,
-        fee,
+        fee: feeNum,
         tanggalKembali: tanggalKembali.toISOString()
       },
       waNotificationLink: waLink
     }, { status: 201 })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating public gadai:', error)
-    return NextResponse.json({ success: false, message: 'Failed to submit gadai' }, { status: 500 })
+    const message = error?.message || error?.code || 'Unknown error'
+    return NextResponse.json({ success: false, message: `Failed to submit gadai: ${message}` }, { status: 500 })
   }
 }
 

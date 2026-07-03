@@ -76,7 +76,29 @@ function CreateForm() {
       const data = await res.json()
 
       if (data.success) {
-        setResult(data)
+        // Format phone number for tracking link
+        const normalizedPhone = formData.phone.replace(/^0/, '62')
+        const trackLink = `${typeof window !== 'undefined' ? window.location.origin : ''}/track?phone=${normalizedPhone}`
+
+        // Create WhatsApp message with submission details and tracking link
+        const bungaLabel = formData.jangkaWaktu === '2minggu' ? '2 Minggu (10%)' : '1 Bulan (20%)'
+        const totalBayar = parseFloat(formData.nominalPinjam) + calculateFee()
+
+        const waMessage = encodeURIComponent(
+          `📋 *Pengajuan Gadai Baru*\n\n` +
+          `👤 Nama: ${formData.customerName}\n` +
+          `📱 No. HP: ${formData.phone}\n` +
+          `📦 Barang: ${formData.namaBarang}\n` +
+          `📂 Kategori: ${formData.kategoriBarang}\n` +
+          `💰 Nominal: Rp ${parseFloat(formData.nominalPinjam).toLocaleString('id-ID')}\n` +
+          `📊 Paket: ${bungaLabel}\n` +
+          `💵 Total Bayar: Rp ${totalBayar.toLocaleString('id-ID')}\n\n` +
+          `🔗 Lacak pengajuan: ${trackLink}`
+        )
+
+        // Redirect to WhatsApp
+        const waNumber = '62819676216' // +62 819-676-216
+        window.location.href = `https://wa.me/${waNumber}?text=${waMessage}`
       } else {
         setError(data.message || 'Terjadi kesalahan')
       }
