@@ -39,12 +39,8 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    if (!fotoKtp) {
-      return NextResponse.json({
-        success: false,
-        message: 'Foto KTP wajib diunggah'
-      }, { status: 400 })
-    }
+    // Foto KTP is optional for now — will become mandatory once the full
+    // pengajuan flow (with in-flow document verification step) is built.
 
     const nominalNum = Number.parseFloat(nominalPinjam)
     if (Number.isNaN(nominalNum) || nominalNum < 100000) {

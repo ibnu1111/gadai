@@ -111,10 +111,6 @@ function CreateForm() {
     e.preventDefault()
     setError('')
 
-    if (!formData.fotoKtp) {
-      setError('Foto KTP wajib diunggah')
-      return
-    }
     if (needsStnk && !formData.fotoStnk) {
       setError('Foto STNK wajib diunggah untuk kategori Motor/Mobil')
       return
@@ -153,7 +149,7 @@ function CreateForm() {
           `💰 Nominal: Rp ${parseFloat(formData.nominalPinjam).toLocaleString('id-ID')}\n` +
           `📊 Paket: ${bungaLabel}\n` +
           `💵 Total Bayar: Rp ${totalBayar.toLocaleString('id-ID')}\n` +
-          `🪪 Foto KTP: ${formData.fotoKtp}\n` +
+          (formData.fotoKtp ? `🪪 Foto KTP: ${formData.fotoKtp}\n` : '') +
           (formData.fotoStnk ? `🛵 Foto STNK: ${formData.fotoStnk}\n` : '') +
           `\n🔗 Lacak pengajuan: ${trackLink}`
         )
@@ -208,7 +204,7 @@ function CreateForm() {
                   </svg>
                 </div>
                 <div>
-                  <span className="text-lg font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">Gadai Jaya</span>
+                  <span className="text-lg font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">Gadai Jogja</span>
                   <span className="hidden sm:block text-xs text-gray-400">gadaijogja.com</span>
                 </div>
               </Link>
@@ -285,7 +281,7 @@ function CreateForm() {
                 </svg>
               </div>
               <div>
-                <span className="text-lg font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">Gadai Jaya</span>
+                <span className="text-lg font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">Gadai Jogja</span>
                 <span className="hidden sm:block text-xs text-gray-400">gadaijogja.com</span>
               </div>
             </Link>
@@ -347,13 +343,12 @@ function CreateForm() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Foto KTP</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Foto KTP <span className="text-gray-400 font-normal">(opsional)</span></label>
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp,image/heic"
                 onChange={handleKtpChange}
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-blue-100 file:text-blue-700 file:text-sm file:font-medium"
-                required={!formData.fotoKtp}
               />
               {uploadingKtp && <p className="text-xs text-blue-500 mt-1.5">Mengunggah foto KTP...</p>}
               {formData.fotoKtp && !uploadingKtp && (
