@@ -55,15 +55,44 @@ const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
 function getMissingDocs(gadai: Gadai): string[] {
   const missing: string[] = []
   const isKendaraan = gadai.kategoriBarang === 'Motor' || gadai.kategoriBarang === 'Mobil'
-  if (!gadai.customer.fotoKtp) missing.push('KTP')
-  if (isKendaraan && !gadai.fotoPendukung) missing.push('STNK')
+  if (!gadai.customer.fotoKtp) missing.push('Foto KTP')
+  if (isKendaraan && !gadai.fotoPendukung) missing.push('Foto STNK')
   if (['PENDING', 'MENUNGGU_TRANSFER'].includes(gadai.status)) {
-    if (!gadai.fotoCustomerBarang) missing.push('Foto Customer+Barang')
-    if (!gadai.noRekening) missing.push('No. Rekening')
+    if (!gadai.fotoCustomerBarang) missing.push('Foto Customer + Barang')
+    if (!gadai.noRekening) missing.push('Nomor Rekening')
     if (!gadai.namaBank) missing.push('Nama Bank')
-    if (isKendaraan && !gadai.nomorPolisi) missing.push('Nopol')
+    if (isKendaraan && !gadai.nomorPolisi) missing.push('Nomor Polisi')
   }
   return missing
+}
+
+function CompletenessIcon({ missing }: { missing: string[] }) {
+  if (missing.length === 0) {
+    return (
+      <span
+        title="Data lengkap"
+        className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-600 transition-transform hover:scale-110 cursor-help"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      </span>
+    )
+  }
+
+  return (
+    <span
+      title={`Data kurang:\n${missing.join('\n')}`}
+      className="relative inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-100 text-red-600 transition-transform hover:scale-110 cursor-help"
+    >
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m0 3.75h.007M4.93 4.93l14.14 14.14M12 3.75l8.485 14.7a1 1 0 01-.866 1.5H4.38a1 1 0 01-.866-1.5L12 3.75z" />
+      </svg>
+      <span className="absolute -top-1.5 -right-1.5 w-4 h-4 flex items-center justify-center rounded-full bg-red-600 text-white text-[10px] font-bold leading-none">
+        {missing.length}
+      </span>
+    </span>
+  )
 }
 
 export default function AdminGadaiPage() {
@@ -268,13 +297,7 @@ export default function AdminGadaiPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 hidden lg:table-cell">
-                        {missingDocs.length === 0 ? (
-                          <span className="inline-flex px-2.5 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">Lengkap</span>
-                        ) : (
-                          <span title={missingDocs.join(', ')} className="inline-flex px-2.5 py-1 text-xs font-medium rounded-full bg-red-100 text-red-700">
-                            Kurang {missingDocs.length}
-                          </span>
-                        )}
+                        <CompletenessIcon missing={missingDocs} />
                       </td>
                       <td className="px-4 py-3">
                         <Link
