@@ -75,12 +75,8 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    if ((dbKategori === 'Motor' || dbKategori === 'Mobil') && !fotoPendukung) {
-      return NextResponse.json({
-        success: false,
-        message: 'Foto STNK wajib diunggah untuk kategori Motor/Mobil'
-      }, { status: 400 })
-    }
+    // Foto STNK (fotoPendukung) is optional at initial submission for Motor/Mobil —
+    // admin will request it in person when the customer brings the item to the office.
 
     const feeNum = (nominalNum * bungaPersentase) / 100
     const tanggalPinjam = new Date()

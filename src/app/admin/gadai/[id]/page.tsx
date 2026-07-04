@@ -35,10 +35,26 @@ interface GadaiDetail {
   createdAt: string
   createdBy: string | null
   payments: Payment[]
+  fotoCustomerBarang: string | null
+  fotoPendukungTambahan: string[]
+  noRekening: string | null
+  namaBank: string | null
+  nomorPolisi: string | null
+  transferToken: string | null
+  buktiTransferCair: string | null
+  nominalTransferCair: string | null
+  tanggalCair: string | null
+  bungaTerbayar: string
+  pendingAksi: string | null
+  pendingAksiNominal: string | null
+  pendingAksiBukti: string | null
+  pendingAksiCreatedAt: string | null
 }
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Menunggu',
+  MENUNGGU_TRANSFER: 'Menunggu Transfer',
+  MENUNGGU_VERIFIKASI_TRANSFER: 'Verifikasi Transfer',
   AKTIF: 'Aktif',
   LUNAS: 'Lunas',
   JATUH_TEMPO: 'Jatuh Tempo',
@@ -49,12 +65,29 @@ const STATUS_LABELS: Record<string, string> = {
 
 const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
   PENDING: { bg: 'bg-yellow-100', text: 'text-yellow-800' },
+  MENUNGGU_TRANSFER: { bg: 'bg-amber-100', text: 'text-amber-800' },
+  MENUNGGU_VERIFIKASI_TRANSFER: { bg: 'bg-amber-100', text: 'text-amber-800' },
   AKTIF: { bg: 'bg-green-100', text: 'text-green-800' },
   LUNAS: { bg: 'bg-blue-100', text: 'text-blue-800' },
   JATUH_TEMPO: { bg: 'bg-orange-100', text: 'text-orange-800' },
   OVERDUE: { bg: 'bg-red-100', text: 'text-red-800' },
   DITOLAK: { bg: 'bg-stone-100', text: 'text-stone-600' },
   DIPERPANJANG: { bg: 'bg-purple-100', text: 'text-purple-800' }
+}
+
+const FINANCE_WA_NUMBER = '62819676216'
+
+function isKendaraan(kategori: string) {
+  return kategori === 'Motor' || kategori === 'Mobil'
+}
+
+function isDueOrOverdue(status: string, tanggalKembali: string) {
+  if (!['AKTIF', 'JATUH_TEMPO', 'OVERDUE'].includes(status)) return false
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const due = new Date(tanggalKembali)
+  due.setHours(0, 0, 0, 0)
+  return today >= due
 }
 
 function formatRupiah(num: number) {
@@ -86,6 +119,48 @@ export default function AdminGadaiDetailPage() {
   const [paymentNote, setPaymentNote] = useState('')
   const [savingPayment, setSavingPayment] = useState(false)
   const [actionMessage, setActionMessage] = useState('')
+
+  // Kelengkapan data (foto customer+barang, foto pendukung tambahan, rekening, nopol)
+  const [kelFotoKtp, setKelFotoKtp] = useState('')
+  const [kelFotoStnk, setKelFotoStnk] = useState('')
+  const [kelFotoCustomerBarang, setKelFotoCustomerBarang] = useState('')
+  const [kelFotoPendukungTambahan, setKelFotoPendukungTambahan] = useState<string[]>([])
+  const [kelNoRekening, setKelNoRekening] = useState('')
+  const [kelNamaBank, setKelNamaBank] = useState('')
+  const [kelNomorPolisi, setKelNomorPolisi] = useState('')
+  const [kelUploading, setKelUploading] = useState<string>('')
+  const [kelSaving, setKelSaving] = useState(false)
+  const [kelMessage, setKelMessage] = useState('')
+
+  // Konfirmasi transfer pencairan
+  const [transferNominal, setTransferNominal] = useState('')
+  const [transferFile, setTransferFile] = useState<File | null>(null)
+  const [transferConfirming, setTransferConfirming] = useState(false)
+
+  // Aksi Ambil / Perpanjang
+  const [aksiType, setAksiType] = useState<'AMBIL' | 'PERPANJANG'>('AMBIL')
+  const [aksiNominal, setAksiNominal] = useState('')
+  const [aksiSaving, setAksiSaving] = useState(false)
+
+  useEffect(() => {
+    if (!gadai) return
+    setKelFotoKtp(gadai.customer.fotoKtp || '')
+    setKelFotoStnk(gadai.fotoPendukung || '')
+    setKelFotoCustomerBarang(gadai.fotoCustomerBarang || '')
+    setKelFotoPendukungTambahan(gadai.fotoPendukungTambahan || [])
+    setKelNoRekening(gadai.noRekening || '')
+    setKelNamaBank(gadai.namaBank || '')
+    setKelNomorPolisi(gadai.nomorPolisi || '')
+  }, [gadai])
+
+  const uploadFile = async (file: File): Promise<string> => {
+    const body = new FormData()
+    body.append('file', file)
+    const res = await fetch('/api/upload', { method: 'POST', body })
+    const data = await res.json()
+    if (!res.ok || !data.success) throw new Error(data.message || 'Gagal mengunggah file')
+    return data.url as string
+  }
 
   const fetchGadai = async () => {
     try {
@@ -165,6 +240,137 @@ export default function AdminGadaiDetailPage() {
     }
   }
 
+  const handleKelFileChange = async (field: 'ktp' | 'stnk' | 'customerBarang', e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setKelUploading(field)
+    setKelMessage('')
+    try {
+      const url = await uploadFile(file)
+      if (field === 'ktp') setKelFotoKtp(url)
+      if (field === 'stnk') setKelFotoStnk(url)
+      if (field === 'customerBarang') setKelFotoCustomerBarang(url)
+    } catch (err: any) {
+      setKelMessage(err.message || 'Gagal mengunggah foto')
+    } finally {
+      setKelUploading('')
+    }
+  }
+
+  const handleAddPendukungTambahan = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setKelUploading('pendukungTambahan')
+    setKelMessage('')
+    try {
+      const url = await uploadFile(file)
+      setKelFotoPendukungTambahan(prev => [...prev, url])
+    } catch (err: any) {
+      setKelMessage(err.message || 'Gagal mengunggah foto')
+    } finally {
+      setKelUploading('')
+      e.target.value = ''
+    }
+  }
+
+  const handleRemovePendukungTambahan = (index: number) => {
+    setKelFotoPendukungTambahan(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const handleSaveKelengkapan = async (submit: boolean) => {
+    if (!gadai) return
+    setKelSaving(true)
+    setKelMessage('')
+    try {
+      const token = localStorage.getItem('adminToken')
+      const res = await fetch(`/api/gadai/${id}/complete`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          fotoKtp: kelFotoKtp || undefined,
+          fotoStnk: kelFotoStnk || undefined,
+          fotoCustomerBarang: kelFotoCustomerBarang || undefined,
+          fotoPendukungTambahan: kelFotoPendukungTambahan,
+          noRekening: kelNoRekening || undefined,
+          namaBank: kelNamaBank || undefined,
+          nomorPolisi: kelNomorPolisi || undefined,
+          submit
+        })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setKelMessage(submit ? 'Data lengkap, gadai siap untuk pencairan dana' : 'Kelengkapan data disimpan')
+        fetchGadai()
+      } else {
+        setKelMessage(data.message || 'Gagal menyimpan data')
+      }
+    } catch {
+      setKelMessage('Gagal menyimpan data')
+    } finally {
+      setKelSaving(false)
+    }
+  }
+
+  const handleConfirmTransfer = async (manual: boolean) => {
+    if (!gadai) return
+    setTransferConfirming(true)
+    setActionMessage('')
+    try {
+      const token = localStorage.getItem('adminToken')
+      let body: Record<string, unknown> = {}
+      if (manual) {
+        if (!transferFile || !transferNominal) {
+          setActionMessage('Nominal dan bukti transfer wajib diisi')
+          setTransferConfirming(false)
+          return
+        }
+        const url = await uploadFile(transferFile)
+        body = { buktiTransferCair: url, nominalTransferCair: transferNominal }
+      }
+      const res = await fetch(`/api/gadai/${id}/confirm-transfer`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(body)
+      })
+      const data = await res.json()
+      if (data.success) {
+        setActionMessage('Transfer dikonfirmasi, gadai aktif')
+        setTransferFile(null)
+        setTransferNominal('')
+        fetchGadai()
+      } else {
+        setActionMessage(data.message || 'Gagal konfirmasi transfer')
+      }
+    } catch (err: any) {
+      setActionMessage(err.message || 'Gagal konfirmasi transfer')
+    } finally {
+      setTransferConfirming(false)
+    }
+  }
+
+  const handleAksi = async (body: Record<string, unknown>) => {
+    setAksiSaving(true)
+    setActionMessage('')
+    try {
+      const token = localStorage.getItem('adminToken')
+      const res = await fetch(`/api/gadai/${id}/aksi`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(body)
+      })
+      const data = await res.json()
+      setActionMessage(data.message || (data.success ? 'Berhasil' : 'Gagal memproses aksi'))
+      if (data.success) {
+        setAksiNominal('')
+        fetchGadai()
+      }
+    } catch {
+      setActionMessage('Gagal memproses aksi')
+    } finally {
+      setAksiSaving(false)
+    }
+  }
+
   if (loading) {
     return <div className="bg-white rounded-xl p-8 border border-stone-100 text-center text-stone-400">Memuat data...</div>
   }
@@ -185,6 +391,18 @@ export default function AdminGadaiDetailPage() {
   const sisaTagihan = Math.max(0, totalTagihan - totalDibayar)
   const style = STATUS_STYLES[gadai.status] || STATUS_STYLES.PENDING
   const isOverdue = gadai.status === 'OVERDUE'
+  const needsKendaraan = isKendaraan(gadai.kategoriBarang)
+  const showKelengkapan = ['PENDING', 'MENUNGGU_TRANSFER'].includes(gadai.status)
+  const showTransferConfirm = ['MENUNGGU_TRANSFER', 'MENUNGGU_VERIFIKASI_TRANSFER'].includes(gadai.status)
+  const isDue = isDueOrOverdue(gadai.status, gadai.tanggalKembali)
+  const bungaTerbayar = Number(gadai.bungaTerbayar)
+  const sisaBunga = Math.max(0, fee - bungaTerbayar)
+  const origin = globalThis.window === undefined ? '' : globalThis.location.origin
+  const financeWaMessage = gadai.transferToken
+    ? `Mohon upload bukti transfer pencairan gadai #${gadai.gadaiID} (${gadai.namaBarang}) sebesar ${formatRupiah(nominal)} ke rekening ${gadai.namaBank || '-'} ${gadai.noRekening || '-'}.` +
+      `\n\nLink upload: ${origin}/transfer/${gadai.transferToken}`
+    : ''
+  const financeWaLink = `https://wa.me/${FINANCE_WA_NUMBER}?text=${encodeURIComponent(financeWaMessage)}`
 
   return (
     <div>
@@ -277,8 +495,150 @@ export default function AdminGadaiDetailPage() {
                   🛵 Foto STNK
                 </a>
               )}
+              {gadai.fotoCustomerBarang && (
+                <a href={gadai.fotoCustomerBarang} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm text-amber-600 hover:text-amber-700 font-medium bg-amber-50 px-3 py-1.5 rounded-lg">
+                  🤝 Foto Customer+Barang
+                </a>
+              )}
+              {gadai.fotoPendukungTambahan?.map((url, i) => (
+                <a key={url} href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm text-amber-600 hover:text-amber-700 font-medium bg-amber-50 px-3 py-1.5 rounded-lg">
+                  📎 Pendukung {i + 1}
+                </a>
+              ))}
             </div>
+            {(gadai.noRekening || gadai.namaBank || gadai.nomorPolisi) && (
+              <div className="border-t border-stone-100 mt-4 pt-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {(gadai.noRekening || gadai.namaBank) && (
+                  <div>
+                    <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Rekening Tujuan</p>
+                    <p className="text-sm font-semibold text-stone-800">{gadai.namaBank || '-'} &mdash; {gadai.noRekening || '-'}</p>
+                  </div>
+                )}
+                {gadai.nomorPolisi && (
+                  <div>
+                    <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Nomor Polisi</p>
+                    <p className="text-sm font-semibold text-stone-800">{gadai.nomorPolisi}</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
+
+          {showKelengkapan && (
+            <div className="bg-white rounded-xl border border-stone-100 p-6">
+              <h2 className="font-semibold text-stone-800 mb-1">Kelengkapan Data</h2>
+              <p className="text-xs text-stone-500 mb-4">Diisi admin saat customer datang membawa barang jaminan.</p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-xs font-medium text-stone-600 mb-1.5">Foto KTP {kelFotoKtp && '✓'}</label>
+                  <input type="file" accept="image/jpeg,image/png,image/webp,image/heic" onChange={(e) => handleKelFileChange('ktp', e)} className="w-full text-xs" />
+                  {kelUploading === 'ktp' && <p className="text-xs text-blue-500 mt-1">Mengunggah...</p>}
+                </div>
+                {needsKendaraan && (
+                  <div>
+                    <label className="block text-xs font-medium text-stone-600 mb-1.5">Foto STNK {kelFotoStnk && '✓'}</label>
+                    <input type="file" accept="image/jpeg,image/png,image/webp,image/heic" onChange={(e) => handleKelFileChange('stnk', e)} className="w-full text-xs" />
+                    {kelUploading === 'stnk' && <p className="text-xs text-blue-500 mt-1">Mengunggah...</p>}
+                  </div>
+                )}
+                <div>
+                  <label className="block text-xs font-medium text-stone-600 mb-1.5">Foto Customer dengan Barang (wajib) {kelFotoCustomerBarang && '✓'}</label>
+                  <input type="file" accept="image/jpeg,image/png,image/webp,image/heic" onChange={(e) => handleKelFileChange('customerBarang', e)} className="w-full text-xs" />
+                  {kelUploading === 'customerBarang' && <p className="text-xs text-blue-500 mt-1">Mengunggah...</p>}
+                </div>
+                <div>
+                  <label htmlFor="kel-pendukung-tambahan" className="block text-xs font-medium text-stone-600 mb-1.5">Foto Pendukung (KK/Nikah/BPKB, opsional)</label>
+                  <input id="kel-pendukung-tambahan" type="file" accept="image/jpeg,image/png,image/webp,image/heic" onChange={handleAddPendukungTambahan} className="w-full text-xs" />
+                  {kelUploading === 'pendukungTambahan' && <p className="text-xs text-blue-500 mt-1">Mengunggah...</p>}
+                  {kelFotoPendukungTambahan.length > 0 && (
+                    <ul className="mt-2 space-y-1">
+                      {kelFotoPendukungTambahan.map((url, i) => (
+                        <li key={url} className="flex items-center justify-between text-xs bg-stone-50 rounded px-2 py-1">
+                          <a href={url} target="_blank" rel="noopener noreferrer" className="text-amber-600 hover:underline truncate">Foto {i + 1}</a>
+                          <button type="button" onClick={() => handleRemovePendukungTambahan(i)} className="text-red-500 ml-2">Hapus</button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                <div>
+                  <label htmlFor="kel-no-rekening" className="block text-xs font-medium text-stone-600 mb-1.5">Nomor Rekening</label>
+                  <input id="kel-no-rekening" type="text" value={kelNoRekening} onChange={(e) => setKelNoRekening(e.target.value)} className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm" />
+                </div>
+                <div>
+                  <label htmlFor="kel-nama-bank" className="block text-xs font-medium text-stone-600 mb-1.5">Nama Bank</label>
+                  <input id="kel-nama-bank" type="text" value={kelNamaBank} onChange={(e) => setKelNamaBank(e.target.value)} className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm" />
+                </div>
+                {needsKendaraan && (
+                  <div>
+                    <label htmlFor="kel-nomor-polisi" className="block text-xs font-medium text-stone-600 mb-1.5">Nomor Polisi</label>
+                    <input id="kel-nomor-polisi" type="text" value={kelNomorPolisi} onChange={(e) => setKelNomorPolisi(e.target.value)} className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm" />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button onClick={() => handleSaveKelengkapan(false)} disabled={kelSaving} className="px-4 py-2 bg-stone-100 text-stone-700 rounded-lg text-sm font-medium hover:bg-stone-200 disabled:opacity-50 transition">
+                  {kelSaving ? 'Menyimpan...' : 'Simpan'}
+                </button>
+                <button onClick={() => handleSaveKelengkapan(true)} disabled={kelSaving} className="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50 transition">
+                  {kelSaving ? 'Menyimpan...' : 'Simpan & Ajukan Pencairan'}
+                </button>
+              </div>
+              {kelMessage && <p className="text-xs text-stone-500 mt-3">{kelMessage}</p>}
+            </div>
+          )}
+
+          {showTransferConfirm && (
+            <div className="bg-white rounded-xl border border-stone-100 p-6">
+              <h2 className="font-semibold text-stone-800 mb-1">Konfirmasi Transfer Pencairan</h2>
+              <p className="text-xs text-stone-500 mb-4">Dana pinjaman ditransfer ke rekening customer, lalu diverifikasi disini.</p>
+
+              {gadai.transferToken && gadai.status === 'MENUNGGU_TRANSFER' && (
+                <a
+                  href={financeWaLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg text-xs font-medium transition mb-4"
+                >
+                  Kirim Link ke Bagian Keuangan (WA)
+                </a>
+              )}
+
+              {gadai.status === 'MENUNGGU_VERIFIKASI_TRANSFER' && gadai.buktiTransferCair ? (
+                <div className="bg-stone-50 rounded-lg p-4 mb-4 text-sm space-y-1">
+                  <p>Nominal ditransfer: <span className="font-semibold">{formatRupiah(Number(gadai.nominalTransferCair))}</span></p>
+                  <a href={gadai.buktiTransferCair} target="_blank" rel="noopener noreferrer" className="text-amber-600 hover:underline">Lihat bukti transfer</a>
+                  <div className="pt-2">
+                    <button onClick={() => handleConfirmTransfer(false)} disabled={transferConfirming} className="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50 transition">
+                      {transferConfirming ? 'Memproses...' : 'Konfirmasi & Aktifkan Gadai'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-xs text-stone-500">Atau upload manual bukti transfer (jika tidak lewat link):</p>
+                  <input
+                    type="number"
+                    value={transferNominal}
+                    onChange={(e) => setTransferNominal(e.target.value)}
+                    placeholder="Nominal ditransfer (Rp)"
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm"
+                  />
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/heic"
+                    onChange={(e) => setTransferFile(e.target.files?.[0] || null)}
+                    className="w-full text-xs"
+                  />
+                  <button onClick={() => handleConfirmTransfer(true)} disabled={transferConfirming} className="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50 transition">
+                    {transferConfirming ? 'Memproses...' : 'Upload & Konfirmasi Manual'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Payment history */}
           <div className="bg-white rounded-xl border border-stone-100 p-6">
@@ -330,6 +690,67 @@ export default function AdminGadaiDetailPage() {
 
         {/* Status panel */}
         <div className="space-y-6">
+          {isDue && (
+            <div className="bg-white rounded-xl border border-stone-100 p-6">
+              <h2 className="font-semibold text-stone-800 mb-1">Ambil / Perpanjang</h2>
+              <p className="text-xs text-stone-500 mb-4">
+                Sisa tagihan {formatRupiah(sisaTagihan)} &bull; Bunga siklus ini {formatRupiah(sisaBunga)} lagi dari {formatRupiah(fee)}
+              </p>
+
+              {gadai.pendingAksi ? (
+                <div className="bg-amber-50 border border-amber-100 rounded-lg p-4 mb-4 text-sm space-y-2">
+                  <p className="font-medium text-amber-800">
+                    Permintaan customer: {gadai.pendingAksi === 'AMBIL' ? 'Ambil Barang' : 'Perpanjang'} sebesar {formatRupiah(Number(gadai.pendingAksiNominal))}
+                  </p>
+                  {gadai.pendingAksiBukti && (
+                    <a href={gadai.pendingAksiBukti} target="_blank" rel="noopener noreferrer" className="text-amber-700 hover:underline text-xs">Lihat bukti transfer</a>
+                  )}
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      onClick={() => handleAksi({})}
+                      disabled={aksiSaving}
+                      className="px-3 py-2 bg-amber-600 text-white rounded-lg text-xs font-medium hover:bg-amber-700 disabled:opacity-50 transition"
+                    >
+                      {aksiSaving ? 'Memproses...' : 'Konfirmasi'}
+                    </button>
+                    <button
+                      onClick={() => handleAksi({ reject: true })}
+                      disabled={aksiSaving}
+                      className="px-3 py-2 bg-stone-100 text-stone-700 rounded-lg text-xs font-medium hover:bg-stone-200 disabled:opacity-50 transition"
+                    >
+                      Tolak
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <select
+                    value={aksiType}
+                    onChange={(e) => setAksiType(e.target.value as 'AMBIL' | 'PERPANJANG')}
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm"
+                  >
+                    <option value="AMBIL">Ambil Barang (lunasi sisa tagihan)</option>
+                    <option value="PERPANJANG">Perpanjang (bayar bunga)</option>
+                  </select>
+                  <input
+                    type="number"
+                    value={aksiNominal}
+                    onChange={(e) => setAksiNominal(e.target.value)}
+                    placeholder="Nominal dibayar (Rp)"
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm"
+                  />
+                  <button
+                    onClick={() => handleAksi({ aksi: aksiType, nominal: aksiNominal })}
+                    disabled={aksiSaving || !aksiNominal}
+                    className="w-full px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50 transition"
+                  >
+                    {aksiSaving ? 'Memproses...' : 'Proses'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="bg-white rounded-xl border border-stone-100 p-6">
             <h2 className="font-semibold text-stone-800 mb-4">Ubah Status</h2>
             <select

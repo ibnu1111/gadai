@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { normalizePhoneNumber, getStatusLabel, getStatusColor } from '@/lib/helpers'
+import { normalizePhoneNumber, getStatusLabel, getStatusColor, isDueOrOverdue } from '@/lib/helpers'
 
 // GET /api/public/gadai/track - Track gadai by phone
 export async function GET(request: NextRequest) {
@@ -40,7 +40,11 @@ export async function GET(request: NextRequest) {
         tanggalKembali: true,
         status: true,
         totalPembayaran: true,
-        perpanjanganKe: true
+        perpanjanganKe: true,
+        bungaTerbayar: true,
+        pendingAksi: true,
+        pendingAksiNominal: true,
+        pendingAksiCreatedAt: true
       }
     })
 
@@ -58,7 +62,12 @@ export async function GET(request: NextRequest) {
       statusLabel: getStatusLabel(g.status),
       statusColor: getStatusColor(g.status),
       perpanjanganKe: g.perpanjanganKe,
-      totalPembayaran: parseFloat(g.totalPembayaran.toString())
+      totalPembayaran: parseFloat(g.totalPembayaran.toString()),
+      bungaTerbayar: parseFloat(g.bungaTerbayar.toString()),
+      isDue: isDueOrOverdue(g.status, g.tanggalKembali),
+      pendingAksi: g.pendingAksi,
+      pendingAksiNominal: g.pendingAksiNominal ? parseFloat(g.pendingAksiNominal.toString()) : null,
+      pendingAksiCreatedAt: g.pendingAksiCreatedAt
     }))
 
     return NextResponse.json({

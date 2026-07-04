@@ -17,6 +17,8 @@ interface CustomerRow {
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Menunggu',
+  MENUNGGU_TRANSFER: 'Menunggu Transfer',
+  MENUNGGU_VERIFIKASI_TRANSFER: 'Verifikasi Transfer',
   AKTIF: 'Aktif',
   LUNAS: 'Lunas',
   JATUH_TEMPO: 'Jatuh Tempo',
@@ -27,6 +29,8 @@ const STATUS_LABELS: Record<string, string> = {
 
 const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
   PENDING: { bg: 'bg-yellow-100', text: 'text-yellow-800' },
+  MENUNGGU_TRANSFER: { bg: 'bg-amber-100', text: 'text-amber-800' },
+  MENUNGGU_VERIFIKASI_TRANSFER: { bg: 'bg-amber-100', text: 'text-amber-800' },
   AKTIF: { bg: 'bg-green-100', text: 'text-green-800' },
   LUNAS: { bg: 'bg-blue-100', text: 'text-blue-800' },
   JATUH_TEMPO: { bg: 'bg-orange-100', text: 'text-orange-800' },

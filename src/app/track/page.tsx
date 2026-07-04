@@ -5,12 +5,132 @@ import Link from 'next/link'
 
 const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
   PENDING: { bg: 'bg-yellow-100', text: 'text-yellow-800' },
+  MENUNGGU_TRANSFER: { bg: 'bg-amber-100', text: 'text-amber-800' },
+  MENUNGGU_VERIFIKASI_TRANSFER: { bg: 'bg-amber-100', text: 'text-amber-800' },
   AKTIF: { bg: 'bg-green-100', text: 'text-green-800' },
   LUNAS: { bg: 'bg-blue-100', text: 'text-blue-800' },
   JATUH_TEMPO: { bg: 'bg-orange-100', text: 'text-orange-800' },
   OVERDUE: { bg: 'bg-red-100', text: 'text-red-800' },
   DITOLAK: { bg: 'bg-stone-100', text: 'text-stone-600' },
   DIPERPANJANG: { bg: 'bg-purple-100', text: 'text-purple-800' }
+}
+
+function formatRupiahValue(num: number): string {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0
+  }).format(num)
+}
+
+function PengajuanActionForm({ item, phone, onDone }: { item: any; phone: string; onDone: () => void }) {
+  const [open, setOpen] = useState(false)
+  const [aksi, setAksi] = useState<'AMBIL' | 'PERPANJANG'>('AMBIL')
+  const [nominal, setNominal] = useState('')
+  const [file, setFile] = useState<File | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [message, setMessage] = useState('')
+
+  if (item.pendingAksi) {
+    return (
+      <div className="mt-3 pt-3 border-t border-gray-100 text-xs bg-amber-50 rounded-lg p-3 text-amber-800">
+        Permintaan {item.pendingAksi === 'AMBIL' ? 'Ambil Barang' : 'Perpanjang'} sebesar {formatRupiahValue(item.pendingAksiNominal)} sedang menunggu konfirmasi admin.
+      </div>
+    )
+  }
+
+  if (!item.isDue) return null
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setMessage('')
+    if (!nominal || !file) {
+      setMessage('Nominal dan bukti transfer wajib diisi')
+      return
+    }
+    setSubmitting(true)
+    try {
+      const body = new FormData()
+      body.append('file', file)
+      const uploadRes = await fetch('/api/upload', { method: 'POST', body })
+      const uploadData = await uploadRes.json()
+      if (!uploadRes.ok || !uploadData.success) {
+        throw new Error(uploadData.message || 'Gagal mengunggah bukti transfer')
+      }
+
+      const res = await fetch('/api/public/track/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, gadaiId: item.gadaiId, aksi, nominal, bukti: uploadData.url })
+      })
+      const data = await res.json()
+      if (!data.success) {
+        throw new Error(data.message || 'Gagal mengirim permintaan')
+      }
+      setOpen(false)
+      onDone()
+    } catch (err: any) {
+      setMessage(err.message || 'Terjadi kesalahan')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  if (!open) {
+    return (
+      <div className="mt-3 pt-3 border-t border-gray-100">
+        <button
+          onClick={() => setOpen(true)}
+          className="w-full bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium py-2 rounded-lg transition"
+        >
+          Sudah jatuh tempo &mdash; Ambil / Perpanjang
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="mt-3 pt-3 border-t border-gray-100 space-y-2">
+      <select
+        value={aksi}
+        onChange={(e) => setAksi(e.target.value as 'AMBIL' | 'PERPANJANG')}
+        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
+      >
+        <option value="AMBIL">Ambil Barang (lunasi sisa tagihan)</option>
+        <option value="PERPANJANG">Perpanjang (bayar bunga)</option>
+      </select>
+      <input
+        type="number"
+        value={nominal}
+        onChange={(e) => setNominal(e.target.value)}
+        placeholder="Nominal ditransfer (Rp)"
+        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
+      />
+      <input
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/heic"
+        onChange={(e) => setFile(e.target.files?.[0] || null)}
+        className="w-full text-xs"
+      />
+      {message && <p className="text-xs text-red-500">{message}</p>}
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          disabled={submitting}
+          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 rounded-lg transition disabled:opacity-50"
+        >
+          {submitting ? 'Mengirim...' : 'Kirim Bukti Transfer'}
+        </button>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="px-3 py-2 bg-gray-100 text-gray-600 text-sm rounded-lg"
+        >
+          Batal
+        </button>
+      </div>
+    </form>
+  )
 }
 
 export default function TrackPage() {
@@ -214,6 +334,8 @@ export default function TrackPage() {
                               </div>
                             </div>
                           )}
+
+                          <PengajuanActionForm item={item} phone={phone} onDone={() => handleSearch(phone)} />
                         </div>
                       )
                     })}

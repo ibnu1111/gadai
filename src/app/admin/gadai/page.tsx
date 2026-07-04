@@ -5,12 +5,17 @@ import Link from 'next/link'
 
 interface Gadai {
   gadaiID: number
-  customer: { nama: string; noHp: string }
+  customer: { nama: string; noHp: string; fotoKtp: string | null }
   namaBarang: string
   nominalPinjam: string
   status: string
   tanggalPinjam: string
   kategoriBarang: string
+  fotoPendukung: string | null
+  fotoCustomerBarang: string | null
+  noRekening: string | null
+  namaBank: string | null
+  nomorPolisi: string | null
 }
 
 interface Summary {
@@ -25,6 +30,8 @@ interface Summary {
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Menunggu',
+  MENUNGGU_TRANSFER: 'Menunggu Transfer',
+  MENUNGGU_VERIFIKASI_TRANSFER: 'Verifikasi Transfer',
   AKTIF: 'Aktif',
   LUNAS: 'Lunas',
   JATUH_TEMPO: 'Jatuh Tempo',
@@ -35,12 +42,28 @@ const STATUS_LABELS: Record<string, string> = {
 
 const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
   PENDING: { bg: 'bg-yellow-100', text: 'text-yellow-800' },
+  MENUNGGU_TRANSFER: { bg: 'bg-amber-100', text: 'text-amber-800' },
+  MENUNGGU_VERIFIKASI_TRANSFER: { bg: 'bg-amber-100', text: 'text-amber-800' },
   AKTIF: { bg: 'bg-green-100', text: 'text-green-800' },
   LUNAS: { bg: 'bg-blue-100', text: 'text-blue-800' },
   JATUH_TEMPO: { bg: 'bg-orange-100', text: 'text-orange-800' },
   OVERDUE: { bg: 'bg-red-100', text: 'text-red-800' },
   DITOLAK: { bg: 'bg-stone-100', text: 'text-stone-600' },
   DIPERPANJANG: { bg: 'bg-purple-100', text: 'text-purple-800' }
+}
+
+function getMissingDocs(gadai: Gadai): string[] {
+  const missing: string[] = []
+  const isKendaraan = gadai.kategoriBarang === 'Motor' || gadai.kategoriBarang === 'Mobil'
+  if (!gadai.customer.fotoKtp) missing.push('KTP')
+  if (isKendaraan && !gadai.fotoPendukung) missing.push('STNK')
+  if (['PENDING', 'MENUNGGU_TRANSFER'].includes(gadai.status)) {
+    if (!gadai.fotoCustomerBarang) missing.push('Foto Customer+Barang')
+    if (!gadai.noRekening) missing.push('No. Rekening')
+    if (!gadai.namaBank) missing.push('Nama Bank')
+    if (isKendaraan && !gadai.nomorPolisi) missing.push('Nopol')
+  }
+  return missing
 }
 
 export default function AdminGadaiPage() {
@@ -196,13 +219,14 @@ export default function AdminGadaiPage() {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wide">Nominal</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wide hidden md:table-cell">Tanggal</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wide hidden lg:table-cell">Kelengkapan</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wide">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-stone-400">
+                  <td colSpan={8} className="px-4 py-8 text-center text-stone-400">
                     <div className="flex items-center justify-center gap-2">
                       <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -214,7 +238,7 @@ export default function AdminGadaiPage() {
                 </tr>
               ) : gadais.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-stone-400">
+                  <td colSpan={8} className="px-4 py-12 text-center text-stone-400">
                     <svg className="w-12 h-12 mx-auto mb-3 text-stone-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                     </svg>
@@ -224,6 +248,7 @@ export default function AdminGadaiPage() {
               ) : (
                 gadais.map((gadai) => {
                   const statusStyle = STATUS_STYLES[gadai.status] || STATUS_STYLES.PENDING
+                  const missingDocs = getMissingDocs(gadai)
                   return (
                     <tr key={gadai.gadaiID} className="hover:bg-stone-50 transition">
                       <td className="px-4 py-3 text-sm font-medium text-stone-600">#{gadai.gadaiID}</td>
@@ -241,6 +266,15 @@ export default function AdminGadaiPage() {
                         <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${statusStyle.bg} ${statusStyle.text}`}>
                           {STATUS_LABELS[gadai.status] || gadai.status}
                         </span>
+                      </td>
+                      <td className="px-4 py-3 hidden lg:table-cell">
+                        {missingDocs.length === 0 ? (
+                          <span className="inline-flex px-2.5 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">Lengkap</span>
+                        ) : (
+                          <span title={missingDocs.join(', ')} className="inline-flex px-2.5 py-1 text-xs font-medium rounded-full bg-red-100 text-red-700">
+                            Kurang {missingDocs.length}
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <Link

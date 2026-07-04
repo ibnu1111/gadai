@@ -45,6 +45,28 @@ model Gadai {
   updatedAt       DateTime  @updatedAt
   createdBy       String?
   payments        Payment[]
+
+  // Kelengkapan data yang diisi admin saat customer datang membawa barang jaminan
+  fotoCustomerBarang    String?
+  fotoPendukungTambahan String[] @default([])
+  noRekening            String?
+  namaBank              String?
+  nomorPolisi           String?
+
+  // Pencairan dana (transfer dari toko/keuangan ke customer)
+  transferToken         String?   @unique
+  buktiTransferCair     String?
+  nominalTransferCair   Decimal?  @db.Decimal(18, 2)
+  tanggalCair           DateTime?
+
+  // Bunga yang sudah dibayar pada siklus berjalan (untuk perpanjangan bertahap)
+  bungaTerbayar         Decimal   @default(0) @db.Decimal(18, 2)
+
+  // Aksi customer (ambil/perpanjang) yang menunggu konfirmasi admin
+  pendingAksi           String?
+  pendingAksiNominal    Decimal?  @db.Decimal(18, 2)
+  pendingAksiBukti      String?
+  pendingAksiCreatedAt  DateTime?
 }
 
 model Payment {

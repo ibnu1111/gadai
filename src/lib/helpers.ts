@@ -65,10 +65,24 @@ export function calculateTanggalKembali(tanggalPinjam: Date, jangkaWaktu: string
 }
 
 /**
+ * Add one tenor (2 minggu if bunga 10%, 1 bulan otherwise) to a date. Used to
+ * compute the next due date on disbursement confirmation / extension.
+ */
+export function addTenor(date: Date, bungaPersentase: number): Date {
+  const result = new Date(date)
+  if (bungaPersentase <= 10) {
+    result.setDate(result.getDate() + 14)
+  } else {
+    result.setMonth(result.getMonth() + 1)
+  }
+  return result
+}
+
+/**
  * Update status based on due date
  */
 export function updateStatusBasedOnDueDate(currentStatus: string, tanggalKembali: Date): string {
-  if (currentStatus !== 'AKTIF') return currentStatus
+  if (currentStatus !== 'AKTIF' && currentStatus !== 'JATUH_TEMPO') return currentStatus
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -81,11 +95,27 @@ export function updateStatusBasedOnDueDate(currentStatus: string, tanggalKembali
 }
 
 /**
+ * Whether a gadai has reached (or passed) its due date and should show the
+ * "Ambil" / "Perpanjang" actions, regardless of whether the persisted status
+ * has already been synced to JATUH_TEMPO/OVERDUE.
+ */
+export function isDueOrOverdue(status: string, tanggalKembali: Date | string): boolean {
+  if (!['AKTIF', 'JATUH_TEMPO', 'OVERDUE'].includes(status)) return false
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const dueDate = new Date(tanggalKembali)
+  dueDate.setHours(0, 0, 0, 0)
+  return today >= dueDate
+}
+
+/**
  * Get status label for display
  */
 export function getStatusLabel(status: string): string {
   const labels: Record<string, string> = {
     'PENDING': 'Menunggu',
+    'MENUNGGU_TRANSFER': 'Menunggu Transfer',
+    'MENUNGGU_VERIFIKASI_TRANSFER': 'Menunggu Verifikasi Transfer',
     'AKTIF': 'Aktif',
     'LUNAS': 'Lunas',
     'JATUH_TEMPO': 'Jatuh Tempo',
@@ -102,6 +132,8 @@ export function getStatusLabel(status: string): string {
 export function getStatusColor(status: string): string {
   const colors: Record<string, string> = {
     'PENDING': 'warning',
+    'MENUNGGU_TRANSFER': 'warning',
+    'MENUNGGU_VERIFIKASI_TRANSFER': 'warning',
     'AKTIF': 'success',
     'LUNAS': 'info',
     'JATUH_TEMPO': 'warning',
@@ -122,3 +154,42 @@ export function formatRupiah(number: number): string {
     minimumFractionDigits: 0
   }).format(number)
 }
+
+/** Whether a kategori barang requires a nomor polisi / STNK (Motor or Mobil) */
+export function isKendaraan(kategoriBarang: string): boolean {
+  return kategoriBarang === 'Motor' || kategoriBarang === 'Mobil'
+}
+
+/**
+ * Documents the customer is supposed to provide at/after initial submission
+ * (KTP always, STNK only for vehicles). Used to show the "kelengkapan"
+ * indicator to admin.
+ */
+export function getMissingInitialDocs(gadai: { kategoriBarang: string; fotoPendukung?: string | null }, customer: { fotoKtp?: string | null }): string[] {
+  const missing: string[] = []
+  if (!customer.fotoKtp) missing.push('Foto KTP')
+  if (isKendaraan(gadai.kategoriBarang) && !gadai.fotoPendukung) missing.push('Foto STNK')
+  return missing
+}
+
+/**
+ * Fields the admin must fill in once the customer brings the item to the
+ * office, before the loan can be submitted for fund disbursement.
+ */
+export function getMissingAdminCompletion(gadai: {
+  kategoriBarang: string
+  fotoCustomerBarang?: string | null
+  noRekening?: string | null
+  namaBank?: string | null
+  nomorPolisi?: string | null
+}): string[] {
+  const missing: string[] = []
+  if (!gadai.fotoCustomerBarang) missing.push('Foto Customer dengan Barang')
+  if (!gadai.noRekening) missing.push('Nomor Rekening')
+  if (!gadai.namaBank) missing.push('Nama Bank')
+  if (isKendaraan(gadai.kategoriBarang) && !gadai.nomorPolisi) missing.push('Nomor Polisi')
+  return missing
+}
+
+/** Nomor WA bagian keuangan yang menerima link upload bukti transfer pencairan */
+export const FINANCE_WA_NUMBER = '62819676216'

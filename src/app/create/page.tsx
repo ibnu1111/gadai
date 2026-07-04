@@ -111,11 +111,6 @@ function CreateForm() {
     e.preventDefault()
     setError('')
 
-    if (needsStnk && !formData.fotoStnk) {
-      setError('Foto STNK wajib diunggah untuk kategori Motor/Mobil')
-      return
-    }
-
     setLoading(true)
     setResult(null)
 
@@ -374,14 +369,14 @@ function CreateForm() {
 
             {needsStnk && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Foto STNK</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Foto STNK <span className="text-gray-400 font-normal">(opsional)</span></label>
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp,image/heic"
                   onChange={handleStnkChange}
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-blue-100 file:text-blue-700 file:text-sm file:font-medium"
-                  required={!formData.fotoStnk}
                 />
+                <p className="text-xs text-gray-500 mt-1.5">Jika belum ada, STNK bisa difotokan admin saat mengantar barang jaminan.</p>
                 {uploadingStnk && <p className="text-xs text-blue-500 mt-1.5">Mengunggah foto STNK...</p>}
                 {formData.fotoStnk && !uploadingStnk && (
                   <p className="text-xs text-green-600 mt-1.5">✓ Foto STNK berhasil diunggah</p>
