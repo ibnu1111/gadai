@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { handleUnauthorized } from '@/lib/adminSession'
 
 interface CustomerRow {
   id: number
@@ -69,6 +70,7 @@ export default function AdminCustomerPage() {
       const res = await fetch(`/api/customer?${params}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
+      if (handleUnauthorized(res.status, '/admin/customer')) return
       const data = await res.json()
 
       if (data.success) {

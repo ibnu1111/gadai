@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { handleUnauthorized } from '@/lib/adminSession'
 
 interface Gadai {
   gadaiID: number
@@ -123,6 +124,8 @@ export default function AdminGadaiPage() {
           headers: { Authorization: `Bearer ${token}` }
         })
       ])
+
+      if (handleUnauthorized(gadaiRes.status, '/admin/gadai')) return
 
       const gadaiData = await gadaiRes.json()
       const summaryData = await summaryRes.json()

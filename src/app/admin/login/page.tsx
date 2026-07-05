@@ -25,7 +25,8 @@ export default function AdminLogin() {
       if (data.success) {
         localStorage.setItem('adminToken', data.data.token)
         localStorage.setItem('adminData', JSON.stringify(data.data.admin))
-        router.push('/admin/dashboard')
+        const redirect = new URLSearchParams(window.location.search).get('redirect')
+        router.push(redirect || '/admin/dashboard')
       } else {
         alert(data.message || 'Login gagal')
       }

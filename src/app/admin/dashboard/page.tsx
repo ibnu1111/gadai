@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { handleUnauthorized } from '@/lib/adminSession'
 
 interface Summary {
   totalGadai: number
@@ -88,6 +89,8 @@ export default function AdminDashboardPage() {
           fetch('/api/gadai?limit=5', { headers }),
           fetch('/api/customer?limit=5', { headers })
         ])
+
+        if (handleUnauthorized(summaryRes.status, '/admin/dashboard')) return
 
         const summaryData = await summaryRes.json()
         const gadaiData = await gadaiRes.json()

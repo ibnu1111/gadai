@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import { handleUnauthorized } from '@/lib/adminSession'
 
 interface Payment {
   id: number
@@ -168,6 +169,7 @@ export default function AdminGadaiDetailPage() {
       const res = await fetch(`/api/gadai/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
+      if (handleUnauthorized(res.status, `/admin/gadai/${id}`)) return
       const data = await res.json()
       if (data.success) {
         setGadai(data.data)
