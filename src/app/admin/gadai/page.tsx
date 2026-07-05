@@ -53,46 +53,95 @@ const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
   DIPERPANJANG: { bg: 'bg-purple-100', text: 'text-purple-800' }
 }
 
-function getMissingDocs(gadai: Gadai): string[] {
-  const missing: string[] = []
-  const isKendaraan = gadai.kategoriBarang === 'Motor' || gadai.kategoriBarang === 'Mobil'
-  if (!gadai.customer.fotoKtp) missing.push('Foto KTP')
-  if (isKendaraan && !gadai.fotoPendukung) missing.push('Foto STNK')
-  if (['PENDING', 'MENUNGGU_TRANSFER'].includes(gadai.status)) {
-    if (!gadai.fotoCustomerBarang) missing.push('Foto Customer + Barang')
-    if (!gadai.noRekening) missing.push('Nomor Rekening')
-    if (!gadai.namaBank) missing.push('Nama Bank')
-    if (isKendaraan && !gadai.nomorPolisi) missing.push('Nomor Polisi')
-  }
-  return missing
+type DocKey = 'ktp' | 'stnk' | 'fotoBarang' | 'rekening' | 'bank' | 'polisi'
+
+interface DocItem {
+  key: DocKey
+  label: string
+  complete: boolean
 }
 
-function CompletenessIcon({ missing }: { missing: string[] }) {
-  if (missing.length === 0) {
-    return (
-      <span
-        title="Data lengkap"
-        className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-600 transition-transform hover:scale-110 cursor-help"
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
-      </span>
-    )
-  }
+function getDocItems(gadai: Gadai): DocItem[] {
+  const isKendaraan = gadai.kategoriBarang === 'Motor' || gadai.kategoriBarang === 'Mobil'
+  const showAdminCompletion = ['PENDING', 'MENUNGGU_TRANSFER'].includes(gadai.status)
 
+  const items: DocItem[] = [
+    { key: 'ktp', label: 'Foto KTP', complete: Boolean(gadai.customer.fotoKtp) }
+  ]
+  if (isKendaraan) {
+    items.push({ key: 'stnk', label: 'Foto STNK', complete: Boolean(gadai.fotoPendukung) })
+  }
+  if (showAdminCompletion) {
+    items.push({ key: 'fotoBarang', label: 'Foto Customer + Barang', complete: Boolean(gadai.fotoCustomerBarang) })
+    items.push({ key: 'rekening', label: 'Nomor Rekening', complete: Boolean(gadai.noRekening) })
+    items.push({ key: 'bank', label: 'Nama Bank', complete: Boolean(gadai.namaBank) })
+    if (isKendaraan) {
+      items.push({ key: 'polisi', label: 'Nomor Polisi', complete: Boolean(gadai.nomorPolisi) })
+    }
+  }
+  return items
+}
+
+const DOC_ICON_PATHS: Record<DocKey, React.ReactNode> = {
+  ktp: (
+    <>
+      <rect x="3" y="6" width="18" height="12" rx="2" />
+      <circle cx="8" cy="12" r="1.75" />
+      <path d="M13 10h5M13 14h5" />
+    </>
+  ),
+  stnk: (
+    <>
+      <path d="M6 3h8l4 4v14H6z" />
+      <path d="M14 3v4h4" />
+      <path d="M9 12h6M9 16h6" />
+    </>
+  ),
+  fotoBarang: (
+    <>
+      <path d="M4 8h3l2-2h6l2 2h3v11H4z" />
+      <circle cx="12" cy="13" r="3" />
+    </>
+  ),
+  rekening: (
+    <>
+      <rect x="3" y="6" width="18" height="12" rx="2" />
+      <path d="M3 10h18" />
+    </>
+  ),
+  bank: (
+    <>
+      <path d="M4 10l8-6 8 6" />
+      <path d="M4 10h16v9H4z" />
+      <path d="M9 10v9M15 10v9" />
+    </>
+  ),
+  polisi: (
+    <>
+      <rect x="3" y="8" width="18" height="8" rx="1" />
+      <path d="M7 12h10" />
+    </>
+  )
+}
+
+function CompletenessIcons({ gadai }: { gadai: Gadai }) {
+  const items = getDocItems(gadai)
   return (
-    <span
-      title={`Data kurang:\n${missing.join('\n')}`}
-      className="relative inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-100 text-red-600 transition-transform hover:scale-110 cursor-help"
-    >
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m0 3.75h.007M4.93 4.93l14.14 14.14M12 3.75l8.485 14.7a1 1 0 01-.866 1.5H4.38a1 1 0 01-.866-1.5L12 3.75z" />
-      </svg>
-      <span className="absolute -top-1.5 -right-1.5 w-4 h-4 flex items-center justify-center rounded-full bg-red-600 text-white text-[10px] font-bold leading-none">
-        {missing.length}
-      </span>
-    </span>
+    <div className="flex items-center gap-1 flex-wrap max-w-[168px]">
+      {items.map((item) => (
+        <span
+          key={item.key}
+          title={`${item.label}: ${item.complete ? 'Lengkap' : 'Belum lengkap'}`}
+          className={`inline-flex items-center justify-center w-6 h-6 rounded-full transition-transform hover:scale-110 cursor-help ${
+            item.complete ? 'bg-green-100 text-green-600' : 'bg-stone-100 text-stone-400'
+          }`}
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+            {DOC_ICON_PATHS[item.key]}
+          </svg>
+        </span>
+      ))}
+    </div>
   )
 }
 
@@ -280,7 +329,6 @@ export default function AdminGadaiPage() {
               ) : (
                 gadais.map((gadai) => {
                   const statusStyle = STATUS_STYLES[gadai.status] || STATUS_STYLES.PENDING
-                  const missingDocs = getMissingDocs(gadai)
                   return (
                     <tr key={gadai.gadaiID} className="hover:bg-stone-50 transition">
                       <td className="px-4 py-3 text-sm font-medium text-stone-600">#{gadai.gadaiID}</td>
@@ -300,7 +348,7 @@ export default function AdminGadaiPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 hidden lg:table-cell">
-                        <CompletenessIcon missing={missingDocs} />
+                        <CompletenessIcons gadai={gadai} />
                       </td>
                       <td className="px-4 py-3">
                         <Link
