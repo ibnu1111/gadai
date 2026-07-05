@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getAdminFromRequest } from '@/lib/auth'
 
-const VALID_STATUS = ['PENDING', 'MENUNGGU_TRANSFER', 'MENUNGGU_VERIFIKASI_TRANSFER', 'AKTIF', 'LUNAS', 'JATUH_TEMPO', 'OVERDUE', 'DITOLAK', 'DIPERPANJANG']
+const VALID_STATUS = ['PENDING', 'MENUNGGU_REKENING', 'MENUNGGU_TRANSFER', 'MENUNGGU_VERIFIKASI_TRANSFER', 'AKTIF', 'LUNAS', 'JATUH_TEMPO', 'OVERDUE', 'DITOLAK', 'DIPERPANJANG']
 
 // GET /api/gadai/summary - Get summary statistics
 export async function GET(request: NextRequest) {

@@ -34,6 +34,7 @@ interface CustomerRow {
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Menunggu',
+  MENUNGGU_REKENING: 'Menunggu Rekening',
   MENUNGGU_TRANSFER: 'Menunggu Transfer',
   MENUNGGU_VERIFIKASI_TRANSFER: 'Verifikasi Transfer',
   AKTIF: 'Aktif',
@@ -46,6 +47,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; bar: string }> = {
   PENDING: { bg: 'bg-yellow-100', text: 'text-yellow-800', bar: 'bg-yellow-400' },
+  MENUNGGU_REKENING: { bg: 'bg-amber-100', text: 'text-amber-800', bar: 'bg-amber-400' },
   MENUNGGU_TRANSFER: { bg: 'bg-amber-100', text: 'text-amber-800', bar: 'bg-amber-400' },
   MENUNGGU_VERIFIKASI_TRANSFER: { bg: 'bg-amber-100', text: 'text-amber-800', bar: 'bg-amber-400' },
   AKTIF: { bg: 'bg-green-100', text: 'text-green-800', bar: 'bg-green-500' },

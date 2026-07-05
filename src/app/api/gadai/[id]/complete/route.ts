@@ -5,8 +5,9 @@ import { getAdminFromRequest } from '@/lib/auth'
 import { getMissingAdminCompletion, getMissingInitialDocs } from '@/lib/helpers'
 
 // PUT /api/gadai/[id]/complete - Admin fills in the on-site "kelengkapan" data
-// (foto customer+barang, foto pendukung tambahan, no rekening, nopol) and,
-// once everything is filled, submits the gadai for fund disbursement.
+// (foto customer+barang, foto pendukung tambahan, nopol) and, once everything
+// is filled, submits the gadai so the customer can self-fill their bank
+// account details via the /rekening/[token] public link.
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -22,7 +23,7 @@ export async function PUT(
     const body = await request.json()
     const {
       fotoKtp, fotoStnk, fotoCustomerBarang, fotoPendukungTambahan,
-      noRekening, namaBank, nomorPolisi, submit
+      nomorPolisi, submit
     } = body
 
     const existing = await prisma.gadai.findUnique({
@@ -49,8 +50,6 @@ export async function PUT(
     if (fotoStnk !== undefined) gadaiUpdate.fotoPendukung = fotoStnk || existing.fotoPendukung
     if (fotoCustomerBarang !== undefined) gadaiUpdate.fotoCustomerBarang = fotoCustomerBarang
     if (Array.isArray(fotoPendukungTambahan)) gadaiUpdate.fotoPendukungTambahan = fotoPendukungTambahan
-    if (noRekening !== undefined) gadaiUpdate.noRekening = noRekening
-    if (namaBank !== undefined) gadaiUpdate.namaBank = namaBank
     if (nomorPolisi !== undefined) gadaiUpdate.nomorPolisi = nomorPolisi
 
     let gadai = existing
@@ -78,10 +77,10 @@ export async function PUT(
       }, { status: 400 })
     }
 
-    const transferToken = randomBytes(24).toString('hex')
+    const rekeningToken = randomBytes(24).toString('hex')
     gadai = await prisma.gadai.update({
       where: { gadaiID },
-      data: { status: 'MENUNGGU_TRANSFER', transferToken },
+      data: { status: 'MENUNGGU_REKENING', rekeningToken },
       include: { customer: true }
     })
 
@@ -89,9 +88,9 @@ export async function PUT(
 
     return NextResponse.json({
       success: true,
-      message: 'Data lengkap, gadai siap untuk pencairan dana',
+      message: 'Data lengkap, menunggu customer mengisi rekening tujuan',
       data: gadai,
-      transferUploadLink: `${origin}/transfer/${transferToken}`
+      rekeningLink: `${origin}/rekening/${rekeningToken}`
     })
   } catch (error) {
     console.error('Error completing gadai:', error)

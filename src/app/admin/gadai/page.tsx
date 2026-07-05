@@ -31,6 +31,7 @@ interface Summary {
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Menunggu',
+  MENUNGGU_REKENING: 'Menunggu Rekening',
   MENUNGGU_TRANSFER: 'Menunggu Transfer',
   MENUNGGU_VERIFIKASI_TRANSFER: 'Verifikasi Transfer',
   AKTIF: 'Aktif',
@@ -43,6 +44,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
   PENDING: { bg: 'bg-yellow-100', text: 'text-yellow-800' },
+  MENUNGGU_REKENING: { bg: 'bg-amber-100', text: 'text-amber-800' },
   MENUNGGU_TRANSFER: { bg: 'bg-amber-100', text: 'text-amber-800' },
   MENUNGGU_VERIFIKASI_TRANSFER: { bg: 'bg-amber-100', text: 'text-amber-800' },
   AKTIF: { bg: 'bg-green-100', text: 'text-green-800' },
@@ -63,7 +65,7 @@ interface DocItem {
 
 function getDocItems(gadai: Gadai): DocItem[] {
   const isKendaraan = gadai.kategoriBarang === 'Motor' || gadai.kategoriBarang === 'Mobil'
-  const showAdminCompletion = ['PENDING', 'MENUNGGU_TRANSFER'].includes(gadai.status)
+  const showAdminCompletion = ['PENDING', 'MENUNGGU_REKENING', 'MENUNGGU_TRANSFER'].includes(gadai.status)
 
   const items: DocItem[] = [
     { key: 'ktp', label: 'Foto KTP', complete: Boolean(gadai.customer.fotoKtp) }
@@ -278,6 +280,9 @@ export default function AdminGadaiPage() {
           >
             <option value="">Semua Status</option>
             <option value="PENDING">Menunggu</option>
+            <option value="MENUNGGU_REKENING">Menunggu Rekening</option>
+            <option value="MENUNGGU_TRANSFER">Menunggu Transfer</option>
+            <option value="MENUNGGU_VERIFIKASI_TRANSFER">Verifikasi Transfer</option>
             <option value="AKTIF">Aktif</option>
             <option value="JATUH_TEMPO">Jatuh Tempo</option>
             <option value="OVERDUE">Overdue</option>

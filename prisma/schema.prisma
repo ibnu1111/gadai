@@ -54,6 +54,7 @@ model Gadai {
   nomorPolisi           String?
 
   // Pencairan dana (transfer dari toko/keuangan ke customer)
+  rekeningToken         String?   @unique
   transferToken         String?   @unique
   buktiTransferCair     String?
   nominalTransferCair   Decimal?  @db.Decimal(18, 2)

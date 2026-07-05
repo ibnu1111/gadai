@@ -149,8 +149,8 @@ function CreateForm() {
           `\n🔗 Lacak pengajuan: ${trackLink}`
         )
 
-        // Redirect to WhatsApp
-        const waNumber = '62819676216' // +62 819-676-216
+        // Redirect to WhatsApp (shop owner's number - notifies about the new pengajuan)
+        const waNumber = '6282299748978' // 0822-9974-8978
         window.location.href = `https://wa.me/${waNumber}?text=${waMessage}`
       } else {
         setError(data.message || 'Terjadi kesalahan')

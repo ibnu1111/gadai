@@ -114,6 +114,7 @@ export function isDueOrOverdue(status: string, tanggalKembali: Date | string): b
 export function getStatusLabel(status: string): string {
   const labels: Record<string, string> = {
     'PENDING': 'Menunggu',
+    'MENUNGGU_REKENING': 'Menunggu Rekening',
     'MENUNGGU_TRANSFER': 'Menunggu Transfer',
     'MENUNGGU_VERIFIKASI_TRANSFER': 'Menunggu Verifikasi Transfer',
     'AKTIF': 'Aktif',
@@ -132,6 +133,7 @@ export function getStatusLabel(status: string): string {
 export function getStatusColor(status: string): string {
   const colors: Record<string, string> = {
     'PENDING': 'warning',
+    'MENUNGGU_REKENING': 'warning',
     'MENUNGGU_TRANSFER': 'warning',
     'MENUNGGU_VERIFIKASI_TRANSFER': 'warning',
     'AKTIF': 'success',
@@ -174,20 +176,32 @@ export function getMissingInitialDocs(gadai: { kategoriBarang: string; fotoPendu
 
 /**
  * Fields the admin must fill in once the customer brings the item to the
- * office, before the loan can be submitted for fund disbursement.
+ * office, before the loan can be submitted for the customer to fill in their
+ * bank account details (noRekening/namaBank are no longer admin's job - see
+ * getMissingCustomerRekening below).
  */
 export function getMissingAdminCompletion(gadai: {
   kategoriBarang: string
   fotoCustomerBarang?: string | null
-  noRekening?: string | null
-  namaBank?: string | null
   nomorPolisi?: string | null
 }): string[] {
   const missing: string[] = []
   if (!gadai.fotoCustomerBarang) missing.push('Foto Customer dengan Barang')
+  if (isKendaraan(gadai.kategoriBarang) && !gadai.nomorPolisi) missing.push('Nomor Polisi')
+  return missing
+}
+
+/**
+ * Bank account fields the customer must self-submit (via the /rekening/[token]
+ * public link) before the loan can move on to MENUNGGU_TRANSFER.
+ */
+export function getMissingCustomerRekening(gadai: {
+  noRekening?: string | null
+  namaBank?: string | null
+}): string[] {
+  const missing: string[] = []
   if (!gadai.noRekening) missing.push('Nomor Rekening')
   if (!gadai.namaBank) missing.push('Nama Bank')
-  if (isKendaraan(gadai.kategoriBarang) && !gadai.nomorPolisi) missing.push('Nomor Polisi')
   return missing
 }
 
