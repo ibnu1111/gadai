@@ -2,6 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+
+function isAdminLoggedIn(): boolean {
+  return Boolean(localStorage.getItem('adminToken') && localStorage.getItem('adminData'))
+}
 
 const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
   PENDING: { bg: 'bg-yellow-100', text: 'text-yellow-800' },
@@ -134,6 +139,7 @@ function PengajuanActionForm({ item, phone, onDone }: { item: any; phone: string
 }
 
 export default function TrackPage() {
+  const router = useRouter()
   const [phone, setPhone] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -161,6 +167,13 @@ export default function TrackPage() {
       const data = await res.json()
 
       if (data.success) {
+        // Admin already logged in on this browser -> skip the public view and go
+        // straight to the pengajuan detail page in the admin panel (most recent
+        // pengajuan for that phone number).
+        if (isAdminLoggedIn() && data.pengajuan?.length > 0) {
+          router.replace(`/admin/gadai/${data.pengajuan[0].gadaiId}`)
+          return
+        }
         setResult(data)
       } else {
         setError(data.message || 'Terjadi kesalahan')
