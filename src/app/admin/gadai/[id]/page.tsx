@@ -107,6 +107,89 @@ function formatDate(date: string) {
   })
 }
 
+function KelStatusBadge({ complete }: { complete: boolean }) {
+  return (
+    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${complete ? 'bg-green-100 text-green-700' : 'bg-stone-200 text-stone-500'}`}>
+      {complete ? (
+        <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      ) : null}
+      {complete ? 'Lengkap' : 'Belum'}
+    </span>
+  )
+}
+
+function KelPhotoField({
+  label,
+  value,
+  uploading,
+  onChange
+}: {
+  label: string
+  value: string
+  uploading: boolean
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+}) {
+  const complete = Boolean(value)
+  return (
+    <div className={`rounded-lg border p-3 transition ${complete ? 'border-green-200 bg-green-50/40' : 'border-amber-200 bg-amber-50/40'}`}>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-medium text-stone-600">{label}</span>
+        <KelStatusBadge complete={complete} />
+      </div>
+      <div className="flex items-center gap-3">
+        {complete && (
+          <a href={value} target="_blank" rel="noopener noreferrer" className="shrink-0">
+            <img src={value} alt={label} className="w-12 h-12 rounded-lg object-cover border border-stone-200" />
+          </a>
+        )}
+        <label className="flex-1 cursor-pointer">
+          <span className="inline-flex items-center justify-center w-full text-xs font-medium text-amber-700 bg-white border border-dashed border-amber-300 rounded-lg px-2 py-2 hover:bg-amber-50 transition">
+            {uploading ? 'Mengunggah...' : complete ? 'Ganti foto' : 'Pilih foto'}
+          </span>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/heic"
+            onChange={onChange}
+            disabled={uploading}
+            className="hidden"
+          />
+        </label>
+      </div>
+    </div>
+  )
+}
+
+function KelTextField({
+  id,
+  label,
+  value,
+  onChange
+}: {
+  id: string
+  label: string
+  value: string
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+}) {
+  const complete = Boolean(value.trim())
+  return (
+    <div className={`rounded-lg border p-3 transition ${complete ? 'border-green-200 bg-green-50/40' : 'border-amber-200 bg-amber-50/40'}`}>
+      <div className="flex items-center justify-between mb-1.5">
+        <label htmlFor={id} className="text-xs font-medium text-stone-600">{label}</label>
+        <KelStatusBadge complete={complete} />
+      </div>
+      <input
+        id={id}
+        type="text"
+        value={value}
+        onChange={onChange}
+        className="w-full px-3 py-2 bg-white border border-stone-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none transition"
+      />
+    </div>
+  )
+}
+
 export default function AdminGadaiDetailPage() {
   const params = useParams()
   const id = params.id as string
@@ -406,6 +489,18 @@ export default function AdminGadaiDetailPage() {
     : ''
   const financeWaLink = `https://wa.me/${FINANCE_WA_NUMBER}?text=${encodeURIComponent(financeWaMessage)}`
 
+  const kelFields = [
+    { key: 'ktp', label: 'Foto KTP', complete: Boolean(kelFotoKtp) },
+    ...(needsKendaraan ? [{ key: 'stnk', label: 'Foto STNK', complete: Boolean(kelFotoStnk) }] : []),
+    { key: 'customerBarang', label: 'Foto Customer + Barang', complete: Boolean(kelFotoCustomerBarang) },
+    { key: 'rekening', label: 'Nomor Rekening', complete: Boolean(kelNoRekening.trim()) },
+    { key: 'bank', label: 'Nama Bank', complete: Boolean(kelNamaBank.trim()) },
+    ...(needsKendaraan ? [{ key: 'polisi', label: 'Nomor Polisi', complete: Boolean(kelNomorPolisi.trim()) }] : [])
+  ]
+  const kelCompletedCount = kelFields.filter(f => f.complete).length
+  const kelMissingLabels = kelFields.filter(f => !f.complete).map(f => f.label)
+  const kelAllComplete = kelMissingLabels.length === 0
+
   return (
     <div>
       <Link href="/admin/gadai" className="text-sm text-stone-500 hover:text-stone-700 mb-4 inline-flex items-center gap-1">
@@ -531,32 +626,42 @@ export default function AdminGadaiDetailPage() {
               <h2 className="font-semibold text-stone-800 mb-1">Kelengkapan Data</h2>
               <p className="text-xs text-stone-500 mb-4">Diisi admin saat customer datang membawa barang jaminan.</p>
 
+              <div className="mb-4">
+                <div className="flex items-center justify-between text-xs mb-1.5">
+                  <span className="font-medium text-stone-600">{kelCompletedCount} dari {kelFields.length} lengkap</span>
+                  {!kelAllComplete && (
+                    <span className="text-amber-600">Kurang: {kelMissingLabels.join(', ')}</span>
+                  )}
+                </div>
+                <div className="w-full h-2 bg-stone-100 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-300 ${kelAllComplete ? 'bg-green-500' : 'bg-amber-400'}`}
+                    style={{ width: `${(kelCompletedCount / kelFields.length) * 100}%` }}
+                  />
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="block text-xs font-medium text-stone-600 mb-1.5">Foto KTP {kelFotoKtp && '✓'}</label>
-                  <input type="file" accept="image/jpeg,image/png,image/webp,image/heic" onChange={(e) => handleKelFileChange('ktp', e)} className="w-full text-xs" />
-                  {kelUploading === 'ktp' && <p className="text-xs text-blue-500 mt-1">Mengunggah...</p>}
-                </div>
+                <KelPhotoField label="Foto KTP" value={kelFotoKtp} uploading={kelUploading === 'ktp'} onChange={(e) => handleKelFileChange('ktp', e)} />
                 {needsKendaraan && (
-                  <div>
-                    <label className="block text-xs font-medium text-stone-600 mb-1.5">Foto STNK {kelFotoStnk && '✓'}</label>
-                    <input type="file" accept="image/jpeg,image/png,image/webp,image/heic" onChange={(e) => handleKelFileChange('stnk', e)} className="w-full text-xs" />
-                    {kelUploading === 'stnk' && <p className="text-xs text-blue-500 mt-1">Mengunggah...</p>}
-                  </div>
+                  <KelPhotoField label="Foto STNK" value={kelFotoStnk} uploading={kelUploading === 'stnk'} onChange={(e) => handleKelFileChange('stnk', e)} />
                 )}
-                <div>
-                  <label className="block text-xs font-medium text-stone-600 mb-1.5">Foto Customer dengan Barang (wajib) {kelFotoCustomerBarang && '✓'}</label>
-                  <input type="file" accept="image/jpeg,image/png,image/webp,image/heic" onChange={(e) => handleKelFileChange('customerBarang', e)} className="w-full text-xs" />
-                  {kelUploading === 'customerBarang' && <p className="text-xs text-blue-500 mt-1">Mengunggah...</p>}
-                </div>
-                <div>
-                  <label htmlFor="kel-pendukung-tambahan" className="block text-xs font-medium text-stone-600 mb-1.5">Foto Pendukung (KK/Nikah/BPKB, opsional)</label>
-                  <input id="kel-pendukung-tambahan" type="file" accept="image/jpeg,image/png,image/webp,image/heic" onChange={handleAddPendukungTambahan} className="w-full text-xs" />
-                  {kelUploading === 'pendukungTambahan' && <p className="text-xs text-blue-500 mt-1">Mengunggah...</p>}
+                <KelPhotoField label="Foto Customer dengan Barang" value={kelFotoCustomerBarang} uploading={kelUploading === 'customerBarang'} onChange={(e) => handleKelFileChange('customerBarang', e)} />
+                <div className="rounded-lg border border-stone-200 bg-stone-50/40 p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <label htmlFor="kel-pendukung-tambahan" className="text-xs font-medium text-stone-600">Foto Pendukung (KK/Nikah/BPKB, opsional)</label>
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-stone-200 text-stone-500">{kelFotoPendukungTambahan.length} foto</span>
+                  </div>
+                  <label className="block cursor-pointer">
+                    <span className="inline-flex items-center justify-center w-full text-xs font-medium text-stone-600 bg-white border border-dashed border-stone-300 rounded-lg px-2 py-2 hover:bg-stone-100 transition">
+                      {kelUploading === 'pendukungTambahan' ? 'Mengunggah...' : 'Tambah foto'}
+                    </span>
+                    <input id="kel-pendukung-tambahan" type="file" accept="image/jpeg,image/png,image/webp,image/heic" onChange={handleAddPendukungTambahan} disabled={kelUploading === 'pendukungTambahan'} className="hidden" />
+                  </label>
                   {kelFotoPendukungTambahan.length > 0 && (
                     <ul className="mt-2 space-y-1">
                       {kelFotoPendukungTambahan.map((url, i) => (
-                        <li key={url} className="flex items-center justify-between text-xs bg-stone-50 rounded px-2 py-1">
+                        <li key={url} className="flex items-center justify-between text-xs bg-white border border-stone-100 rounded px-2 py-1">
                           <a href={url} target="_blank" rel="noopener noreferrer" className="text-amber-600 hover:underline truncate">Foto {i + 1}</a>
                           <button type="button" onClick={() => handleRemovePendukungTambahan(i)} className="text-red-500 ml-2">Hapus</button>
                         </li>
@@ -564,19 +669,10 @@ export default function AdminGadaiDetailPage() {
                     </ul>
                   )}
                 </div>
-                <div>
-                  <label htmlFor="kel-no-rekening" className="block text-xs font-medium text-stone-600 mb-1.5">Nomor Rekening</label>
-                  <input id="kel-no-rekening" type="text" value={kelNoRekening} onChange={(e) => setKelNoRekening(e.target.value)} className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm" />
-                </div>
-                <div>
-                  <label htmlFor="kel-nama-bank" className="block text-xs font-medium text-stone-600 mb-1.5">Nama Bank</label>
-                  <input id="kel-nama-bank" type="text" value={kelNamaBank} onChange={(e) => setKelNamaBank(e.target.value)} className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm" />
-                </div>
+                <KelTextField id="kel-no-rekening" label="Nomor Rekening" value={kelNoRekening} onChange={(e) => setKelNoRekening(e.target.value)} />
+                <KelTextField id="kel-nama-bank" label="Nama Bank" value={kelNamaBank} onChange={(e) => setKelNamaBank(e.target.value)} />
                 {needsKendaraan && (
-                  <div>
-                    <label htmlFor="kel-nomor-polisi" className="block text-xs font-medium text-stone-600 mb-1.5">Nomor Polisi</label>
-                    <input id="kel-nomor-polisi" type="text" value={kelNomorPolisi} onChange={(e) => setKelNomorPolisi(e.target.value)} className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm" />
-                  </div>
+                  <KelTextField id="kel-nomor-polisi" label="Nomor Polisi" value={kelNomorPolisi} onChange={(e) => setKelNomorPolisi(e.target.value)} />
                 )}
               </div>
 
@@ -584,7 +680,12 @@ export default function AdminGadaiDetailPage() {
                 <button onClick={() => handleSaveKelengkapan(false)} disabled={kelSaving} className="px-4 py-2 bg-stone-100 text-stone-700 rounded-lg text-sm font-medium hover:bg-stone-200 disabled:opacity-50 transition">
                   {kelSaving ? 'Menyimpan...' : 'Simpan'}
                 </button>
-                <button onClick={() => handleSaveKelengkapan(true)} disabled={kelSaving} className="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50 transition">
+                <button
+                  onClick={() => handleSaveKelengkapan(true)}
+                  disabled={kelSaving || !kelAllComplete}
+                  title={kelAllComplete ? undefined : `Lengkapi dulu: ${kelMissingLabels.join(', ')}`}
+                  className="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50 disabled:hover:bg-amber-600 transition"
+                >
                   {kelSaving ? 'Menyimpan...' : 'Simpan & Ajukan Pencairan'}
                 </button>
               </div>
