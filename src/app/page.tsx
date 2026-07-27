@@ -1,103 +1,9 @@
-'use client'
-
-import { useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
-
-// Animated counter component
-function AnimatedCounter({ end, duration = 2000 }: { end: number; duration?: number }) {
-  const [count, setCount] = useState(0)
-  const [isVisible, setIsVisible] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true)
-        }
-      },
-      { threshold: 0.1 }
-    )
-
-    if (ref.current) {
-      observer.observe(ref.current)
-    }
-
-    return () => observer.disconnect()
-  }, [])
-
-  useEffect(() => {
-    if (!isVisible) return
-
-    let startTime: number
-    const animate = (timestamp: number) => {
-      if (!startTime) startTime = timestamp
-      const progress = Math.min((timestamp - startTime) / duration, 1)
-      setCount(Math.floor(progress * end))
-      if (progress < 1) {
-        requestAnimationFrame(animate)
-      }
-    }
-    requestAnimationFrame(animate)
-  }, [isVisible, end, duration])
-
-  return <div ref={ref}>{count}+</div>
-}
-
-// FAQ Item Component with animation
-function FaqItem({ question, answer, isOpen, onClick }: { question: string; answer: string; isOpen: boolean; onClick: () => void }) {
-  return (
-    <div
-      className={`bg-white rounded-2xl overflow-hidden transition-all duration-300 ${
-        isOpen ? 'shadow-lg ring-2 ring-blue-100' : 'shadow-sm hover:shadow-md'
-      }`}
-    >
-      <button
-        onClick={onClick}
-        className="w-full px-6 py-5 flex items-center justify-between text-left"
-      >
-        <span className="font-semibold text-gray-900 pr-4">{question}</span>
-        <svg
-          className={`w-5 h-5 text-gray-500 flex-shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-      <div
-        className={`overflow-hidden transition-all duration-300 ${
-          isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-        }`}
-      >
-        <div className="px-6 pb-5 text-gray-600">
-          {answer}
-        </div>
-      </div>
-    </div>
-  )
-}
+import Image from 'next/image'
+import AnimatedCounter from '@/components/home/AnimatedCounter'
+import FaqAccordion from '@/components/home/FaqAccordion'
+import AjukanFormTabs from '@/components/home/AjukanFormTabs'
 
 export default function Home() {
-  const [openFaq, setOpenFaq] = useState<number | null>(0)
-  const [isLoaded, setIsLoaded] = useState(false)
-  const [amountDisplay, setAmountDisplay] = useState('')
-
-  useEffect(() => {
-    setIsLoaded(true)
-  }, [])
-
-  const formatAmount = (value: string) => {
-    const number = value.replace(/\D/g, '')
-    return number.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
-  }
-
-  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatAmount(e.target.value)
-    setAmountDisplay(formatted)
-  }
-
   const faqs = [
     {
       question: 'Berapa lama proses gadai di Gadai Jogja?',
@@ -130,8 +36,30 @@ export default function Home() {
     {
       question: 'Berapa nilai maksimal yang bisa dipinjam?',
       answer: 'Nilai pinjaman tergantung taksiran barang. Bisa hingga 85% dari harga pasaran. Tidak ada batasan maksimal.'
+    },
+    {
+      question: 'Apakah bisa gadai motor tanpa BPKB di Gadai Jogja?',
+      answer: 'Bisa. Kami menerima gadai motor tanpa BPKB selama STNK dan identitas pemilik jelas serta unit diparkir 100% di tempat kami selama masa gadai. Taksiran tetap kompetitif meski tanpa BPKB.'
+    },
+    {
+      question: 'Apakah Gadai Jogja buka 24 jam?',
+      answer: 'Pengajuan online via WhatsApp dan form di website bisa dilakukan 24 jam setiap hari. Untuk serah terima barang dan pencairan dana, tim kami segera merespons dan menjadwalkan proses secepat mungkin.'
     }
   ]
+
+  // FAQPage structured data (schema.org) so Google can show an FAQ rich result for this page.
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer,
+      },
+    })),
+  }
 
   const testimonials = [
     {
@@ -157,14 +85,55 @@ export default function Home() {
     }
   ]
 
+  // LocalBusiness structured data with aggregate rating + reviews, built from the
+  // testimonials shown above (all displayed with a 5-star rating in the UI).
+  // Note: Google generally does not render self-authored review rich snippets for a
+  // business's own site, but the markup is still valid/useful schema.org metadata.
+  const businessSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FinancialService',
+    name: 'Gadai Jogja',
+    image: 'https://gadaijogja.com/og-image.jpg',
+    url: 'https://gadaijogja.com',
+    telephone: '+6282299748978',
+    priceRange: '$$',
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: 'Yogyakarta',
+      addressRegion: 'DI Yogyakarta',
+      addressCountry: 'ID',
+    },
+    areaServed: ['Kota Yogyakarta', 'Sleman', 'Bantul', 'Kulon Progo', 'Gunung Kidul'],
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: '5',
+      reviewCount: String(testimonials.length),
+    },
+    review: testimonials.map((testimonial) => ({
+      '@type': 'Review',
+      author: { '@type': 'Person', name: testimonial.name },
+      reviewRating: { '@type': 'Rating', ratingValue: '5', bestRating: '5' },
+      reviewBody: testimonial.message,
+    })),
+  }
+
   return (
-    <div className="min-h-screen bg-white">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(businessSchema) }}
+      />
+      <div className="min-h-screen bg-white">
       {/* Header */}
       <header className="bg-white border-b border-gray-100 sticky top-0 z-50 backdrop-blur-lg bg-white/90">
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
-              <img src="/logo-gadai.png" alt="Gadai Jogja" className="h-10 w-auto" />
+              <Image src="/logo-gadai.png" alt="Gadai Jogja" width={40} height={40} className="h-10 w-auto" priority />
               <div className="hidden sm:block">
                 <span className="text-xs text-gray-400">gadaijogja.com</span>
               </div>
@@ -205,13 +174,13 @@ export default function Home() {
 
         <div className="relative max-w-4xl mx-auto px-4 py-20 md:py-28 text-center">
           {/* Badge */}
-          <div className={`inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-2 rounded-full mb-8 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-2 rounded-full mb-8 animate-fade-in-up">
             <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
             <span className="text-white/90 text-sm font-medium">Terpercaya sejak 2020</span>
           </div>
 
           {/* Headline */}
-          <div className={`transition-all duration-700 delay-100 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          <div className="animate-fade-in-up [animation-delay:100ms]">
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-white leading-tight mb-6">
               Butuh Dana Cepat?
               <span className="block mt-2 bg-gradient-to-r from-yellow-300 to-yellow-400 bg-clip-text text-transparent">Gadai Aja!</span>
@@ -222,7 +191,7 @@ export default function Home() {
           </div>
 
           {/* CTA Buttons */}
-          <div className={`flex flex-col sm:flex-row gap-4 justify-center transition-all duration-700 delay-200 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up [animation-delay:200ms]">
             <a
               href="#form"
               className="group bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-300 hover:to-yellow-400 text-gray-900 px-10 py-4 rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl hover:scale-105 transition-all inline-flex items-center justify-center gap-2"
@@ -246,7 +215,7 @@ export default function Home() {
           </div>
 
           {/* Quick Features */}
-          <div className={`flex flex-wrap justify-center gap-6 mt-12 transition-all duration-700 delay-300 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          <div className="flex flex-wrap justify-center gap-6 mt-12 animate-fade-in-up [animation-delay:300ms]">
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -290,126 +259,7 @@ export default function Home() {
             <p className="text-gray-500">Isi form atau lihat cara kerja kami</p>
           </div>
 
-          <div className="bg-gray-50 rounded-3xl overflow-hidden shadow-lg border border-gray-100">
-            {/* Tab Headers */}
-            <div className="flex border-b border-gray-200">
-              <button
-                onClick={() => setOpenFaq(0)}
-                className={`flex-1 px-6 py-4 text-center font-semibold transition-colors ${
-                  openFaq === 0 ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                Ajukan
-              </button>
-              <button
-                onClick={() => setOpenFaq(1)}
-                className={`flex-1 px-6 py-4 text-center font-semibold transition-colors ${
-                  openFaq === 1 ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                Cara Kerja
-              </button>
-            </div>
-
-            {/* Tab Content */}
-            <div className="p-6">
-              {openFaq === 0 ? (
-                /* Form Tab */
-                <div>
-                  <form action="/create" method="GET" className="space-y-4">
-                    <div>
-                      <input type="text" name="name" placeholder="Nama Lengkap" required
-                        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition" />
-                    </div>
-
-                    <div>
-                      <input type="tel" name="phone" placeholder="Nomor WhatsApp" required
-                        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition" />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <select name="category" required
-                        className="px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-gray-600">
-                        <option value="">Kategori</option>
-                        <option value="HP">HP</option>
-                        <option value="Laptop">Laptop</option>
-                        <option value="Motor">Motor</option>
-                        <option value="Mobil">Mobil</option>
-                      </select>
-
-                      <div className="relative">
-                        <input type="hidden" name="amount" value={amountDisplay.replace(/\./g, '')} />
-                        <input type="text" placeholder="1.000.000" onChange={handleAmountChange} value={amountDisplay}
-                          className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-right" />
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">Rp</span>
-                      </div>
-                    </div>
-
-                    <button type="submit" className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-4 rounded-xl font-bold text-lg transition shadow-lg shadow-blue-200 mt-4">
-                      Lanjutkan Pengajuan
-                    </button>
-                  </form>
-
-                  <p className="text-center text-gray-400 text-sm mt-4">
-                    atau hubungi via{' '}
-                    <a href="https://wa.me/6282299748978" target="_blank" rel="noopener noreferrer" className="text-green-600 font-medium hover:underline">
-                      WhatsApp 0822-9974-8978
-                    </a>
-                  </p>
-                </div>
-              ) : (
-                /* Cara Kerja Tab */
-                <div className="space-y-4">
-                  <div className="flex gap-4">
-                    <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-blue-600 font-bold">1</span>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900">Hubungi via WhatsApp</h4>
-                      <p className="text-gray-600 text-sm">Hubungi via WhatsApp atau isi form di website untuk taksir harga</p>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-4">
-                    <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-blue-600 font-bold">2</span>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900">Setuju Harga</h4>
-                      <p className="text-gray-600 text-sm">Jika setuju dengan taksiran, datang ke lokasi dengan barang</p>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-4">
-                    <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-blue-600 font-bold">3</span>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900">Verifikasi & Cair</h4>
-                      <p className="text-gray-600 text-sm">Cek barang, dana langsung cair</p>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-4">
-                    <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                      <span className="text-green-600 font-bold">4</span>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900">Tebus / Perpanjang</h4>
-                      <p className="text-gray-600 text-sm">Bayar jasa + pokok untuk menebus barang</p>
-                    </div>
-                  </div>
-
-                  <a href="https://wa.me/6282299748978?text=Halo%20Gadai%20Jogja,%20saya%20ingin%20bertanya"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3 rounded-xl font-bold text-center transition shadow-lg mt-4">
-                    Tanya via WhatsApp
-                  </a>
-                </div>
-              )}
-            </div>
-          </div>
+          <AjukanFormTabs />
         </div>
       </section>
 
@@ -463,7 +313,7 @@ export default function Home() {
           <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4">
             {/* HP Card */}
             <div className="group relative h-64 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all cursor-pointer">
-              <img src="/images/4.jpeg" alt="Gadai HP" className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500" />
+              <Image src="/images/4.jpeg" alt="Gadai HP" fill sizes="(max-width: 768px) 50vw, 20vw" className="object-cover transform group-hover:scale-110 transition-transform duration-500" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
               <div className="absolute bottom-0 left-0 right-0 p-4">
                 <div className="inline-block bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full mb-2">
@@ -476,7 +326,7 @@ export default function Home() {
 
             {/* Smartwatch Card */}
             <div className="group relative h-64 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all cursor-pointer">
-              <img src="/images/2.jpeg" alt="Gadai Smartwatch" className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500" />
+              <Image src="/images/2.jpeg" alt="Gadai Smartwatch" fill sizes="(max-width: 768px) 50vw, 20vw" className="object-cover transform group-hover:scale-110 transition-transform duration-500" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
               <div className="absolute bottom-0 left-0 right-0 p-4">
                 <div className="inline-block bg-pink-500 text-white text-xs font-bold px-2 py-1 rounded-full mb-2">
@@ -489,7 +339,7 @@ export default function Home() {
 
             {/* Laptop Card */}
             <div className="group relative h-64 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all cursor-pointer">
-              <img src="/images/6.jpeg" alt="Gadai Laptop" className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500" />
+              <Image src="/images/6.jpeg" alt="Gadai Laptop" fill sizes="(max-width: 768px) 50vw, 20vw" className="object-cover transform group-hover:scale-110 transition-transform duration-500" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
               <div className="absolute bottom-0 left-0 right-0 p-4">
                 <div className="inline-block bg-purple-500 text-white text-xs font-bold px-2 py-1 rounded-full mb-2">
@@ -502,7 +352,7 @@ export default function Home() {
 
             {/* Motor Card */}
             <div className="group relative h-64 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all cursor-pointer">
-              <img src="/images/7.jpeg" alt="Gadai Motor" className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500" />
+              <Image src="/images/7.jpeg" alt="Gadai Motor" fill sizes="(max-width: 768px) 50vw, 20vw" className="object-cover transform group-hover:scale-110 transition-transform duration-500" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
               <div className="absolute bottom-0 left-0 right-0 p-4">
                 <div className="inline-block bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full mb-2">
@@ -515,7 +365,7 @@ export default function Home() {
 
             {/* Mobil Card */}
             <div className="group relative h-64 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all cursor-pointer">
-              <img src="/images/8.jpeg" alt="Gadai Mobil" className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500" />
+              <Image src="/images/8.jpeg" alt="Gadai Mobil" fill sizes="(max-width: 768px) 50vw, 20vw" className="object-cover transform group-hover:scale-110 transition-transform duration-500" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
               <div className="absolute bottom-0 left-0 right-0 p-4">
                 <div className="inline-block bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full mb-2">
@@ -739,17 +589,7 @@ export default function Home() {
             </h2>
           </div>
 
-          <div className="space-y-4">
-            {faqs.map((faq, index) => (
-              <FaqItem
-                key={index}
-                question={faq.question}
-                answer={faq.answer}
-                isOpen={openFaq === index}
-                onClick={() => setOpenFaq(openFaq === index ? null : index)}
-              />
-            ))}
-          </div>
+          <FaqAccordion faqs={faqs} />
 
           <div className="text-center mt-8">
             <p className="text-gray-600 mb-4">Masih ada pertanyaan?</p>
@@ -824,7 +664,7 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <img src="/logo-gadai.png" alt="Gadai Jogja" className="h-10 w-auto" />
+                <Image src="/logo-gadai.png" alt="Gadai Jogja" width={40} height={40} className="h-10 w-auto" />
               </div>
               <p className="text-gray-400 text-sm">
                 Solusi gadai online terpercaya di Yogyakarta. Proses cepat, jasa 10% per 2 minggu, tanpa biaya tersembunyi.
@@ -871,6 +711,7 @@ export default function Home() {
           </div>
         </div>
       </footer>
-    </div>
+      </div>
+    </>
   )
 }

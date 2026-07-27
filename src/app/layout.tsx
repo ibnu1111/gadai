@@ -50,6 +50,9 @@ export const metadata: Metadata = {
     description: 'Layanan gadai terpercaya di Yogyakarta. Proses cepat, jasa transparan.',
     images: ['/og-image.jpg'],
   },
+  alternates: {
+    canonical: 'https://gadaijogja.com',
+  },
   robots: {
     index: true,
     follow: true,
@@ -61,9 +64,6 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  verification: {
-    google: 'your-google-verification-code',
-  },
 }
 
 export default function RootLayout({
@@ -73,9 +73,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="id" className="scroll-smooth">
-      <head>
-        <link rel="canonical" href="https://gadaijogja.com" />
-      </head>
       <body className="min-h-screen bg-white antialiased scroll-smooth">{children}</body>
     </html>
   )

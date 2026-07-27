@@ -2,7 +2,10 @@
 const nextConfig = {
   output: 'standalone',
   images: {
-    domains: ['localhost', 'gadai-production.up.railway.app'],
+    remotePatterns: [
+      { protocol: 'http', hostname: 'localhost' },
+      { protocol: 'https', hostname: 'gadai-production.up.railway.app' },
+    ],
   },
 }
 
