@@ -1,13 +1,22 @@
 import Image from 'next/image'
+import Link from 'next/link'
 import AnimatedCounter from '@/components/home/AnimatedCounter'
 import FaqAccordion from '@/components/home/FaqAccordion'
 import AjukanFormTabs from '@/components/home/AjukanFormTabs'
+import SiteHeader from '@/components/SiteHeader'
+import SiteFooter from '@/components/SiteFooter'
+import WhatsAppIcon from '@/components/WhatsAppIcon'
+import { BUSINESS, addressSchema, openingHoursSchema, whatsappLink } from '@/lib/business'
 
 export default function Home() {
   const faqs = [
     {
       question: 'Berapa lama proses gadai di Gadai Jogja?',
       answer: 'Proses gadai kami sangat cepat, hanya membutuhkan waktu 10-15 menit dari pengajuan hingga pencairan dana langsung ke rekening Anda. Untuk motor & mobil, kepemilikan harus jelas dan akan ditaksir di tempat kami.'
+    },
+    {
+      question: 'Apakah gadai bisa sepenuhnya online tanpa datang ke lokasi?',
+      answer: 'Tidak. Yang bisa dilakukan online adalah pengajuan dan taksiran harga, lewat form di website atau WhatsApp. Setelah harga disepakati, Anda tetap mengantar unit ke tempat kami untuk dicek langsung, baru dana dicairkan ke rekening. Barang disimpan di tempat kami selama masa gadai, jadi tidak ada serah terima lewat kurir atau pengiriman.'
     },
     {
       question: 'Apakah ada biaya admin atau biaya tersembunyi?',
@@ -43,7 +52,7 @@ export default function Home() {
     },
     {
       question: 'Apakah Gadai Jogja buka 24 jam?',
-      answer: 'Pengajuan online via WhatsApp dan form di website bisa dilakukan 24 jam setiap hari. Untuk serah terima barang dan pencairan dana, tim kami segera merespons dan menjadwalkan proses secepat mungkin.'
+      answer: 'Pengajuan dan taksiran lewat WhatsApp atau form di website bisa dilakukan 24 jam setiap hari. Untuk serah terima barang dan pencairan dana, silakan datang ke tempat kami di Wedomartani, Ngemplak, Sleman yang buka setiap hari pukul 06.00 - 20.00 WIB.'
     }
   ]
 
@@ -92,18 +101,17 @@ export default function Home() {
   const businessSchema = {
     '@context': 'https://schema.org',
     '@type': 'FinancialService',
-    name: 'Gadai Jogja',
-    image: 'https://gadaijogja.com/og-image.jpg',
-    url: 'https://gadaijogja.com',
-    telephone: '+6282299748978',
+    name: BUSINESS.name,
+    description: 'Gadai Jogja melayani gadai HP, laptop, motor, dan mobil di Yogyakarta. Pengajuan dan taksiran harga dilakukan online lewat website atau WhatsApp, sedangkan serah terima serta penyimpanan barang dilakukan langsung di tempat kami.',
+    image: `${BUSINESS.url}/og-image.jpg`,
+    url: BUSINESS.url,
+    telephone: BUSINESS.telephone,
+    email: BUSINESS.email,
     priceRange: '$$',
-    address: {
-      '@type': 'PostalAddress',
-      addressLocality: 'Yogyakarta',
-      addressRegion: 'DI Yogyakarta',
-      addressCountry: 'ID',
-    },
-    areaServed: ['Kota Yogyakarta', 'Sleman', 'Bantul', 'Kulon Progo', 'Gunung Kidul'],
+    currenciesAccepted: 'IDR',
+    address: addressSchema,
+    openingHoursSpecification: openingHoursSchema,
+    areaServed: BUSINESS.areaServed,
     aggregateRating: {
       '@type': 'AggregateRating',
       ratingValue: '5',
@@ -128,41 +136,7 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(businessSchema) }}
       />
       <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-50 backdrop-blur-lg bg-white/90">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <Image src="/logo-gadai.png" alt="Gadai Jogja" width={40} height={40} className="h-10 w-auto" priority />
-              <div className="hidden sm:block">
-                <span className="text-xs text-gray-400">gadaijogja.com</span>
-              </div>
-            </div>
-            <nav className="hidden lg:flex items-center gap-1">
-              <a href="#layanan" className="px-4 py-2 text-gray-600 hover:text-blue-600 font-medium rounded-lg hover:bg-blue-50 transition">Layanan</a>
-              <a href="#cara-kerja" className="px-4 py-2 text-gray-600 hover:text-blue-600 font-medium rounded-lg hover:bg-blue-50 transition">Cara Kerja</a>
-              <a href="#wilayah" className="px-4 py-2 text-gray-600 hover:text-blue-600 font-medium rounded-lg hover:bg-blue-50 transition">Wilayah</a>
-              <a href="#faq" className="px-4 py-2 text-gray-600 hover:text-blue-600 font-medium rounded-lg hover:bg-blue-50 transition">FAQ</a>
-            </nav>
-            <div className="flex items-center gap-3">
-              <a href="/track" className="hidden sm:flex items-center gap-1.5 px-4 py-2 text-gray-600 hover:text-blue-600 font-medium">
-                Lacak
-              </a>
-              <a
-                href="https://wa.me/6282299748978?text=Halo%20Gadai%20Jogja,%20saya%20ingin%20konsultasi"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-5 py-2.5 rounded-lg font-semibold text-sm transition shadow-lg shadow-blue-200 flex items-center gap-2"
-              >
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-                </svg>
-                Hubungi Kami
-              </a>
-            </div>
-          </div>
-        </div>
-      </header>
+      <SiteHeader />
 
       {/* Hero Section - Minimalis */}
       <section className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 overflow-hidden">
@@ -183,10 +157,10 @@ export default function Home() {
           <div className="animate-fade-in-up [animation-delay:100ms]">
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-white leading-tight mb-6">
               Butuh Dana Cepat?
-              <span className="block mt-2 bg-gradient-to-r from-yellow-300 to-yellow-400 bg-clip-text text-transparent">Gadai Aja!</span>
+              <span className="block mt-2 bg-gradient-to-r from-yellow-300 to-yellow-400 bg-clip-text text-transparent">Gadai Aja di Jogja!</span>
             </h1>
             <p className="text-xl text-blue-100 mb-10 max-w-2xl mx-auto">
-              Gadai online terpercaya di Yogyakarta. Proses 15 menit, jasa 10% per 2 minggu, terima utuh tanpa potongan.
+              Gadai HP, laptop, motor & mobil di Yogyakarta. Ajukan taksiran online, serah terima dan penyimpanan unit di tempat kami. Cair 15 menit, jasa 10% per 2 minggu.
             </p>
           </div>
 
@@ -283,7 +257,7 @@ export default function Home() {
               <div className="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-yellow-300 to-yellow-400 bg-clip-text text-transparent group-hover:scale-110 transition-transform">
                 24<span className="text-lg">/</span>7
               </div>
-              <div className="text-gray-400 text-sm mt-2">Layanan Online</div>
+              <div className="text-gray-400 text-sm mt-2">Pengajuan Online</div>
             </div>
             <div className="group">
               <div className="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-yellow-300 to-yellow-400 bg-clip-text text-transparent group-hover:scale-110 transition-transform">
@@ -312,7 +286,7 @@ export default function Home() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4">
             {/* HP Card */}
-            <div className="group relative h-64 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all cursor-pointer">
+            <Link href="/gadai-hp" className="group relative h-64 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all">
               <Image src="/images/4.jpeg" alt="Gadai HP" fill sizes="(max-width: 768px) 50vw, 20vw" className="object-cover transform group-hover:scale-110 transition-transform duration-500" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
               <div className="absolute bottom-0 left-0 right-0 p-4">
@@ -322,10 +296,10 @@ export default function Home() {
                 <h3 className="text-lg font-bold text-white mb-1">Gadai HP</h3>
                 <p className="text-white/80 text-xs">HP tidak dipakai</p>
               </div>
-            </div>
+            </Link>
 
             {/* Smartwatch Card */}
-            <div className="group relative h-64 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all cursor-pointer">
+            <Link href="/gadai-smartwatch" className="group relative h-64 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all">
               <Image src="/images/2.jpeg" alt="Gadai Smartwatch" fill sizes="(max-width: 768px) 50vw, 20vw" className="object-cover transform group-hover:scale-110 transition-transform duration-500" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
               <div className="absolute bottom-0 left-0 right-0 p-4">
@@ -335,10 +309,10 @@ export default function Home() {
                 <h3 className="text-lg font-bold text-white mb-1">Smartwatch</h3>
                 <p className="text-white/80 text-xs">Tidak dipakai</p>
               </div>
-            </div>
+            </Link>
 
             {/* Laptop Card */}
-            <div className="group relative h-64 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all cursor-pointer">
+            <Link href="/gadai-laptop" className="group relative h-64 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all">
               <Image src="/images/6.jpeg" alt="Gadai Laptop" fill sizes="(max-width: 768px) 50vw, 20vw" className="object-cover transform group-hover:scale-110 transition-transform duration-500" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
               <div className="absolute bottom-0 left-0 right-0 p-4">
@@ -348,10 +322,10 @@ export default function Home() {
                 <h3 className="text-lg font-bold text-white mb-1">Gadai Laptop</h3>
                 <p className="text-white/80 text-xs">Laptop tidak dipakai</p>
               </div>
-            </div>
+            </Link>
 
             {/* Motor Card */}
-            <div className="group relative h-64 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all cursor-pointer">
+            <Link href="/gadai-motor" className="group relative h-64 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all">
               <Image src="/images/7.jpeg" alt="Gadai Motor" fill sizes="(max-width: 768px) 50vw, 20vw" className="object-cover transform group-hover:scale-110 transition-transform duration-500" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
               <div className="absolute bottom-0 left-0 right-0 p-4">
@@ -361,10 +335,10 @@ export default function Home() {
                 <h3 className="text-lg font-bold text-white mb-1">Gadai Motor</h3>
                 <p className="text-white/80 text-xs">Unit 100% parkir</p>
               </div>
-            </div>
+            </Link>
 
             {/* Mobil Card */}
-            <div className="group relative h-64 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all cursor-pointer">
+            <Link href="/gadai-mobil" className="group relative h-64 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all">
               <Image src="/images/8.jpeg" alt="Gadai Mobil" fill sizes="(max-width: 768px) 50vw, 20vw" className="object-cover transform group-hover:scale-110 transition-transform duration-500" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
               <div className="absolute bottom-0 left-0 right-0 p-4">
@@ -374,7 +348,7 @@ export default function Home() {
                 <h3 className="text-lg font-bold text-white mb-1">Gadai Mobil</h3>
                 <p className="text-white/80 text-xs">Unit 100% parkir</p>
               </div>
-            </div>
+            </Link>
           </div>
         </div>
       </section>
@@ -488,7 +462,7 @@ export default function Home() {
               { num: 1, title: 'Hubungi Kami', desc: 'Via WhatsApp' },
               { num: 2, title: 'Kirim Foto', desc: 'Barang & dokumen' },
               { num: 3, title: 'Taksiran', desc: 'Tim kami kasih penawaran' },
-              { num: 4, title: 'Survey', desc: 'Jika diperlukan' },
+              { num: 4, title: 'Antar Unit', desc: 'Serah terima di tempat kami' },
               { num: 5, title: 'Dana Cair', desc: 'Transfer ke rekening' }
             ].map((step, i) => (
               <div key={i} className="text-center relative">
@@ -645,72 +619,19 @@ export default function Home() {
 
       {/* Floating WhatsApp Button */}
       <a
-        href="https://wa.me/6282299748978?text=Halo%20Gadai%20Jogja,%20saya%20ingin%20bertanya"
+        href={whatsappLink('Halo Gadai Jogja, saya ingin bertanya')}
         target="_blank"
         rel="noopener noreferrer"
+        aria-label="Chat WhatsApp Gadai Jogja"
         className="fixed bottom-6 right-6 z-50 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 animate-bounce"
         style={{ animationDuration: '2s' }}
       >
-        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-        </svg>
+        <WhatsAppIcon className="w-8 h-8" />
         {/* Pulse Ring */}
         <span className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-30"></span>
       </a>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 py-12">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="grid md:grid-cols-3 gap-8 mb-8">
-            <div>
-              <div className="flex items-center gap-3 mb-4">
-                <Image src="/logo-gadai.png" alt="Gadai Jogja" width={40} height={40} className="h-10 w-auto" />
-              </div>
-              <p className="text-gray-400 text-sm">
-                Solusi gadai online terpercaya di Yogyakarta. Proses cepat, jasa 10% per 2 minggu, tanpa biaya tersembunyi.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-bold text-white mb-4">Layanan</h4>
-              <ul className="space-y-2 text-gray-400 text-sm">
-                <li><a href="#layanan" className="hover:text-white transition">Gadai HP</a></li>
-                <li><a href="#layanan" className="hover:text-white transition">Gadai Laptop</a></li>
-                <li><a href="#layanan" className="hover:text-white transition">Gadai Motor</a></li>
-                <li><a href="#layanan" className="hover:text-white transition">Gadai Mobil</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold text-white mb-4">Kontak</h4>
-              <ul className="space-y-2 text-gray-400 text-sm">
-                <li className="flex items-center gap-2">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-                  </svg>
-                  0822-9974-8978
-                </li>
-                <li className="flex items-center gap-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                  cs@gadaijogja.com
-                </li>
-                <li className="flex items-center gap-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  Yogyakarta, Indonesia
-                </li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-gray-800 pt-8 text-center">
-            <p className="text-gray-500 text-sm">
-              &copy; {new Date().getFullYear()} Gadai Jogja. All rights reserved.
-            </p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
       </div>
     </>
   )
