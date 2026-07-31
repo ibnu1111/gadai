@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { handleUnauthorized } from '@/lib/adminSession'
+import PhotoLightbox from '@/components/admin/PhotoLightbox'
 
 interface Gadai {
   gadaiID: number
@@ -74,6 +75,7 @@ export default function AdminCustomerDetailPage() {
   const [customer, setCustomer] = useState<CustomerDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [previewPhoto, setPreviewPhoto] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchCustomer = async () => {
@@ -138,14 +140,13 @@ export default function AdminCustomerDetailPage() {
               WhatsApp
             </a>
             {customer.fotoKtp && (
-              <a
-                href={customer.fotoKtp}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                type="button"
+                onClick={() => setPreviewPhoto(customer.fotoKtp)}
                 className="inline-flex items-center gap-2 bg-stone-100 hover:bg-stone-200 text-stone-700 px-4 py-2 rounded-lg text-sm font-medium transition"
               >
                 Lihat Foto KTP
-              </a>
+              </button>
             )}
           </div>
         </div>
@@ -221,6 +222,8 @@ export default function AdminCustomerDetailPage() {
           </table>
         </div>
       </div>
+
+      {previewPhoto && <PhotoLightbox src={previewPhoto} onClose={() => setPreviewPhoto(null)} />}
     </div>
   )
 }

@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { handleUnauthorized } from '@/lib/adminSession'
+import ConfirmDialog from '@/components/admin/ConfirmDialog'
+import PhotoLightbox from '@/components/admin/PhotoLightbox'
 
 interface Payment {
   id: number
@@ -13,6 +15,20 @@ interface Payment {
   createdAt: string
   createdBy: string | null
 }
+
+interface SumberDanaOption {
+  id: number
+  nama: string
+}
+
+interface PendanaanRow {
+  key: number
+  sumberDanaId: string
+  nominal: string
+}
+
+let pendanaanKeySeq = 0
+const newPendanaanRow = (): PendanaanRow => ({ key: ++pendanaanKeySeq, sumberDanaId: '', nominal: '' })
 
 interface GadaiDetail {
   gadaiID: number
@@ -123,42 +139,6 @@ function KelStatusBadge({ complete }: { complete: boolean }) {
   )
 }
 
-function PhotoLightbox({ src, onClose }: { src: string; onClose: () => void }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
-
-  return (
-    <div
-      className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4"
-      onClick={onClose}
-      role="presentation"
-    >
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label="Tutup preview"
-        className="absolute top-4 right-4 sm:top-6 sm:right-6 w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition"
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={src}
-        alt="Preview"
-        className="max-w-full max-h-full rounded-lg shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      />
-    </div>
-  )
-}
-
 function KelPhotoField({
   label,
   value,
@@ -244,6 +224,8 @@ export default function AdminGadaiDetailPage() {
   const [paymentNote, setPaymentNote] = useState('')
   const [savingPayment, setSavingPayment] = useState(false)
   const [actionMessage, setActionMessage] = useState('')
+  const [showRejectConfirm, setShowRejectConfirm] = useState(false)
+  const [rejectError, setRejectError] = useState('')
 
   // Kelengkapan data (foto customer+barang, foto pendukung tambahan, nopol)
   const [kelFotoKtp, setKelFotoKtp] = useState('')
@@ -268,6 +250,12 @@ export default function AdminGadaiDetailPage() {
   const [transferFile, setTransferFile] = useState<File | null>(null)
   const [transferConfirming, setTransferConfirming] = useState(false)
 
+  // Pencatatan ke buku besar saat pencairan
+  const [sumberDanaOptions, setSumberDanaOptions] = useState<SumberDanaOption[]>([])
+  const [pendanaan, setPendanaan] = useState<PendanaanRow[]>([newPendanaanRow()])
+  const [nominalKembali, setNominalKembali] = useState('')
+  const [kembaliDiubah, setKembaliDiubah] = useState(false)
+
   // Aksi Ambil / Perpanjang
   const [aksiType, setAksiType] = useState<'AMBIL' | 'PERPANJANG'>('AMBIL')
   const [aksiNominal, setAksiNominal] = useState('')
@@ -281,6 +269,17 @@ export default function AdminGadaiDetailPage() {
     setKelFotoPendukungTambahan(gadai.fotoPendukungTambahan || [])
     setKelNomorPolisi(gadai.nomorPolisi || '')
   }, [gadai])
+
+  useEffect(() => {
+    const token = localStorage.getItem('adminToken')
+    if (!token) return
+    fetch('/api/sumber-dana', { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setSumberDanaOptions(data.data)
+      })
+      .catch(() => setSumberDanaOptions([]))
+  }, [])
 
   const uploadFile = async (file: File): Promise<string> => {
     const body = new FormData()
@@ -486,6 +485,15 @@ export default function AdminGadaiDetailPage() {
         const url = await uploadFile(transferFile)
         body = { buktiTransferCair: url, nominalTransferCair: transferNominal }
       }
+
+      const pokok = Number(manual ? transferNominal : gadai.nominalTransferCair) || 0
+      body.sumberDana = pendanaan
+        .filter((row) => row.sumberDanaId && Number(row.nominal) > 0)
+        .map((row) => ({ sumberDanaId: Number(row.sumberDanaId), nominal: row.nominal }))
+      body.nominalKembali = kembaliDiubah
+        ? nominalKembali
+        : Math.round(pokok * (1 + Number(gadai.bungaPersentase) / 100))
+
       const res = await fetch(`/api/gadai/${id}/confirm-transfer`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -493,9 +501,12 @@ export default function AdminGadaiDetailPage() {
       })
       const data = await res.json()
       if (data.success) {
-        setActionMessage('Transfer dikonfirmasi, gadai aktif')
+        setActionMessage('Transfer dikonfirmasi, gadai aktif dan tercatat di buku besar')
         setTransferFile(null)
         setTransferNominal('')
+        setPendanaan([newPendanaanRow()])
+        setNominalKembali('')
+        setKembaliDiubah(false)
         fetchGadai()
       } else {
         setActionMessage(data.message || 'Gagal konfirmasi transfer')
@@ -504,6 +515,32 @@ export default function AdminGadaiDetailPage() {
       setActionMessage(err.message || 'Gagal konfirmasi transfer')
     } finally {
       setTransferConfirming(false)
+    }
+  }
+
+  const handleReject = async () => {
+    if (!gadai) return
+    setSavingStatus(true)
+    setRejectError('')
+    try {
+      const token = localStorage.getItem('adminToken')
+      const res = await fetch(`/api/gadai/${id}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ status: 'DITOLAK' })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setShowRejectConfirm(false)
+        setActionMessage('Pengajuan berhasil ditolak')
+        fetchGadai()
+      } else {
+        setRejectError(data.message || 'Gagal menolak pengajuan')
+      }
+    } catch {
+      setRejectError('Gagal menolak pengajuan')
+    } finally {
+      setSavingStatus(false)
     }
   }
 
@@ -554,6 +591,17 @@ export default function AdminGadaiDetailPage() {
   const showKelengkapan = gadai.status === 'PENDING'
   const showRekeningMenunggu = gadai.status === 'MENUNGGU_REKENING'
   const showTransferConfirm = ['MENUNGGU_TRANSFER', 'MENUNGGU_VERIFIKASI_TRANSFER'].includes(gadai.status)
+  const pokokCair = Number(transferNominal || gadai.nominalTransferCair || 0)
+  const totalPendanaan = pendanaan.reduce((sum, row) => sum + (Number(row.nominal) || 0), 0)
+  const sisaPendanaan = pokokCair - totalPendanaan
+  const pendanaanSiap =
+    pokokCair > 0 &&
+    sisaPendanaan === 0 &&
+    pendanaan.every((row) => row.sumberDanaId && Number(row.nominal) > 0)
+  const kembaliOtomatis = pokokCair
+    ? String(Math.round(pokokCair * (1 + Number(gadai.bungaPersentase) / 100)))
+    : ''
+  const nominalKembaliView = kembaliDiubah ? nominalKembali : kembaliOtomatis
   const isDue = isDueOrOverdue(gadai.status, gadai.tanggalKembali)
   const bungaTerbayar = Number(gadai.bungaTerbayar)
   const sisaBunga = Math.max(0, fee - bungaTerbayar)
@@ -568,6 +616,100 @@ export default function AdminGadaiDetailPage() {
       `Mohon isi nomor rekening tujuan pencairan dana melalui link berikut:\n\n${origin}/rekening/${gadai.rekeningToken}`
     : ''
   const customerRekeningWaLink = `https://wa.me/${gadai.customer.noHp}?text=${encodeURIComponent(customerRekeningWaMessage)}`
+
+  const updatePendanaan = (index: number, patch: Partial<PendanaanRow>) => {
+    setPendanaan((rows) => rows.map((row, i) => (i === index ? { ...row, ...patch } : row)))
+  }
+
+  const bukuBesarForm = (
+    <div className="border border-stone-200 rounded-lg bg-white p-4 my-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-stone-800">Catat ke Buku Besar</h3>
+        <span className="text-xs text-stone-500">Pokok {formatRupiah(pokokCair)}</span>
+      </div>
+
+      {sumberDanaOptions.length === 0 ? (
+        <p className="text-xs text-red-500">Master sumber dana belum tersedia.</p>
+      ) : (
+        <div className="space-y-2">
+          {pendanaan.map((row, index) => (
+            <div key={row.key} className="flex gap-2">
+              <select
+                value={row.sumberDanaId}
+                onChange={(e) => {
+                  const sisa = pokokCair - totalPendanaan + (Number(row.nominal) || 0)
+                  updatePendanaan(index, {
+                    sumberDanaId: e.target.value,
+                    nominal: row.nominal || (sisa > 0 ? String(sisa) : '')
+                  })
+                }}
+                aria-label="Sumber dana"
+                className="flex-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm"
+              >
+                <option value="">Pilih sumber dana</option>
+                {sumberDanaOptions
+                  .filter((opt) => String(opt.id) === row.sumberDanaId || !pendanaan.some((r) => r.sumberDanaId === String(opt.id)))
+                  .map((opt) => (
+                    <option key={opt.id} value={opt.id}>{opt.nama}</option>
+                  ))}
+              </select>
+              <input
+                type="number"
+                value={row.nominal}
+                onChange={(e) => updatePendanaan(index, { nominal: e.target.value })}
+                placeholder="Nominal"
+                aria-label="Nominal sumber dana"
+                className="w-36 px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm"
+              />
+              {pendanaan.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setPendanaan((rows) => rows.filter((_, i) => i !== index))}
+                  aria-label="Hapus sumber dana"
+                  className="px-3 text-stone-400 hover:text-red-600 transition"
+                >
+                  &times;
+                </button>
+              )}
+            </div>
+          ))}
+
+          {pendanaan.length < sumberDanaOptions.length && (
+            <button
+              type="button"
+              onClick={() => setPendanaan((rows) => [...rows, newPendanaanRow()])}
+              className="text-xs font-medium text-amber-600 hover:text-amber-700"
+            >
+              + Tambah sumber dana
+            </button>
+          )}
+
+          <div className="flex items-center justify-between text-xs pt-2 border-t border-stone-100">
+            <span className="text-stone-500">Total dialokasikan</span>
+            <span className={sisaPendanaan === 0 && totalPendanaan > 0 ? 'font-semibold text-green-600' : 'font-semibold text-amber-600'}>
+              {formatRupiah(totalPendanaan)}
+              {sisaPendanaan > 0 && ` · kurang ${formatRupiah(sisaPendanaan)}`}
+              {sisaPendanaan < 0 && ` · lebih ${formatRupiah(-sisaPendanaan)}`}
+            </span>
+          </div>
+        </div>
+      )}
+
+      <div>
+        <label htmlFor="nominal-kembali" className="block text-xs text-stone-500 mb-1">Nominal kembali (hasil nego)</label>
+        <input
+          id="nominal-kembali"
+          type="number"
+          value={nominalKembaliView}
+          onChange={(e) => {
+            setKembaliDiubah(true)
+            setNominalKembali(e.target.value)
+          }}
+          className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm"
+        />
+      </div>
+    </div>
+  )
 
   const kelFields = [
     { key: 'ktp', label: 'Foto KTP', complete: Boolean(kelFotoKtp) },
@@ -764,6 +906,13 @@ export default function AdminGadaiDetailPage() {
                 >
                   {kelSaving ? 'Menyimpan...' : 'Setujui & Minta Rekening ke Customer'}
                 </button>
+                <button
+                  onClick={() => { setRejectError(''); setShowRejectConfirm(true) }}
+                  disabled={savingStatus}
+                  className="px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm font-medium hover:bg-red-100 disabled:opacity-50 transition sm:ml-auto"
+                >
+                  Tolak Pengajuan
+                </button>
               </div>
               {kelMessage && <p className="text-xs text-stone-500 mt-3">{kelMessage}</p>}
             </div>
@@ -833,9 +982,10 @@ export default function AdminGadaiDetailPage() {
               {gadai.status === 'MENUNGGU_VERIFIKASI_TRANSFER' && gadai.buktiTransferCair ? (
                 <div className="bg-stone-50 rounded-lg p-4 mb-4 text-sm space-y-1">
                   <p>Nominal ditransfer: <span className="font-semibold">{formatRupiah(Number(gadai.nominalTransferCair))}</span></p>
-                  <a href={gadai.buktiTransferCair} target="_blank" rel="noopener noreferrer" className="text-amber-600 hover:underline">Lihat bukti transfer</a>
+                  <button type="button" onClick={() => setPreviewPhoto(gadai.buktiTransferCair)} className="text-amber-600 hover:underline">Lihat bukti transfer</button>
+                  {bukuBesarForm}
                   <div className="pt-2">
-                    <button onClick={() => handleConfirmTransfer(false)} disabled={transferConfirming} className="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50 transition">
+                    <button onClick={() => handleConfirmTransfer(false)} disabled={transferConfirming || !pendanaanSiap} className="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50 transition">
                       {transferConfirming ? 'Memproses...' : 'Konfirmasi & Aktifkan Gadai'}
                     </button>
                   </div>
@@ -856,7 +1006,8 @@ export default function AdminGadaiDetailPage() {
                     onChange={(e) => setTransferFile(e.target.files?.[0] || null)}
                     className="w-full text-xs"
                   />
-                  <button onClick={() => handleConfirmTransfer(true)} disabled={transferConfirming} className="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50 transition">
+                  {bukuBesarForm}
+                  <button onClick={() => handleConfirmTransfer(true)} disabled={transferConfirming || !pendanaanSiap} className="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50 transition">
                     {transferConfirming ? 'Memproses...' : 'Upload & Konfirmasi Manual'}
                   </button>
                 </div>
@@ -927,7 +1078,7 @@ export default function AdminGadaiDetailPage() {
                     Permintaan customer: {gadai.pendingAksi === 'AMBIL' ? 'Ambil Barang' : 'Perpanjang'} sebesar {formatRupiah(Number(gadai.pendingAksiNominal))}
                   </p>
                   {gadai.pendingAksiBukti && (
-                    <a href={gadai.pendingAksiBukti} target="_blank" rel="noopener noreferrer" className="text-amber-700 hover:underline text-xs">Lihat bukti transfer</a>
+                    <button type="button" onClick={() => setPreviewPhoto(gadai.pendingAksiBukti)} className="text-amber-700 hover:underline text-xs">Lihat bukti transfer</button>
                   )}
                   <div className="flex gap-2 pt-1">
                     <button
@@ -1011,6 +1162,19 @@ export default function AdminGadaiDetailPage() {
       </div>
 
       {previewPhoto && <PhotoLightbox src={previewPhoto} onClose={() => setPreviewPhoto(null)} />}
+
+      <ConfirmDialog
+        open={showRejectConfirm}
+        variant="danger"
+        title="Tolak pengajuan ini?"
+        description={`Pengajuan #${gadai.gadaiID} (${gadai.namaBarang}) akan ditolak. Customer akan melihat status "Ditolak" pada halaman lacak pengajuan.`}
+        confirmLabel="Ya, Tolak"
+        loadingLabel="Menolak..."
+        loading={savingStatus}
+        errorMessage={rejectError}
+        onConfirm={handleReject}
+        onCancel={() => { if (!savingStatus) setShowRejectConfirm(false) }}
+      />
     </div>
   )
 }

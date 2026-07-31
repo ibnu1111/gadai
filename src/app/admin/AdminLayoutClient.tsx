@@ -63,6 +63,12 @@ export default function AdminLayoutClient({ children }: Readonly<{ children: Rea
                 <Link href="/admin/gadai" className={navLinkClass(pathname === '/admin/gadai' || pathname.startsWith('/admin/gadai/'))}>
                   Pengajuan
                 </Link>
+                <Link href="/admin/buku/tempo" className={navLinkClass(pathname.startsWith('/admin/buku/tempo'))}>
+                  Jatuh Tempo
+                </Link>
+                <Link href="/admin/buku/rekap" className={navLinkClass(pathname.startsWith('/admin/buku/rekap'))}>
+                  Rekap
+                </Link>
                 <Link href="/admin/customer" className={navLinkClass(pathname === '/admin/customer' || pathname.startsWith('/admin/customer/'))}>
                   Customer
                 </Link>
@@ -109,6 +115,12 @@ export default function AdminLayoutClient({ children }: Readonly<{ children: Rea
               </Link>
               <Link href="/admin/gadai" className={navLinkClass(pathname === '/admin/gadai' || pathname.startsWith('/admin/gadai/'))}>
                 Pengajuan
+              </Link>
+              <Link href="/admin/buku/tempo" className={navLinkClass(pathname.startsWith('/admin/buku/tempo'))}>
+                Jatuh Tempo
+              </Link>
+              <Link href="/admin/buku/rekap" className={navLinkClass(pathname.startsWith('/admin/buku/rekap'))}>
+                Rekap
               </Link>
               <Link href="/admin/customer" className={navLinkClass(pathname === '/admin/customer' || pathname.startsWith('/admin/customer/'))}>
                 Customer

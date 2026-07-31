@@ -11,13 +11,14 @@ datasource db {
 }
 
 model Customer {
-  id        Int      @id @default(autoincrement())
+  id        Int        @id @default(autoincrement())
   nama      String
-  noHp      String   @unique
+  noHp      String     @unique
   fotoKtp   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
   gadais    Gadai[]
+  pinjaman  Pinjaman[]
 }
 
 model Gadai {
@@ -54,20 +55,23 @@ model Gadai {
   nomorPolisi           String?
 
   // Pencairan dana (transfer dari toko/keuangan ke customer)
-  rekeningToken         String?   @unique
-  transferToken         String?   @unique
-  buktiTransferCair     String?
-  nominalTransferCair   Decimal?  @db.Decimal(18, 2)
-  tanggalCair           DateTime?
+  rekeningToken       String?   @unique
+  transferToken       String?   @unique
+  buktiTransferCair   String?
+  nominalTransferCair Decimal?  @db.Decimal(18, 2)
+  tanggalCair         DateTime?
 
   // Bunga yang sudah dibayar pada siklus berjalan (untuk perpanjangan bertahap)
-  bungaTerbayar         Decimal   @default(0) @db.Decimal(18, 2)
+  bungaTerbayar Decimal @default(0) @db.Decimal(18, 2)
 
   // Aksi customer (ambil/perpanjang) yang menunggu konfirmasi admin
-  pendingAksi           String?
-  pendingAksiNominal    Decimal?  @db.Decimal(18, 2)
-  pendingAksiBukti      String?
-  pendingAksiCreatedAt  DateTime?
+  pendingAksi          String?
+  pendingAksiNominal   Decimal?  @db.Decimal(18, 2)
+  pendingAksiBukti     String?
+  pendingAksiCreatedAt DateTime?
+
+  // Terisi bila pengajuan online ini sudah menetas jadi pinjaman berjalan di buku besar
+  pinjaman Pinjaman?
 }
 
 model Payment {
@@ -87,4 +91,88 @@ model Admin {
   email     String   @unique
   password  String
   createdAt DateTime @default(now())
+}
+
+// ============================================================================
+// BUKU BESAR PINJAMAN
+// Mencatat pinjaman yang benar-benar berjalan (Gadai walk-in maupun Dapin),
+// menggantikan rekap manual WhatsApp. Terpisah dari model Gadai yang melayani
+// funnel pengajuan online.
+// ============================================================================
+
+/// Kas asal pencairan: MEGA, TAB ANAK, TAB EMAS.
+model SumberDana {
+  id        Int            @id @default(autoincrement())
+  nama      String         @unique
+  urutan    Int            @default(0)
+  aktif     Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  pendanaan PinjamanDana[]
+}
+
+/// Pokok pinjaman. Nilainya tidak berubah walau diperpanjang berkali-kali.
+model Pinjaman {
+  id             Int       @id @default(autoincrement())
+  customerID     Int
+  customer       Customer  @relation(fields: [customerID], references: [id])
+  jenis          String // GADAI | DAPIN
+  namaBarang     String? // hanya untuk GADAI
+  pokok          Decimal   @db.Decimal(18, 2)
+  tanggalCair    DateTime
+  status         String    @default("AKTIF") // AKTIF | LUNAS | LELANG | WRITEOFF
+  tanggalSelesai DateTime?
+  /// Hasil lelang, atau nominal yang dihapusbukukan saat write-off.
+  nominalAkhir   Decimal?  @db.Decimal(18, 2)
+  catatan        String? // mis. "OPER GADAI"
+  gadaiID        Int?      @unique
+  gadai          Gadai?    @relation(fields: [gadaiID], references: [gadaiID])
+  dibuatOleh     String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  siklus    Siklus[]
+  pendanaan PinjamanDana[]
+
+  @@index([status, jenis])
+  @@index([customerID])
+}
+
+/// Satu periode berjalan. Perpanjangan menutup siklus lama dan membuka siklus baru.
+model Siklus {
+  id                Int       @id @default(autoincrement())
+  pinjamanId        Int
+  pinjaman          Pinjaman  @relation(fields: [pinjamanId], references: [id], onDelete: Cascade)
+  siklusKe          Int
+  tanggalMulai      DateTime
+  tanggalJatuhTempo DateTime
+  nominalBunga      Decimal   @db.Decimal(18, 2)
+  status            String    @default("BERJALAN") // BERJALAN | PERPANJANG | LUNAS | LELANG | WRITEOFF
+  tanggalBayar      DateTime?
+  nominalDibayar    Decimal?  @db.Decimal(18, 2)
+  /// Nomor baris pada rekap WhatsApp dalam grup tanggalMulai; sengaja dipertahankan
+  /// agar rekap hasil generate tetap sama persis dengan kebiasaan pencatatan manual.
+  nomorUrut         Int?
+  catatan           String?
+  dibuatOleh        String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([pinjamanId, siklusKe])
+  @@index([status, tanggalJatuhTempo])
+  @@index([tanggalMulai])
+}
+
+/// Satu pinjaman bisa didanai lebih dari satu sumber; total nominal harus sama dengan pokok.
+model PinjamanDana {
+  id           Int        @id @default(autoincrement())
+  pinjamanId   Int
+  pinjaman     Pinjaman   @relation(fields: [pinjamanId], references: [id], onDelete: Cascade)
+  sumberDanaId Int
+  sumberDana   SumberDana @relation(fields: [sumberDanaId], references: [id])
+  nominal      Decimal    @db.Decimal(18, 2)
+  createdAt    DateTime   @default(now())
+
+  @@index([pinjamanId])
+  @@index([sumberDanaId])
 }

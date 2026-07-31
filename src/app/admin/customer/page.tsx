@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { handleUnauthorized } from '@/lib/adminSession'
+import PhotoLightbox from '@/components/admin/PhotoLightbox'
 
 interface CustomerRow {
   id: number
@@ -55,6 +56,7 @@ export default function AdminCustomerPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 })
+  const [previewPhoto, setPreviewPhoto] = useState<string | null>(null)
 
   useEffect(() => {
     const timeout = setTimeout(() => fetchData(1), 300)
@@ -141,9 +143,9 @@ export default function AdminCustomerPage() {
                       <td className="px-4 py-3 text-sm text-stone-600">{c.noHp}</td>
                       <td className="px-4 py-3 hidden sm:table-cell">
                         {c.fotoKtp ? (
-                          <a href={c.fotoKtp} target="_blank" rel="noopener noreferrer" className="text-amber-600 hover:text-amber-700 text-sm font-medium">
+                          <button type="button" onClick={() => setPreviewPhoto(c.fotoKtp)} className="text-amber-600 hover:text-amber-700 text-sm font-medium">
                             Lihat
-                          </a>
+                          </button>
                         ) : (
                           <span className="text-stone-300 text-sm">-</span>
                         )}
@@ -201,6 +203,8 @@ export default function AdminCustomerPage() {
           </div>
         )}
       </div>
+
+      {previewPhoto && <PhotoLightbox src={previewPhoto} onClose={() => setPreviewPhoto(null)} />}
     </div>
   )
 }

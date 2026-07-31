@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { handleUnauthorized } from '@/lib/adminSession'
+import ConfirmDialog from '@/components/admin/ConfirmDialog'
 
 interface Gadai {
   gadaiID: number
@@ -153,11 +154,40 @@ export default function AdminGadaiPage() {
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState({ status: '', search: '' })
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 })
+  const [rejectTarget, setRejectTarget] = useState<number | null>(null)
+  const [rejecting, setRejecting] = useState(false)
+  const [rejectError, setRejectError] = useState('')
 
   useEffect(() => {
     fetchData(1)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.status, filters.search])
+
+  const confirmReject = async () => {
+    if (rejectTarget === null) return
+    setRejecting(true)
+    setRejectError('')
+    try {
+      const token = localStorage.getItem('adminToken')
+      const res = await fetch(`/api/gadai/${rejectTarget}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ status: 'DITOLAK' })
+      })
+      if (handleUnauthorized(res.status, '/admin/gadai')) return
+      const data = await res.json()
+      if (data.success) {
+        setRejectTarget(null)
+        fetchData(pagination.page)
+      } else {
+        setRejectError(data.message || 'Gagal menolak pengajuan')
+      }
+    } catch {
+      setRejectError('Gagal menolak pengajuan')
+    } finally {
+      setRejecting(false)
+    }
+  }
 
   const fetchData = async (page: number) => {
     setLoading(true)
@@ -356,15 +386,26 @@ export default function AdminGadaiPage() {
                         <CompletenessIcons gadai={gadai} />
                       </td>
                       <td className="px-4 py-3">
-                        <Link
-                          href={`/admin/gadai/${gadai.gadaiID}`}
-                          className="inline-flex items-center gap-1 text-sm text-amber-600 hover:text-amber-700 font-medium transition"
-                        >
-                          Detail
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
-                        </Link>
+                        <div className="flex items-center gap-3">
+                          <Link
+                            href={`/admin/gadai/${gadai.gadaiID}`}
+                            className="inline-flex items-center gap-1 text-sm text-amber-600 hover:text-amber-700 font-medium transition"
+                          >
+                            Detail
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </Link>
+                          {gadai.status === 'PENDING' && (
+                            <button
+                              type="button"
+                              onClick={() => { setRejectError(''); setRejectTarget(gadai.gadaiID) }}
+                              className="text-sm text-red-600 hover:text-red-700 font-medium transition"
+                            >
+                              Tolak
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   )
@@ -393,6 +434,19 @@ export default function AdminGadaiPage() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={rejectTarget !== null}
+        variant="danger"
+        title={`Tolak pengajuan #${rejectTarget}?`}
+        description='Customer akan melihat status "Ditolak" pada halaman lacak pengajuan.'
+        confirmLabel="Ya, Tolak"
+        loadingLabel="Menolak..."
+        loading={rejecting}
+        errorMessage={rejectError}
+        onConfirm={confirmReject}
+        onCancel={() => { if (!rejecting) { setRejectTarget(null); setRejectError('') } }}
+      />
     </div>
   )
 }
