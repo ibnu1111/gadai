@@ -78,13 +78,13 @@ function KartuPinjaman({
   return (
     <div className={`bg-white rounded-xl border p-4 ${telat ? 'border-red-200' : 'border-stone-100'}`}>
       <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="min-w-0">
-          <p className="font-semibold text-stone-800 truncate">{pinjaman.customer.nama}</p>
+        <Link href={`/admin/pinjaman/${pinjaman.id}`} className="min-w-0 group">
+          <p className="font-semibold text-stone-800 truncate group-hover:text-amber-600 transition">{pinjaman.customer.nama}</p>
           <p className="text-xs text-stone-500 truncate">
             {pinjaman.namaBarang || 'Tanpa jaminan'} · siklus ke-{item.siklusKe}
             {pinjaman.gadaiID ? ` · #${pinjaman.gadaiID}` : ''}
           </p>
-        </div>
+        </Link>
         <div className="text-right shrink-0">
           {aksiAktif ? (
             <LabelTempo jatuhTempo={tanggalWib(item.tanggalJatuhTempo)} hariIni={hariIni} />

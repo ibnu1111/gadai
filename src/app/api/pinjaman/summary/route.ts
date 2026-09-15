@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
       terlambat,
       lunasBulanIni,
       keuntunganBulanIni,
+      pengeluaranBulanIni,
       pengajuanBaru
     ] = await Promise.all([
       prisma.pinjaman.count({ where: { status: 'AKTIF' } }),
@@ -44,6 +45,10 @@ export async function GET(request: NextRequest) {
         where: { tanggalJatuhTempo: { gte: awalBulan, lt: awalBulanDepan } },
         _sum: { nominalBunga: true }
       }),
+      prisma.pengeluaran.aggregate({
+        where: { tanggal: { gte: awalBulan, lt: awalBulanDepan } },
+        _sum: { nominal: true }
+      }),
       prisma.gadai.count({
         where: { status: { in: ['PENDING', 'MENUNGGU_REKENING', 'MENUNGGU_TRANSFER', 'MENUNGGU_VERIFIKASI_TRANSFER'] } }
       })
@@ -58,7 +63,7 @@ export async function GET(request: NextRequest) {
         jatuhTempo7Hari,
         terlambat,
         lunasBulanIni,
-        keuntunganBulanIni: Number(keuntunganBulanIni._sum.nominalBunga ?? 0),
+        keuntunganBulanIni: Number(keuntunganBulanIni._sum.nominalBunga ?? 0) - Number(pengeluaranBulanIni._sum.nominal ?? 0),
         pengajuanBaru
       }
     })

@@ -116,7 +116,7 @@ async function rekapClosing(tahun: number, bulan: number): Promise<string> {
   const awal = new Date(Date.UTC(tahun, bulan - 1, 1))
   const akhir = new Date(Date.UTC(tahun, bulan, 1))
 
-  const [terputar, perSumber, keuntungan, sumberDana] = await Promise.all([
+  const [terputar, perSumber, keuntungan, sumberDana, pengeluaran] = await Promise.all([
     prisma.pinjaman.aggregate({ where: { status: 'AKTIF' }, _sum: { pokok: true } }),
     prisma.pinjamanDana.groupBy({
       by: ['sumberDanaId'],
@@ -127,16 +127,25 @@ async function rekapClosing(tahun: number, bulan: number): Promise<string> {
       where: { tanggalJatuhTempo: { gte: awal, lt: akhir } },
       _sum: { nominalBunga: true }
     }),
-    prisma.sumberDana.findMany({ orderBy: [{ urutan: 'asc' }, { nama: 'asc' }], select: { id: true, nama: true } })
+    prisma.sumberDana.findMany({ orderBy: [{ urutan: 'asc' }, { nama: 'asc' }], select: { id: true, nama: true } }),
+    prisma.pengeluaran.findMany({
+      where: { tanggal: { gte: awal, lt: akhir } },
+      orderBy: [{ tanggal: 'asc' }, { id: 'asc' }],
+      select: { keterangan: true, nominal: true }
+    })
   ])
 
   const totalTerputar = Number(terputar._sum.pokok ?? 0)
   const totalKeuntungan = Number(keuntungan._sum.nominalBunga ?? 0)
+  const totalPengeluaran = pengeluaran.reduce((acc, p) => acc + Number(p.nominal), 0)
+  const keuntunganBersih = totalKeuntungan - totalPengeluaran
   const nominalSumber = new Map(perSumber.map((p) => [p.sumberDanaId, Number(p._sum.nominal ?? 0)]))
 
   const ringkas = sumberDana
     .filter((s) => nominalSumber.has(s.id))
     .map((s) => `${s.nama} : ${formatAngka(nominalSumber.get(s.id) ?? 0)}`)
+
+  const barisPengeluaran = pengeluaran.map((p, i) => `${i + 1}. ${p.keterangan} : ${formatAngka(Number(p.nominal))}`)
 
   return [
     `MODAL+ KEUNTUNGAN TERPUTAR DI BULAN ${bulanPanjang(bulan)} : `,
@@ -155,7 +164,15 @@ async function rekapClosing(tahun: number, bulan: number): Promise<string> {
     '',
     `*KEUNTUNGAN ${bulanSingkat(bulan)} :*`,
     '',
-    `Rp. ${formatAngka(totalKeuntungan)}`
+    `Rp. ${formatAngka(totalKeuntungan)}`,
+    '',
+    'PEMAKAIAN : ',
+    '',
+    ...(barisPengeluaran.length > 0 ? barisPengeluaran : ['(tidak ada)']),
+    '',
+    `*KEUNTUNGAN BERSIH ${bulanSingkat(bulan)} :*`,
+    '',
+    `Rp. ${formatAngka(keuntunganBersih)}`
   ].join('\n')
 }
 

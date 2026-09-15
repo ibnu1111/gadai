@@ -69,6 +69,9 @@ export default function AdminLayoutClient({ children }: Readonly<{ children: Rea
                 <Link href="/admin/buku/rekap" className={navLinkClass(pathname.startsWith('/admin/buku/rekap'))}>
                   Rekap
                 </Link>
+                <Link href="/admin/buku/pengeluaran" className={navLinkClass(pathname.startsWith('/admin/buku/pengeluaran'))}>
+                  Pengeluaran
+                </Link>
                 <Link href="/admin/customer" className={navLinkClass(pathname === '/admin/customer' || pathname.startsWith('/admin/customer/'))}>
                   Customer
                 </Link>
@@ -121,6 +124,9 @@ export default function AdminLayoutClient({ children }: Readonly<{ children: Rea
               </Link>
               <Link href="/admin/buku/rekap" className={navLinkClass(pathname.startsWith('/admin/buku/rekap'))}>
                 Rekap
+              </Link>
+              <Link href="/admin/buku/pengeluaran" className={navLinkClass(pathname.startsWith('/admin/buku/pengeluaran'))}>
+                Pengeluaran
               </Link>
               <Link href="/admin/customer" className={navLinkClass(pathname === '/admin/customer' || pathname.startsWith('/admin/customer/'))}>
                 Customer

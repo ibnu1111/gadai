@@ -70,9 +70,14 @@ export default function AdminRekapPage() {
           <h1 className="text-xl font-semibold text-stone-800">Rekap WhatsApp</h1>
           <p className="text-sm text-stone-500">Teks siap tempel ke grup, formatnya mengikuti catatan yang sudah berjalan.</p>
         </div>
-        <Link href="/admin/buku/tempo" className="text-sm text-amber-600 hover:text-amber-700 font-medium">
-          Ke jatuh tempo &rarr;
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link href="/admin/buku/pengeluaran" className="text-sm text-amber-600 hover:text-amber-700 font-medium">
+            Pengeluaran &rarr;
+          </Link>
+          <Link href="/admin/buku/tempo" className="text-sm text-amber-600 hover:text-amber-700 font-medium">
+            Ke jatuh tempo &rarr;
+          </Link>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2">

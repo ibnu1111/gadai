@@ -112,6 +112,19 @@ model SumberDana {
   pendanaan PinjamanDana[]
 }
 
+/// Biaya operasional (mis. servis kendaraan, pulsa, dsb) yang mengurangi keuntungan bulan berjalan.
+model Pengeluaran {
+  id         Int      @id @default(autoincrement())
+  tanggal    DateTime
+  keterangan String
+  nominal    Decimal  @db.Decimal(18, 2)
+  dibuatOleh String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([tanggal])
+}
+
 /// Pokok pinjaman. Nilainya tidak berubah walau diperpanjang berkali-kali.
 model Pinjaman {
   id             Int       @id @default(autoincrement())
