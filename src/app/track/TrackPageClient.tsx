@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import BreadcrumbSchema from '@/components/BreadcrumbSchema'
+import { FINANCE_WA_NUMBER } from '@/lib/helpers'
 
 function isAdminLoggedIn(): boolean {
   return Boolean(localStorage.getItem('adminToken') && localStorage.getItem('adminData'))
@@ -29,6 +30,83 @@ function formatRupiahValue(num: number): string {
     currency: 'IDR',
     minimumFractionDigits: 0
   }).format(num)
+}
+
+function RekeningForm({ item, phone, onDone }: { item: any; phone: string; onDone: () => void }) {
+  const [namaBank, setNamaBank] = useState('')
+  const [noRekening, setNoRekening] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [message, setMessage] = useState('')
+
+  if (item.status !== 'MENUNGGU_REKENING') return null
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setMessage('')
+
+    if (!namaBank || !noRekening) {
+      setMessage('Nama bank dan nomor rekening wajib diisi')
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      const res = await fetch('/api/public/track/rekening', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, gadaiId: item.gadaiId, noRekening, namaBank })
+      })
+      const data = await res.json()
+      if (!data.success) {
+        throw new Error(data.message || 'Gagal menyimpan rekening')
+      }
+
+      // Notify finance via WhatsApp in a new tab so this tab can keep showing the result
+      const waMessage = encodeURIComponent(
+        `📋 *Rekening Pencairan Gadai Terisi*\n\n` +
+        `Gadai #${item.gadaiId} • ${item.namaBarang}\n` +
+        `💰 Nominal: ${formatRupiahValue(item.nominalPinjam)}\n` +
+        `🏦 Rekening: ${namaBank} - ${noRekening}\n\n` +
+        `Mohon diproses pencairan dananya.`
+      )
+      window.open(`https://wa.me/${FINANCE_WA_NUMBER}?text=${waMessage}`, '_blank', 'noopener,noreferrer')
+      onDone()
+    } catch (err: any) {
+      setMessage(err.message || 'Terjadi kesalahan')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="mt-3 pt-3 border-t border-gray-100 bg-blue-50 -mx-5 px-5 py-3">
+      <p className="text-xs font-semibold text-blue-800 mb-2">Pengajuan disetujui &mdash; isi rekening untuk pencairan dana:</p>
+      <form onSubmit={handleSubmit} className="space-y-2">
+        <input
+          type="text"
+          value={namaBank}
+          onChange={(e) => setNamaBank(e.target.value)}
+          placeholder="Nama Bank (contoh: BCA, BRI, Mandiri)"
+          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm"
+        />
+        <input
+          type="text"
+          value={noRekening}
+          onChange={(e) => setNoRekening(e.target.value)}
+          placeholder="Nomor Rekening"
+          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm"
+        />
+        {message && <p className="text-xs text-red-500">{message}</p>}
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 rounded-lg transition disabled:opacity-50"
+        >
+          {submitting ? 'Menyimpan...' : 'Simpan Rekening'}
+        </button>
+      </form>
+    </div>
+  )
 }
 
 function KelengkapanForm({ item, phone, onDone }: { item: any; phone: string; onDone: () => void }) {
@@ -514,6 +592,7 @@ export default function TrackPageClient() {
                           )}
 
                           <KelengkapanForm item={item} phone={phone} onDone={() => handleSearch(phone)} />
+                          <RekeningForm item={item} phone={phone} onDone={() => handleSearch(phone)} />
                           <PengajuanActionForm item={item} phone={phone} onDone={() => handleSearch(phone)} />
                         </div>
                       )
