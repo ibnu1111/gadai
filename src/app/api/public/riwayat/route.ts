@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
             deskripsi: true,
             atributTinggal: true,
             nomorPolisi: true,
+            fotoPendukung: true,
             noRekening: true,
             namaBank: true,
             namaRekening: true,
@@ -47,6 +48,7 @@ export async function GET(request: NextRequest) {
       data: {
         ditemukan: true,
         nama: customer.nama,
+        fotoKtp: customer.fotoKtp,
         pengajuan: customer.gadais.map((g) => ({
           gadaiID: g.gadaiID,
           kategoriBarang: g.kategoriBarang,
@@ -54,6 +56,7 @@ export async function GET(request: NextRequest) {
           deskripsi: g.deskripsi,
           atributTinggal: g.atributTinggal,
           nomorPolisi: g.nomorPolisi,
+          fotoPendukung: g.fotoPendukung,
           createdAt: g.createdAt
         })),
         rekeningTerakhir: rekeningTerakhir

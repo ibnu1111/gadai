@@ -50,6 +50,8 @@ function CreateForm() {
   const [riwayat, setRiwayat] = useState<any>(null)
   const [riwayatDismissed, setRiwayatDismissed] = useState(false)
   const [pengajuanDipilih, setPengajuanDipilih] = useState<number | null>(null)
+  const [fotoKtpDariRiwayat, setFotoKtpDariRiwayat] = useState(false)
+  const [fotoStnkDariRiwayat, setFotoStnkDariRiwayat] = useState(false)
 
   const needsStnk = formData.kategoriBarang === 'Motor' || formData.kategoriBarang === 'Mobil'
 
@@ -62,6 +64,10 @@ function CreateForm() {
       if (data.success && data.data.ditemukan) {
         setRiwayat(data.data)
         setRiwayatDismissed(false)
+        if (data.data.fotoKtp) {
+          setFormData((prev) => ({ ...prev, fotoKtp: prev.fotoKtp || data.data.fotoKtp }))
+          setFotoKtpDariRiwayat(true)
+        }
       }
     } catch {
       // Diam-diam gagal - ini cuma saran, bukan wajib.
@@ -81,8 +87,11 @@ function CreateForm() {
       atributTinggal: item.atributTinggal || '',
       platWilayah: plat[0] || '',
       platNomor: plat[1] || '',
-      platSeri: plat[2] || ''
+      platSeri: plat[2] || '',
+      fotoKtp: riwayat.fotoKtp || prev.fotoKtp,
+      fotoStnk: item.fotoPendukung || prev.fotoStnk
     }))
+    if (item.fotoPendukung) setFotoStnkDariRiwayat(true)
     setPengajuanDipilih(gadaiID)
   }
 
@@ -105,6 +114,7 @@ function CreateForm() {
     try {
       const url = await uploadPhoto(file)
       setFormData(prev => ({ ...prev, fotoKtp: url }))
+      setFotoKtpDariRiwayat(false)
     } catch (err: any) {
       setError(err.message || 'Gagal mengunggah foto KTP')
     } finally {
@@ -120,6 +130,7 @@ function CreateForm() {
     try {
       const url = await uploadPhoto(file)
       setFormData(prev => ({ ...prev, fotoStnk: url }))
+      setFotoStnkDariRiwayat(false)
     } catch (err: any) {
       setError(err.message || 'Gagal mengunggah foto STNK')
     } finally {
@@ -139,6 +150,8 @@ function CreateForm() {
       kategoriBarang: category,
       nominalPinjam: amount
     }))
+    if (phone) cekRiwayat(phone)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
   const calculateFee = (): number => {
@@ -457,7 +470,9 @@ function CreateForm() {
               <p className="text-xs text-gray-500 mt-1.5">KTP asli wajib dibawa saat mengantar barang jaminan.</p>
               {uploadingKtp && <p className="text-xs text-blue-500 mt-1.5">Mengunggah foto KTP...</p>}
               {formData.fotoKtp && !uploadingKtp && (
-                <p className="text-xs text-green-600 mt-1.5">✓ Foto KTP berhasil diunggah</p>
+                <p className="text-xs text-green-600 mt-1.5">
+                  ✓ {fotoKtpDariRiwayat ? 'Memakai foto KTP dari pengajuan sebelumnya' : 'Foto KTP berhasil diunggah'}
+                </p>
               )}
             </div>
 
@@ -490,7 +505,9 @@ function CreateForm() {
                 <p className="text-xs text-gray-500 mt-1.5">Jika belum ada, STNK bisa difotokan admin saat mengantar barang jaminan.</p>
                 {uploadingStnk && <p className="text-xs text-blue-500 mt-1.5">Mengunggah foto STNK...</p>}
                 {formData.fotoStnk && !uploadingStnk && (
-                  <p className="text-xs text-green-600 mt-1.5">✓ Foto STNK berhasil diunggah</p>
+                  <p className="text-xs text-green-600 mt-1.5">
+                    ✓ {fotoStnkDariRiwayat ? 'Memakai foto STNK dari pengajuan sebelumnya' : 'Foto STNK berhasil diunggah'}
+                  </p>
                 )}
               </div>
             )}
