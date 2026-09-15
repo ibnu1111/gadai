@@ -34,6 +34,11 @@ export async function GET(request: NextRequest) {
         include: {
           gadais: {
             select: { gadaiID: true, nominalPinjam: true, status: true, createdAt: true }
+          },
+          // Data pinjaman buku besar (transaksi walk-in) - sumber utama bisnis nyata,
+          // terpisah dari funnel pengajuan online di atas.
+          pinjaman: {
+            select: { id: true, pokok: true, status: true, createdAt: true, tanggalCair: true }
           }
         },
         orderBy: { createdAt: 'desc' },
@@ -44,11 +49,17 @@ export async function GET(request: NextRequest) {
     ])
 
     const data = customers.map((c) => {
-      const sortedGadais = [...c.gadais].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      )
-      const totalNominal = c.gadais.reduce((sum, g) => sum + Number(g.nominalPinjam), 0)
-      const activeCount = c.gadais.filter((g) => ACTIVE_STATUSES.has(g.status)).length
+      const events = [
+        ...c.gadais.map((g) => ({ status: g.status, at: g.createdAt })),
+        ...c.pinjaman.map((p) => ({ status: p.status, at: p.tanggalCair ?? p.createdAt }))
+      ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+
+      const totalNominal =
+        c.gadais.reduce((sum, g) => sum + Number(g.nominalPinjam), 0) +
+        c.pinjaman.reduce((sum, p) => sum + Number(p.pokok), 0)
+      const activeCount =
+        c.gadais.filter((g) => ACTIVE_STATUSES.has(g.status)).length +
+        c.pinjaman.filter((p) => p.status === 'AKTIF').length
 
       return {
         id: c.id,
@@ -56,11 +67,11 @@ export async function GET(request: NextRequest) {
         noHp: c.noHp,
         fotoKtp: c.fotoKtp,
         createdAt: c.createdAt,
-        totalPengajuan: c.gadais.length,
+        totalPengajuan: c.gadais.length + c.pinjaman.length,
         totalNominal,
         activeCount,
-        lastStatus: sortedGadais[0]?.status ?? null,
-        lastGadaiAt: sortedGadais[0]?.createdAt ?? null
+        lastStatus: events[0]?.status ?? null,
+        lastGadaiAt: events[0]?.at ?? null
       }
     })
 

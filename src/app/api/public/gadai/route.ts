@@ -17,7 +17,7 @@ const VALID_BUNGA: Record<string, number> = {
 export async function POST(request: NextRequest) {
   let customerName: string, phone: string, kategoriBarang: string, namaBarang: string
   let deskripsi: string | null, atributTinggal: string, fotoBarang: string, fotoPendukung: string | null
-  let jangkaWaktu: string, nominalPinjam: string, fotoKtp: string | null
+  let jangkaWaktu: string, nominalPinjam: string, fotoKtp: string | null, nomorPolisi: string | null
 
   try {
     const body = await request.json()
@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
     deskripsi = deskripsi || null
     atributTinggal = atributTinggal || '-'
     fotoKtp = body.fotoKtp || null
+    nomorPolisi = body.nomorPolisi || null
 
     if (!customerName || !phone || !kategoriBarang || !namaBarang ||
         !jangkaWaktu || !nominalPinjam) {
@@ -120,6 +121,7 @@ export async function POST(request: NextRequest) {
         deskripsi,
         fotoBarang,
         fotoPendukung,
+        nomorPolisi,
         status: 'PENDING'
       },
       include: { customer: true }
@@ -135,6 +137,7 @@ export async function POST(request: NextRequest) {
       `💵 Fee: Rp ${feeNum.toLocaleString('id-ID')}\n` +
       `🪪 Foto KTP: ${fotoKtp}\n` +
       (fotoPendukung ? `🛵 Foto STNK: ${fotoPendukung}\n` : '') +
+      (nomorPolisi ? `🔢 Plat Nomor: ${nomorPolisi}\n` : '') +
       `\nMohon untuk meninjau pengajuan di sistem.`
     )
     const waLink = `https://wa.me/?text=${waMessage}`

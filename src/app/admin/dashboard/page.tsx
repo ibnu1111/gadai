@@ -4,14 +4,15 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { handleUnauthorized } from '@/lib/adminSession'
 
-interface Summary {
-  totalGadai: number
-  aktif: number
-  pending: number
-  jatuhTempo: number
-  overdue: number
-  lunas: number
-  totalNominal: number
+interface PinjamanSummary {
+  aktifCount: number
+  totalPokokAktif: number
+  jatuhTempoHariIni: number
+  jatuhTempo7Hari: number
+  terlambat: number
+  lunasBulanIni: number
+  keuntunganBulanIni: number
+  pengajuanBaru: number
 }
 
 interface Gadai {
@@ -74,7 +75,7 @@ function formatDate(date: string) {
 }
 
 export default function AdminDashboardPage() {
-  const [summary, setSummary] = useState<Summary | null>(null)
+  const [summary, setSummary] = useState<PinjamanSummary | null>(null)
   const [recentGadai, setRecentGadai] = useState<Gadai[]>([])
   const [topCustomers, setTopCustomers] = useState<CustomerRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -87,7 +88,7 @@ export default function AdminDashboardPage() {
         const headers = { Authorization: `Bearer ${token}` }
 
         const [summaryRes, gadaiRes, customerRes] = await Promise.all([
-          fetch('/api/gadai/summary', { headers }),
+          fetch('/api/pinjaman/summary', { headers }),
           fetch('/api/gadai?limit=5', { headers }),
           fetch('/api/customer?limit=5', { headers })
         ])
@@ -115,22 +116,11 @@ export default function AdminDashboardPage() {
     load()
   }, [])
 
-  const statusBreakdown = summary
-    ? [
-        { key: 'PENDING', count: summary.pending },
-        { key: 'AKTIF', count: summary.aktif },
-        { key: 'JATUH_TEMPO', count: summary.jatuhTempo },
-        { key: 'OVERDUE', count: summary.overdue },
-        { key: 'LUNAS', count: summary.lunas }
-      ]
-    : []
-  const maxStatusCount = Math.max(1, ...statusBreakdown.map((s) => s.count))
-
   return (
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-stone-800">Dashboard</h1>
-        <p className="text-stone-500 text-sm mt-1">Ringkasan performa layanan gadai</p>
+        <p className="text-stone-500 text-sm mt-1">Ringkasan buku besar pinjaman</p>
       </div>
 
       {loading || !summary ? (
@@ -139,56 +129,55 @@ export default function AdminDashboardPage() {
         </div>
       ) : (
         <>
-          {/* Summary Cards */}
+          {/* Summary Cards - bersumber dari Pinjaman/Siklus, sama dengan Daftar Pinjaman */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+            <Link href="/admin/buku/tempo" className="bg-white rounded-xl p-4 border border-stone-100 hover:border-amber-200 transition">
+              <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Pinjaman Aktif</p>
+              <p className="text-2xl font-bold text-green-600">{summary.aktifCount}</p>
+            </Link>
             <div className="bg-white rounded-xl p-4 border border-stone-100">
-              <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Total Pengajuan</p>
-              <p className="text-2xl font-bold text-stone-800">{summary.totalGadai}</p>
+              <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Pokok Berjalan</p>
+              <p className="text-lg font-bold text-stone-800 truncate">{formatRupiah(summary.totalPokokAktif)}</p>
             </div>
-            <div className="bg-white rounded-xl p-4 border border-stone-100">
-              <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Aktif</p>
-              <p className="text-2xl font-bold text-green-600">{summary.aktif}</p>
-            </div>
-            <div className="bg-white rounded-xl p-4 border border-stone-100">
-              <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Menunggu</p>
-              <p className="text-2xl font-bold text-yellow-600">{summary.pending}</p>
-            </div>
-            <div className="bg-white rounded-xl p-4 border border-stone-100">
-              <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Jatuh Tempo</p>
-              <p className="text-2xl font-bold text-orange-600">{summary.jatuhTempo}</p>
-            </div>
-            <div className="bg-white rounded-xl p-4 border border-stone-100">
+            <Link href="/admin/buku/tempo" className="bg-white rounded-xl p-4 border border-stone-100 hover:border-amber-200 transition">
+              <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Jatuh Tempo Hari Ini</p>
+              <p className="text-2xl font-bold text-amber-600">{summary.jatuhTempoHariIni}</p>
+            </Link>
+            <Link href="/admin/buku/tempo" className="bg-white rounded-xl p-4 border border-stone-100 hover:border-amber-200 transition">
+              <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Jatuh Tempo 7 Hari</p>
+              <p className="text-2xl font-bold text-orange-600">{summary.jatuhTempo7Hari}</p>
+            </Link>
+            <Link href="/admin/buku/tempo" className="bg-white rounded-xl p-4 border border-stone-100 hover:border-amber-200 transition">
               <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Terlambat</p>
-              <p className="text-2xl font-bold text-red-600">{summary.overdue}</p>
-            </div>
+              <p className="text-2xl font-bold text-red-600">{summary.terlambat}</p>
+            </Link>
             <div className="bg-white rounded-xl p-4 border border-stone-100">
-              <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Total Pinjaman Aktif</p>
-              <p className="text-lg font-bold text-amber-600 truncate">{formatRupiah(Number(summary.totalNominal))}</p>
+              <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Keuntungan Bulan Ini</p>
+              <p className="text-lg font-bold text-amber-600 truncate">{formatRupiah(summary.keuntunganBulanIni)}</p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Status breakdown */}
+            {/* Ringkasan aksi */}
             <div className="bg-white rounded-xl border border-stone-100 p-5 lg:col-span-1">
-              <h2 className="font-semibold text-stone-800 mb-4">Sebaran Status</h2>
+              <h2 className="font-semibold text-stone-800 mb-4">Perlu Ditindak</h2>
               <div className="space-y-3">
-                {statusBreakdown.map((s) => {
-                  const style = STATUS_STYLES[s.key] || STATUS_STYLES.PENDING
-                  return (
-                    <div key={s.key}>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-stone-600">{STATUS_LABELS[s.key]}</span>
-                        <span className="font-semibold text-stone-800">{s.count}</span>
-                      </div>
-                      <div className="h-2 rounded-full bg-stone-100 overflow-hidden">
-                        <div
-                          className={`h-full rounded-full ${style.bar}`}
-                          style={{ width: `${(s.count / maxStatusCount) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                  )
-                })}
+                <Link href="/admin/buku/tempo" className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-red-50 hover:bg-red-100 transition">
+                  <span className="text-sm text-red-700">Sudah telat</span>
+                  <span className="text-sm font-bold text-red-700">{summary.terlambat}</span>
+                </Link>
+                <Link href="/admin/buku/tempo" className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-amber-50 hover:bg-amber-100 transition">
+                  <span className="text-sm text-amber-700">Jatuh tempo hari ini</span>
+                  <span className="text-sm font-bold text-amber-700">{summary.jatuhTempoHariIni}</span>
+                </Link>
+                <Link href="/admin/buku/tempo" className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition">
+                  <span className="text-sm text-blue-700">Pengajuan baru</span>
+                  <span className="text-sm font-bold text-blue-700">{summary.pengajuanBaru}</span>
+                </Link>
+                <Link href="/admin/buku/tempo" className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-stone-50 hover:bg-stone-100 transition">
+                  <span className="text-sm text-stone-600">Lunas bulan ini</span>
+                  <span className="text-sm font-bold text-stone-700">{summary.lunasBulanIni}</span>
+                </Link>
               </div>
             </div>
 
@@ -196,7 +185,7 @@ export default function AdminDashboardPage() {
             <div className="bg-white rounded-xl border border-stone-100 p-5 lg:col-span-2">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="font-semibold text-stone-800">Pengajuan Terbaru</h2>
-                <Link href="/admin/gadai" className="text-sm text-amber-600 hover:text-amber-700 font-medium">
+                <Link href="/admin/buku/tempo" className="text-sm text-amber-600 hover:text-amber-700 font-medium">
                   Lihat semua
                 </Link>
               </div>
@@ -257,8 +246,7 @@ export default function AdminDashboardPage() {
               </div>
             )}
           </div>
-        </>
-      )}
+        </>      )}
     </div>
   )
 }

@@ -18,6 +18,25 @@ interface Gadai {
   tanggalKembali: string
 }
 
+interface Siklus {
+  id: number
+  siklusKe: number
+  tanggalJatuhTempo: string
+  status: string
+}
+
+interface Pinjaman {
+  id: number
+  jenis: string
+  namaBarang: string | null
+  pokok: string
+  status: string
+  tanggalCair: string
+  tanggalSelesai: string | null
+  nominalAkhir: string | null
+  siklus: Siklus[]
+}
+
 interface CustomerDetail {
   id: number
   nama: string
@@ -25,6 +44,7 @@ interface CustomerDetail {
   fotoKtp: string | null
   createdAt: string
   gadais: Gadai[]
+  pinjaman: Pinjaman[]
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -37,7 +57,9 @@ const STATUS_LABELS: Record<string, string> = {
   JATUH_TEMPO: 'Jatuh Tempo',
   OVERDUE: 'Terlambat',
   DITOLAK: 'Ditolak',
-  DIPERPANJANG: 'Diperpanjang'
+  DIPERPANJANG: 'Diperpanjang',
+  LELANG: 'Lelang',
+  WRITEOFF: 'Hapus Buku'
 }
 
 const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
@@ -50,7 +72,9 @@ const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
   JATUH_TEMPO: { bg: 'bg-orange-100', text: 'text-orange-800' },
   OVERDUE: { bg: 'bg-red-100', text: 'text-red-800' },
   DITOLAK: { bg: 'bg-stone-100', text: 'text-stone-600' },
-  DIPERPANJANG: { bg: 'bg-purple-100', text: 'text-purple-800' }
+  DIPERPANJANG: { bg: 'bg-purple-100', text: 'text-purple-800' },
+  LELANG: { bg: 'bg-stone-100', text: 'text-stone-600' },
+  WRITEOFF: { bg: 'bg-red-100', text: 'text-red-800' }
 }
 
 function formatRupiah(num: number) {
@@ -113,9 +137,13 @@ export default function AdminCustomerDetailPage() {
     )
   }
 
-  const totalNominal = customer.gadais.reduce((sum, g) => sum + Number(g.nominalPinjam), 0)
+  const totalNominal =
+    customer.gadais.reduce((sum, g) => sum + Number(g.nominalPinjam), 0) +
+    customer.pinjaman.reduce((sum, p) => sum + Number(p.pokok), 0)
   const totalDibayar = customer.gadais.reduce((sum, g) => sum + Number(g.totalPembayaran), 0)
-  const activeCount = customer.gadais.filter((g) => ['AKTIF', 'JATUH_TEMPO', 'OVERDUE'].includes(g.status)).length
+  const activeCount =
+    customer.gadais.filter((g) => ['AKTIF', 'JATUH_TEMPO', 'OVERDUE'].includes(g.status)).length +
+    customer.pinjaman.filter((p) => p.status === 'AKTIF').length
 
   return (
     <div>
@@ -153,8 +181,8 @@ export default function AdminCustomerDetailPage() {
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
           <div className="bg-stone-50 rounded-lg p-3">
-            <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Total Pengajuan</p>
-            <p className="text-xl font-bold text-stone-800">{customer.gadais.length}</p>
+            <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Total Transaksi</p>
+            <p className="text-xl font-bold text-stone-800">{customer.gadais.length + customer.pinjaman.length}</p>
           </div>
           <div className="bg-stone-50 rounded-lg p-3">
             <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Sedang Aktif</p>
@@ -171,9 +199,58 @@ export default function AdminCustomerDetailPage() {
         </div>
       </div>
 
+      <div className="bg-white rounded-xl border border-stone-100 overflow-hidden mb-6">
+        <div className="px-4 py-3 border-b border-stone-100">
+          <h2 className="font-semibold text-stone-800">Riwayat Pinjaman (Buku Besar)</h2>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-stone-50 border-b border-stone-100">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wide">Jenis</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wide">Pokok</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wide hidden md:table-cell">Tanggal Cair</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wide hidden md:table-cell">Jatuh Tempo</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-stone-100">
+              {customer.pinjaman.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-4 py-12 text-center text-stone-400">Belum ada pinjaman</td>
+                </tr>
+              ) : (
+                customer.pinjaman.map((p) => {
+                  const style = STATUS_STYLES[p.status] || STATUS_STYLES.PENDING
+                  const siklusTerakhir = p.siklus[0]
+                  return (
+                    <tr key={p.id} className="hover:bg-stone-50 transition">
+                      <td className="px-4 py-3">
+                        <p className="text-sm text-stone-700">{p.jenis}</p>
+                        {p.namaBarang && <p className="text-xs text-stone-400">{p.namaBarang}</p>}
+                      </td>
+                      <td className="px-4 py-3 text-sm font-semibold text-stone-700">{formatRupiah(Number(p.pokok))}</td>
+                      <td className="px-4 py-3 hidden md:table-cell text-sm text-stone-500">{formatDate(p.tanggalCair)}</td>
+                      <td className="px-4 py-3 hidden md:table-cell text-sm text-stone-500">
+                        {siklusTerakhir ? formatDate(siklusTerakhir.tanggalJatuhTempo) : '-'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${style.bg} ${style.text}`}>
+                          {STATUS_LABELS[p.status] || p.status}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div className="bg-white rounded-xl border border-stone-100 overflow-hidden">
         <div className="px-4 py-3 border-b border-stone-100">
-          <h2 className="font-semibold text-stone-800">Riwayat Pengajuan</h2>
+          <h2 className="font-semibold text-stone-800">Riwayat Pengajuan (Online)</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">

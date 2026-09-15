@@ -38,7 +38,10 @@ function CreateForm() {
     jangkaWaktu: '',
     nominalPinjam: '',
     fotoKtp: '',
-    fotoStnk: ''
+    fotoStnk: '',
+    platWilayah: '',
+    platNomor: '',
+    platSeri: ''
   })
   const [result, setResult] = useState<any>(null)
   const [error, setError] = useState('')
@@ -116,12 +119,20 @@ function CreateForm() {
     setResult(null)
 
     try {
+      const nomorPolisi = needsStnk
+        ? [formData.platWilayah, formData.platNomor, formData.platSeri]
+            .map((s) => s.trim())
+            .filter(Boolean)
+            .join(' ')
+        : undefined
+
       const res = await fetch('/api/public/gadai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
-          fotoPendukung: formData.fotoStnk || undefined
+          fotoPendukung: formData.fotoStnk || undefined,
+          nomorPolisi: nomorPolisi || undefined
         })
       })
 
@@ -147,6 +158,7 @@ function CreateForm() {
           `💵 Total Bayar: Rp ${totalBayar.toLocaleString('id-ID')}\n` +
           (formData.fotoKtp ? `🪪 Foto KTP: ${formData.fotoKtp}\n` : '') +
           (formData.fotoStnk ? `🛵 Foto STNK: ${formData.fotoStnk}\n` : '') +
+          (nomorPolisi ? `🔢 Plat Nomor: ${nomorPolisi}\n` : '') +
           `\n🔗 Lacak pengajuan: ${trackLink}`
         )
 
@@ -174,7 +186,10 @@ function CreateForm() {
       jangkaWaktu: '',
       nominalPinjam: '',
       fotoKtp: '',
-      fotoStnk: ''
+      fotoStnk: '',
+      platWilayah: '',
+      platNomor: '',
+      platSeri: ''
     })
     setResult(null)
   }
@@ -387,6 +402,45 @@ function CreateForm() {
                 {formData.fotoStnk && !uploadingStnk && (
                   <p className="text-xs text-green-600 mt-1.5">✓ Foto STNK berhasil diunggah</p>
                 )}
+              </div>
+            )}
+
+            {needsStnk && (
+              <div>
+                <label htmlFor="platWilayah" className="block text-sm font-medium text-gray-700 mb-1.5">Plat Nomor</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <input
+                    id="platWilayah"
+                    type="text"
+                    value={formData.platWilayah}
+                    onChange={(e) => setFormData({ ...formData, platWilayah: e.target.value.toUpperCase() })}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition uppercase"
+                    placeholder="AB"
+                    maxLength={2}
+                    required
+                  />
+                  <input
+                    id="platNomor"
+                    type="text"
+                    inputMode="numeric"
+                    value={formData.platNomor}
+                    onChange={(e) => setFormData({ ...formData, platNomor: e.target.value.replace(/\D/g, '') })}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                    placeholder="3403"
+                    maxLength={4}
+                    required
+                  />
+                  <input
+                    id="platSeri"
+                    type="text"
+                    value={formData.platSeri}
+                    onChange={(e) => setFormData({ ...formData, platSeri: e.target.value.toUpperCase() })}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition uppercase"
+                    placeholder="PO"
+                    maxLength={3}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1.5">Contoh: AB 3403 PO</p>
               </div>
             )}
 

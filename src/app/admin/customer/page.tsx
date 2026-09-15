@@ -27,7 +27,9 @@ const STATUS_LABELS: Record<string, string> = {
   JATUH_TEMPO: 'Jatuh Tempo',
   OVERDUE: 'Terlambat',
   DITOLAK: 'Ditolak',
-  DIPERPANJANG: 'Diperpanjang'
+  DIPERPANJANG: 'Diperpanjang',
+  LELANG: 'Lelang',
+  WRITEOFF: 'Hapus Buku'
 }
 
 const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
@@ -40,7 +42,9 @@ const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
   JATUH_TEMPO: { bg: 'bg-orange-100', text: 'text-orange-800' },
   OVERDUE: { bg: 'bg-red-100', text: 'text-red-800' },
   DITOLAK: { bg: 'bg-stone-100', text: 'text-stone-600' },
-  DIPERPANJANG: { bg: 'bg-purple-100', text: 'text-purple-800' }
+  DIPERPANJANG: { bg: 'bg-purple-100', text: 'text-purple-800' },
+  LELANG: { bg: 'bg-stone-100', text: 'text-stone-600' },
+  WRITEOFF: { bg: 'bg-red-100', text: 'text-red-800' }
 }
 
 function formatRupiah(num: number) {

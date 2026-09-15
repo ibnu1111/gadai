@@ -19,6 +19,14 @@ export async function GET(
       include: {
         gadais: {
           orderBy: { createdAt: 'desc' }
+        },
+        // Riwayat pinjaman buku besar (transaksi walk-in nyata), terpisah dari
+        // funnel pengajuan online di atas.
+        pinjaman: {
+          orderBy: { tanggalCair: 'desc' },
+          include: {
+            siklus: { orderBy: { siklusKe: 'desc' }, take: 1 }
+          }
         }
       }
     })

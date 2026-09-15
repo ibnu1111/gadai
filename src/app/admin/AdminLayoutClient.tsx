@@ -60,11 +60,11 @@ export default function AdminLayoutClient({ children }: Readonly<{ children: Rea
                 <Link href="/admin/dashboard" className={navLinkClass(pathname === '/admin/dashboard')}>
                   Dashboard
                 </Link>
-                <Link href="/admin/gadai" className={navLinkClass(pathname === '/admin/gadai' || pathname.startsWith('/admin/gadai/'))}>
-                  Pengajuan
-                </Link>
-                <Link href="/admin/buku/tempo" className={navLinkClass(pathname.startsWith('/admin/buku/tempo'))}>
-                  Jatuh Tempo
+                <Link
+                  href="/admin/buku/tempo"
+                  className={navLinkClass(pathname.startsWith('/admin/buku/tempo') || pathname === '/admin/gadai' || pathname.startsWith('/admin/gadai/'))}
+                >
+                  Daftar Pinjaman
                 </Link>
                 <Link href="/admin/buku/rekap" className={navLinkClass(pathname.startsWith('/admin/buku/rekap'))}>
                   Rekap
@@ -113,11 +113,11 @@ export default function AdminLayoutClient({ children }: Readonly<{ children: Rea
               <Link href="/admin/dashboard" className={navLinkClass(pathname === '/admin/dashboard')}>
                 Dashboard
               </Link>
-              <Link href="/admin/gadai" className={navLinkClass(pathname === '/admin/gadai' || pathname.startsWith('/admin/gadai/'))}>
-                Pengajuan
-              </Link>
-              <Link href="/admin/buku/tempo" className={navLinkClass(pathname.startsWith('/admin/buku/tempo'))}>
-                Jatuh Tempo
+              <Link
+                href="/admin/buku/tempo"
+                className={navLinkClass(pathname.startsWith('/admin/buku/tempo') || pathname === '/admin/gadai' || pathname.startsWith('/admin/gadai/'))}
+              >
+                Daftar Pinjaman
               </Link>
               <Link href="/admin/buku/rekap" className={navLinkClass(pathname.startsWith('/admin/buku/rekap'))}>
                 Rekap

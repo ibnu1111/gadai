@@ -10,7 +10,7 @@ export default function SiteFooter() {
   return (
     <footer className="bg-gray-900 py-12">
       <div className="max-w-6xl mx-auto px-4">
-        <div className="grid md:grid-cols-3 gap-8 mb-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
           <div>
             <div className="flex items-center gap-3 mb-4">
               <Image src="/logo-gadai.png" alt="Gadai Jogja" width={40} height={40} className="h-10 w-auto" />
@@ -27,6 +27,15 @@ export default function SiteFooter() {
                   <Link href={`/${service.slug}`} className="hover:text-white transition">{service.navLabel}</Link>
                 </li>
               ))}
+            </ul>
+          </div>
+          <div>
+            <h2 className="font-bold text-white mb-4">Perusahaan</h2>
+            <ul className="space-y-2 text-gray-400 text-sm">
+              <li><Link href="/tentang-kami" className="hover:text-white transition">Tentang Kami</Link></li>
+              <li><Link href="/kontak" className="hover:text-white transition">Kontak</Link></li>
+              <li><Link href="/syarat-ketentuan" className="hover:text-white transition">Syarat & Ketentuan</Link></li>
+              <li><Link href="/track" className="hover:text-white transition">Lacak Status</Link></li>
             </ul>
           </div>
           <div>
