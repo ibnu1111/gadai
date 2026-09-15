@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { normalizePhoneNumber, getStatusLabel, getStatusColor, isDueOrOverdue } from '@/lib/helpers'
+import {
+  normalizePhoneNumber,
+  getStatusLabel,
+  getStatusColor,
+  isDueOrOverdue,
+  getMissingInitialDocs,
+  getMissingAdminCompletion
+} from '@/lib/helpers'
 
 // GET /api/public/gadai/track - Track gadai by phone
 export async function GET(request: NextRequest) {
@@ -44,7 +51,10 @@ export async function GET(request: NextRequest) {
         bungaTerbayar: true,
         pendingAksi: true,
         pendingAksiNominal: true,
-        pendingAksiCreatedAt: true
+        pendingAksiCreatedAt: true,
+        fotoPendukung: true,
+        fotoCustomerBarang: true,
+        nomorPolisi: true
       }
     })
 
@@ -67,7 +77,15 @@ export async function GET(request: NextRequest) {
       isDue: isDueOrOverdue(g.status, g.tanggalKembali),
       pendingAksi: g.pendingAksi,
       pendingAksiNominal: g.pendingAksiNominal ? parseFloat(g.pendingAksiNominal.toString()) : null,
-      pendingAksiCreatedAt: g.pendingAksiCreatedAt
+      pendingAksiCreatedAt: g.pendingAksiCreatedAt,
+      // Dokumen yang masih kurang, boleh dilengkapi sendiri oleh customer selama
+      // pengajuan masih berstatus PENDING (belum ditinjau admin).
+      kelengkapanMissing: g.status === 'PENDING'
+        ? [
+            ...getMissingInitialDocs({ kategoriBarang: g.kategoriBarang, fotoPendukung: g.fotoPendukung }, { fotoKtp: customer.fotoKtp }),
+            ...getMissingAdminCompletion({ kategoriBarang: g.kategoriBarang, fotoCustomerBarang: g.fotoCustomerBarang, nomorPolisi: g.nomorPolisi })
+          ]
+        : []
     }))
 
     return NextResponse.json({

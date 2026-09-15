@@ -31,6 +31,161 @@ function formatRupiahValue(num: number): string {
   }).format(num)
 }
 
+function KelengkapanForm({ item, phone, onDone }: { item: any; phone: string; onDone: () => void }) {
+  const missing: string[] = item.kelengkapanMissing || []
+  const [fotoKtp, setFotoKtp] = useState('')
+  const [fotoStnk, setFotoStnk] = useState('')
+  const [fotoCustomerBarang, setFotoCustomerBarang] = useState('')
+  const [platWilayah, setPlatWilayah] = useState('')
+  const [platNomor, setPlatNomor] = useState('')
+  const [platSeri, setPlatSeri] = useState('')
+  const [uploading, setUploading] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [message, setMessage] = useState('')
+
+  if (missing.length === 0) return null
+
+  const uploadPhoto = async (file: File): Promise<string> => {
+    const body = new FormData()
+    body.append('file', file)
+    const res = await fetch('/api/upload', { method: 'POST', body })
+    const data = await res.json()
+    if (!res.ok || !data.success) {
+      throw new Error(data.message || 'Gagal mengunggah foto')
+    }
+    return data.url as string
+  }
+
+  const handleFileChange = async (field: 'ktp' | 'stnk' | 'customerBarang', e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setMessage('')
+    setUploading(field)
+    try {
+      const url = await uploadPhoto(file)
+      if (field === 'ktp') setFotoKtp(url)
+      else if (field === 'stnk') setFotoStnk(url)
+      else setFotoCustomerBarang(url)
+    } catch (err: any) {
+      setMessage(err.message || 'Gagal mengunggah foto')
+    } finally {
+      setUploading(null)
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setMessage('')
+
+    const nomorPolisi = missing.includes('Nomor Polisi')
+      ? [platWilayah, platNomor, platSeri].map((s) => s.trim()).filter(Boolean).join(' ')
+      : undefined
+
+    if (missing.includes('Foto KTP') && !fotoKtp) return setMessage('Foto KTP wajib diisi')
+    if (missing.includes('Foto STNK') && !fotoStnk) return setMessage('Foto STNK wajib diisi')
+    if (missing.includes('Foto Customer dengan Barang') && !fotoCustomerBarang) return setMessage('Foto Anda bersama barang wajib diisi')
+    if (missing.includes('Nomor Polisi') && !nomorPolisi) return setMessage('Plat nomor wajib diisi')
+
+    setSubmitting(true)
+    try {
+      const res = await fetch('/api/public/track/kelengkapan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone,
+          gadaiId: item.gadaiId,
+          fotoKtp: fotoKtp || undefined,
+          fotoPendukung: fotoStnk || undefined,
+          fotoCustomerBarang: fotoCustomerBarang || undefined,
+          nomorPolisi: nomorPolisi || undefined
+        })
+      })
+      const data = await res.json()
+      if (!data.success) {
+        throw new Error(data.message || 'Gagal menyimpan kelengkapan')
+      }
+      onDone()
+    } catch (err: any) {
+      setMessage(err.message || 'Terjadi kesalahan')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="mt-3 pt-3 border-t border-gray-100 bg-amber-50 -mx-5 px-5 py-3">
+      <p className="text-xs font-semibold text-amber-800 mb-2">Lengkapi data yang masih kurang:</p>
+      <form onSubmit={handleSubmit} className="space-y-2">
+        {missing.includes('Foto KTP') && (
+          <div>
+            <label htmlFor={`kel-ktp-${item.gadaiId}`} className="block text-xs text-gray-600 mb-1">Foto KTP</label>
+            <input id={`kel-ktp-${item.gadaiId}`} type="file" accept="image/jpeg,image/png,image/webp,image/heic" onChange={(e) => handleFileChange('ktp', e)} className="w-full text-xs" />
+            {uploading === 'ktp' && <p className="text-xs text-blue-500 mt-1">Mengunggah...</p>}
+            {fotoKtp && uploading !== 'ktp' && <p className="text-xs text-green-600 mt-1">✓ Terunggah</p>}
+          </div>
+        )}
+        {missing.includes('Foto STNK') && (
+          <div>
+            <label htmlFor={`kel-stnk-${item.gadaiId}`} className="block text-xs text-gray-600 mb-1">Foto STNK</label>
+            <input id={`kel-stnk-${item.gadaiId}`} type="file" accept="image/jpeg,image/png,image/webp,image/heic" onChange={(e) => handleFileChange('stnk', e)} className="w-full text-xs" />
+            {uploading === 'stnk' && <p className="text-xs text-blue-500 mt-1">Mengunggah...</p>}
+            {fotoStnk && uploading !== 'stnk' && <p className="text-xs text-green-600 mt-1">✓ Terunggah</p>}
+          </div>
+        )}
+        {missing.includes('Foto Customer dengan Barang') && (
+          <div>
+            <label htmlFor={`kel-customer-barang-${item.gadaiId}`} className="block text-xs text-gray-600 mb-1">Foto Anda bersama barang jaminan</label>
+            <input id={`kel-customer-barang-${item.gadaiId}`} type="file" accept="image/jpeg,image/png,image/webp,image/heic" onChange={(e) => handleFileChange('customerBarang', e)} className="w-full text-xs" />
+            {uploading === 'customerBarang' && <p className="text-xs text-blue-500 mt-1">Mengunggah...</p>}
+            {fotoCustomerBarang && uploading !== 'customerBarang' && <p className="text-xs text-green-600 mt-1">✓ Terunggah</p>}
+          </div>
+        )}
+        {missing.includes('Nomor Polisi') && (
+          <div>
+            <label htmlFor={`plat-wilayah-${item.gadaiId}`} className="block text-xs text-gray-600 mb-1">Plat Nomor</label>
+            <div className="grid grid-cols-3 gap-2">
+              <input
+                id={`plat-wilayah-${item.gadaiId}`}
+                type="text"
+                value={platWilayah}
+                onChange={(e) => setPlatWilayah(e.target.value.toUpperCase())}
+                placeholder="AB"
+                maxLength={2}
+                className="px-2 py-1.5 bg-white border border-gray-200 rounded text-xs uppercase"
+              />
+              <input
+                type="text"
+                inputMode="numeric"
+                value={platNomor}
+                onChange={(e) => setPlatNomor(e.target.value.replace(/\D/g, ''))}
+                placeholder="3403"
+                maxLength={4}
+                className="px-2 py-1.5 bg-white border border-gray-200 rounded text-xs"
+              />
+              <input
+                type="text"
+                value={platSeri}
+                onChange={(e) => setPlatSeri(e.target.value.toUpperCase())}
+                placeholder="PO"
+                maxLength={3}
+                className="px-2 py-1.5 bg-white border border-gray-200 rounded text-xs uppercase"
+              />
+            </div>
+          </div>
+        )}
+        {message && <p className="text-xs text-red-500">{message}</p>}
+        <button
+          type="submit"
+          disabled={submitting || uploading !== null}
+          className="w-full bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium py-2 rounded-lg transition disabled:opacity-50"
+        >
+          {submitting ? 'Menyimpan...' : 'Simpan Kelengkapan'}
+        </button>
+      </form>
+    </div>
+  )
+}
+
 function PengajuanActionForm({ item, phone, onDone }: { item: any; phone: string; onDone: () => void }) {
   const [open, setOpen] = useState(false)
   const [aksi, setAksi] = useState<'AMBIL' | 'PERPANJANG'>('AMBIL')
@@ -358,6 +513,7 @@ export default function TrackPageClient() {
                             </div>
                           )}
 
+                          <KelengkapanForm item={item} phone={phone} onDone={() => handleSearch(phone)} />
                           <PengajuanActionForm item={item} phone={phone} onDone={() => handleSearch(phone)} />
                         </div>
                       )
