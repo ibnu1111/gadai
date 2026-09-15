@@ -52,6 +52,8 @@ function CreateForm() {
   const [pengajuanDipilih, setPengajuanDipilih] = useState<number | null>(null)
   const [fotoKtpDariRiwayat, setFotoKtpDariRiwayat] = useState(false)
   const [fotoStnkDariRiwayat, setFotoStnkDariRiwayat] = useState(false)
+  const [gantiFotoKtp, setGantiFotoKtp] = useState(false)
+  const [gantiFotoStnk, setGantiFotoStnk] = useState(false)
 
   const needsStnk = formData.kategoriBarang === 'Motor' || formData.kategoriBarang === 'Mobil'
 
@@ -460,19 +462,34 @@ function CreateForm() {
 
             <div>
               <label htmlFor="fotoKtp" className="block text-sm font-medium text-gray-700 mb-1.5">Foto KTP <span className="text-gray-400 font-normal">(opsional)</span></label>
-              <input
-                id="fotoKtp"
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/heic"
-                onChange={handleKtpChange}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-blue-100 file:text-blue-700 file:text-sm file:font-medium"
-              />
+              {formData.fotoKtp && fotoKtpDariRiwayat && !gantiFotoKtp ? (
+                <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl p-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={formData.fotoKtp} alt="Foto KTP" className="w-14 h-14 object-cover rounded-lg border border-gray-200" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-green-600">✓ Memakai foto KTP dari pengajuan sebelumnya</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setGantiFotoKtp(true)}
+                    className="text-xs font-medium text-blue-600 hover:text-blue-700 shrink-0"
+                  >
+                    Ganti
+                  </button>
+                </div>
+              ) : (
+                <input
+                  id="fotoKtp"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/heic"
+                  onChange={handleKtpChange}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-blue-100 file:text-blue-700 file:text-sm file:font-medium"
+                />
+              )}
               <p className="text-xs text-gray-500 mt-1.5">KTP asli wajib dibawa saat mengantar barang jaminan.</p>
               {uploadingKtp && <p className="text-xs text-blue-500 mt-1.5">Mengunggah foto KTP...</p>}
-              {formData.fotoKtp && !uploadingKtp && (
-                <p className="text-xs text-green-600 mt-1.5">
-                  ✓ {fotoKtpDariRiwayat ? 'Memakai foto KTP dari pengajuan sebelumnya' : 'Foto KTP berhasil diunggah'}
-                </p>
+              {formData.fotoKtp && !uploadingKtp && !fotoKtpDariRiwayat && (
+                <p className="text-xs text-green-600 mt-1.5">✓ Foto KTP berhasil diunggah</p>
               )}
             </div>
 
@@ -495,19 +512,34 @@ function CreateForm() {
             {needsStnk && (
               <div>
                 <label htmlFor="fotoStnk" className="block text-sm font-medium text-gray-700 mb-1.5">Foto STNK <span className="text-gray-400 font-normal">(opsional)</span></label>
-                <input
-                  id="fotoStnk"
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/heic"
-                  onChange={handleStnkChange}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-blue-100 file:text-blue-700 file:text-sm file:font-medium"
-                />
+                {formData.fotoStnk && fotoStnkDariRiwayat && !gantiFotoStnk ? (
+                  <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl p-3">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={formData.fotoStnk} alt="Foto STNK" className="w-14 h-14 object-cover rounded-lg border border-gray-200" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-green-600">✓ Memakai foto STNK dari pengajuan sebelumnya</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setGantiFotoStnk(true)}
+                      className="text-xs font-medium text-blue-600 hover:text-blue-700 shrink-0"
+                    >
+                      Ganti
+                    </button>
+                  </div>
+                ) : (
+                  <input
+                    id="fotoStnk"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/heic"
+                    onChange={handleStnkChange}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-blue-100 file:text-blue-700 file:text-sm file:font-medium"
+                  />
+                )}
                 <p className="text-xs text-gray-500 mt-1.5">Jika belum ada, STNK bisa difotokan admin saat mengantar barang jaminan.</p>
                 {uploadingStnk && <p className="text-xs text-blue-500 mt-1.5">Mengunggah foto STNK...</p>}
-                {formData.fotoStnk && !uploadingStnk && (
-                  <p className="text-xs text-green-600 mt-1.5">
-                    ✓ {fotoStnkDariRiwayat ? 'Memakai foto STNK dari pengajuan sebelumnya' : 'Foto STNK berhasil diunggah'}
-                  </p>
+                {formData.fotoStnk && !uploadingStnk && !fotoStnkDariRiwayat && (
+                  <p className="text-xs text-green-600 mt-1.5">✓ Foto STNK berhasil diunggah</p>
                 )}
               </div>
             )}
