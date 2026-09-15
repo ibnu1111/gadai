@@ -147,7 +147,7 @@ function CreateForm() {
       (nomorPolisi ? `\u{1F522} Plat Nomor: ${nomorPolisi}\n` : '') +
       `\n\u{1F517} Lacak pengajuan: ${trackLink}`
     )
-    const waNumber = '6282299748978' // 0822-9974-8978
+    const waNumber = '62819676216' // 0819-676-216
     const waLink = `https://wa.me/${waNumber}?text=${waMessage}`
 
     // Buka WhatsApp SEKARANG JUGA (masih dalam gesture klik asli, bukan setelah
