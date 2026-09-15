@@ -620,6 +620,25 @@ export default function AdminGadaiDetailPage() {
     : ''
   const customerRekeningWaLink = `https://wa.me/${gadai.customer.noHp}?text=${encodeURIComponent(customerRekeningWaMessage)}`
 
+  // Rincian jatuh tempo untuk diingatkan ke customer (perpanjang/ambil, denda, batas waktu)
+  const showJatuhTempoRecap = ['AKTIF', 'JATUH_TEMPO', 'OVERDUE'].includes(gadai.status)
+  const sebutanBarang = needsKendaraan ? 'unit' : 'barang jaminan'
+  const jatuhTempoRecapMessage =
+    `Halo ${gadai.customer.nama}, mau mengingatkan untuk gadai *${gadai.namaBarang}* (#${gadai.gadaiID}) ya \u{1F64F}\n\n` +
+    `\u{1F4C5} Jatuh tempo: *${formatDate(gadai.tanggalKembali)}*\n\n` +
+    `Ada 2 pilihan:\n` +
+    `\u{1F504} Perpanjang: ${formatRupiah(fee)}\n` +
+    `\u{1F4E6} Ambil ${sebutanBarang} (lunas): ${formatRupiah(sisaTagihan)}\n\n` +
+    `Nanti akan diingatkan lagi H-1 sebelum jatuh tempo ya.\n\n` +
+    `\u{26A0}\uFE0F Ketentuan keterlambatan:\n` +
+    `- Denda keterlambatan Rp 100.000/hari, mohon ON TIME\n` +
+    `- Maksimal 3 hari dari tanggal jatuh tempo, lewat dari itu ${sebutanBarang} akan dilelang\n\n` +
+    `\u{23F0} Batas waktu:\n` +
+    `- Perpanjang: maks jam 17.00 di tanggal jatuh tempo\n` +
+    `- Ambil ${sebutanBarang}: maks jam 20.00\n\n` +
+    `Mohon WhatsApp selalu aktif ya, supaya ${sebutanBarang} tidak sampai dilelang kalau melewati jatuh tempo \u{1F64F}\u{1F3FB}\u{1F64F}\u{1F3FB}\u{1F64F}\u{1F3FB}`
+  const jatuhTempoRecapWaLink = `https://wa.me/${gadai.customer.noHp}?text=${encodeURIComponent(jatuhTempoRecapMessage)}`
+
   const updatePendanaan = (index: number, patch: Partial<PendanaanRow>) => {
     setPendanaan((rows) => rows.map((row, i) => (i === index ? { ...row, ...patch } : row)))
   }
@@ -1187,6 +1206,16 @@ export default function AdminGadaiDetailPage() {
             >
               Chat WhatsApp
             </a>
+            {showJatuhTempoRecap && (
+              <a
+                href={jatuhTempoRecapWaLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 w-full bg-stone-100 hover:bg-stone-200 text-stone-700 px-4 py-2.5 rounded-lg text-sm font-medium transition mt-2"
+              >
+                Kirim Rincian Jatuh Tempo (WA)
+              </a>
+            )}
           </div>
         </div>
       </div>
