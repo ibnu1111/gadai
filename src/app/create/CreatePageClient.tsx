@@ -118,6 +118,10 @@ function CreateForm() {
     setLoading(true)
     setResult(null)
 
+    // Buka tab kosong sekarang juga (masih dalam gesture klik) agar browser tidak
+    // memblokir popup - URL-nya baru diisi setelah fetch selesai.
+    const waTab = window.open('', '_blank')
+
     try {
       const nomorPolisi = needsStnk
         ? [formData.platWilayah, formData.platNomor, formData.platSeri]
@@ -162,13 +166,21 @@ function CreateForm() {
           `\n🔗 Lacak pengajuan: ${trackLink}`
         )
 
-        // Redirect to WhatsApp (shop owner's number - notifies about the new pengajuan)
+        // Buka WhatsApp di tab baru, tab ini sendiri lanjut ke halaman lacak pengajuan
         const waNumber = '6282299748978' // 0822-9974-8978
-        window.location.href = `https://wa.me/${waNumber}?text=${waMessage}`
+        const waLink = `https://wa.me/${waNumber}?text=${waMessage}`
+        if (waTab) {
+          waTab.location.href = waLink
+        } else {
+          window.open(waLink, '_blank', 'noopener,noreferrer')
+        }
+        window.location.href = trackLink
       } else {
+        waTab?.close()
         setError(data.message || 'Terjadi kesalahan')
       }
     } catch {
+      waTab?.close()
       setError('Terjadi kesalahan saat mengirim pengajuan')
     } finally {
       setLoading(false)
