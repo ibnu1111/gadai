@@ -720,6 +720,7 @@ export default function AdminGadaiDetailPage() {
   const kelCompletedCount = kelFields.filter(f => f.complete).length
   const kelMissingLabels = kelFields.filter(f => !f.complete).map(f => f.label)
   const kelAllComplete = kelMissingLabels.length === 0
+  const showPerjanjian = kelAllComplete && !['PENDING', 'DITOLAK'].includes(gadai.status)
 
   return (
     <div>
@@ -1133,9 +1134,17 @@ export default function AdminGadaiDetailPage() {
               onChange={(e) => setStatusValue(e.target.value)}
               className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-sm mb-3"
             >
-              {Object.keys(STATUS_LABELS).map((s) => (
-                <option key={s} value={s}>{STATUS_LABELS[s]}</option>
-              ))}
+              {gadai.status === 'PENDING' ? (
+                <>
+                  <option value="PENDING" disabled>Menunggu (pilih aksi)</option>
+                  <option value="AKTIF">Terima / Aktifkan</option>
+                  <option value="DITOLAK">Tolak</option>
+                </>
+              ) : (
+                Object.keys(STATUS_LABELS).map((s) => (
+                  <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+                ))
+              )}
             </select>
             <button
               onClick={handleUpdateStatus}
@@ -1146,6 +1155,20 @@ export default function AdminGadaiDetailPage() {
             </button>
             {actionMessage && <p className="text-xs text-stone-500 mt-3">{actionMessage}</p>}
           </div>
+
+          {showPerjanjian && (
+            <div className="bg-white rounded-xl border border-stone-100 p-6">
+              <h2 className="font-semibold text-stone-800 mb-1">Surat Perjanjian</h2>
+              <p className="text-xs text-stone-500 mb-3">Kelengkapan data sudah lengkap, surat perjanjian gadai siap dicetak.</p>
+              <Link
+                href={`/admin/gadai/${gadai.gadaiID}/perjanjian`}
+                target="_blank"
+                className="inline-flex items-center justify-center gap-2 w-full bg-stone-800 hover:bg-stone-900 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition"
+              >
+                🖨 Cetak Surat Perjanjian
+              </Link>
+            </div>
+          )}
 
           <div className="bg-white rounded-xl border border-stone-100 p-6">
             <h2 className="font-semibold text-stone-800 mb-3">Kontak Customer</h2>
