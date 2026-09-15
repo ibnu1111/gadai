@@ -128,16 +128,16 @@ export async function POST(request: NextRequest) {
     })
 
     const waMessage = encodeURIComponent(
-      `📋 *Pengajuan Gadai Baru*\n\n` +
-      `👤 Nama: ${customerName}\n` +
-      `📱 HP: ${phone}\n` +
-      `📦 Barang: ${namaBarang}\n` +
-      `💰 Nominal: Rp ${nominalNum.toLocaleString('id-ID')}\n` +
-      `📊 Jasa: ${bungaPersentase}%\n` +
-      `💵 Fee: Rp ${feeNum.toLocaleString('id-ID')}\n` +
-      `🪪 Foto KTP: ${fotoKtp}\n` +
-      (fotoPendukung ? `🛵 Foto STNK: ${fotoPendukung}\n` : '') +
-      (nomorPolisi ? `🔢 Plat Nomor: ${nomorPolisi}\n` : '') +
+      `\u{1F4CB} *Pengajuan Gadai Baru*\n\n` +
+      `\u{1F464} Nama: ${customerName}\n` +
+      `\u{1F4F1} HP: ${phone}\n` +
+      `\u{1F4E6} Barang: ${namaBarang}\n` +
+      `\u{1F4B0} Nominal: Rp ${nominalNum.toLocaleString('id-ID')}\n` +
+      `\u{1F4CA} Jasa: ${bungaPersentase}%\n` +
+      `\u{1F4B5} Fee: Rp ${feeNum.toLocaleString('id-ID')}\n` +
+      `\u{1FAAA} Foto KTP: ${fotoKtp}\n` +
+      (fotoPendukung ? `\u{1F6F5} Foto STNK: ${fotoPendukung}\n` : '') +
+      (nomorPolisi ? `\u{1F522} Plat Nomor: ${nomorPolisi}\n` : '') +
       `\nMohon untuk meninjau pengajuan di sistem.`
     )
     const waLink = `https://wa.me/?text=${waMessage}`

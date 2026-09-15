@@ -118,18 +118,44 @@ function CreateForm() {
     setLoading(true)
     setResult(null)
 
-    // Buka tab kosong sekarang juga (masih dalam gesture klik) agar browser tidak
-    // memblokir popup - URL-nya baru diisi setelah fetch selesai.
-    const waTab = window.open('', '_blank')
+    const nomorPolisi = needsStnk
+      ? [formData.platWilayah, formData.platNomor, formData.platSeri]
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .join(' ')
+      : undefined
+
+    // Format phone number for tracking link
+    const normalizedPhone = formData.phone.replace(/^0/, '62')
+    const trackLink = `${typeof window !== 'undefined' ? window.location.origin : ''}/track?phone=${normalizedPhone}`
+
+    // Create WhatsApp message with submission details and tracking link
+    const bungaLabel = formData.jangkaWaktu === '2minggu' ? '2 Minggu (10%)' : '1 Bulan (20%)'
+    const totalBayar = parseFloat(formData.nominalPinjam) + calculateFee()
+
+    const waMessage = encodeURIComponent(
+      `\u{1F4CB} *Pengajuan Gadai Baru*\n\n` +
+      `\u{1F464} Nama: ${formData.customerName}\n` +
+      `\u{1F4F1} No. HP: ${formData.phone}\n` +
+      `\u{1F4E6} Barang: ${formData.namaBarang}\n` +
+      `\u{1F4C2} Kategori: ${formData.kategoriBarang}\n` +
+      `\u{1F4B0} Nominal: Rp ${parseFloat(formData.nominalPinjam).toLocaleString('id-ID')}\n` +
+      `\u{1F4CA} Tempo: ${bungaLabel}\n` +
+      `\u{1F4B5} Total Bayar: Rp ${totalBayar.toLocaleString('id-ID')}\n` +
+      (formData.fotoKtp ? `\u{1FAAA} Foto KTP: ${formData.fotoKtp}\n` : '') +
+      (formData.fotoStnk ? `\u{1F6F5} Foto STNK: ${formData.fotoStnk}\n` : '') +
+      (nomorPolisi ? `\u{1F522} Plat Nomor: ${nomorPolisi}\n` : '') +
+      `\n\u{1F517} Lacak pengajuan: ${trackLink}`
+    )
+    const waNumber = '6282299748978' // 0822-9974-8978
+    const waLink = `https://wa.me/${waNumber}?text=${waMessage}`
+
+    // Buka WhatsApp SEKARANG JUGA (masih dalam gesture klik asli, bukan setelah
+    // await) - browser hanya menyerahkan navigasi ke app WhatsApp/skema URI
+    // custom untuk navigasi yang dianggap benar-benar dipicu user secara langsung.
+    const waTab = window.open(waLink, '_blank')
 
     try {
-      const nomorPolisi = needsStnk
-        ? [formData.platWilayah, formData.platNomor, formData.platSeri]
-            .map((s) => s.trim())
-            .filter(Boolean)
-            .join(' ')
-        : undefined
-
       const res = await fetch('/api/public/gadai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -143,37 +169,6 @@ function CreateForm() {
       const data = await res.json()
 
       if (data.success) {
-        // Format phone number for tracking link
-        const normalizedPhone = formData.phone.replace(/^0/, '62')
-        const trackLink = `${typeof window !== 'undefined' ? window.location.origin : ''}/track?phone=${normalizedPhone}`
-
-        // Create WhatsApp message with submission details and tracking link
-        const bungaLabel = formData.jangkaWaktu === '2minggu' ? '2 Minggu (10%)' : '1 Bulan (20%)'
-        const totalBayar = parseFloat(formData.nominalPinjam) + calculateFee()
-
-        const waMessage = encodeURIComponent(
-          `📋 *Pengajuan Gadai Baru*\n\n` +
-          `👤 Nama: ${formData.customerName}\n` +
-          `📱 No. HP: ${formData.phone}\n` +
-          `📦 Barang: ${formData.namaBarang}\n` +
-          `📂 Kategori: ${formData.kategoriBarang}\n` +
-          `💰 Nominal: Rp ${parseFloat(formData.nominalPinjam).toLocaleString('id-ID')}\n` +
-          `📊 Tempo: ${bungaLabel}\n` +
-          `💵 Total Bayar: Rp ${totalBayar.toLocaleString('id-ID')}\n` +
-          (formData.fotoKtp ? `🪪 Foto KTP: ${formData.fotoKtp}\n` : '') +
-          (formData.fotoStnk ? `🛵 Foto STNK: ${formData.fotoStnk}\n` : '') +
-          (nomorPolisi ? `🔢 Plat Nomor: ${nomorPolisi}\n` : '') +
-          `\n🔗 Lacak pengajuan: ${trackLink}`
-        )
-
-        // Buka WhatsApp di tab baru, tab ini sendiri lanjut ke halaman lacak pengajuan
-        const waNumber = '6282299748978' // 0822-9974-8978
-        const waLink = `https://wa.me/${waNumber}?text=${waMessage}`
-        if (waTab) {
-          waTab.location.href = waLink
-        } else {
-          window.open(waLink, '_blank', 'noopener,noreferrer')
-        }
         window.location.href = trackLink
       } else {
         waTab?.close()

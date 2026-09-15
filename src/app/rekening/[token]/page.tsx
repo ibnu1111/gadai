@@ -60,10 +60,10 @@ export default function RekeningPage() {
 
       // Notify finance via WhatsApp that the rekening is ready for disbursement
       const waMessage = encodeURIComponent(
-        `📋 *Rekening Pencairan Gadai Terisi*\n\n` +
+        `\u{1F4CB} *Rekening Pencairan Gadai Terisi*\n\n` +
         `Gadai #${data.gadaiID} • ${data.customerNama} • ${data.namaBarang}\n` +
-        `💰 Nominal: ${formatRupiah(Number(data.nominalPinjam))}\n` +
-        `🏦 Rekening: ${namaBank} - ${noRekening}\n\n` +
+        `\u{1F4B0} Nominal: ${formatRupiah(Number(data.nominalPinjam))}\n` +
+        `\u{1F3E6} Rekening: ${namaBank} - ${noRekening}\n\n` +
         `Mohon diproses pencairan dananya.`
       )
       const financeWaNumber = '62819676216' // 0819-676-216

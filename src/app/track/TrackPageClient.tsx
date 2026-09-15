@@ -63,10 +63,10 @@ function RekeningForm({ item, phone, onDone }: { item: any; phone: string; onDon
 
       // Notify finance via WhatsApp in a new tab so this tab can keep showing the result
       const waMessage = encodeURIComponent(
-        `📋 *Rekening Pencairan Gadai Terisi*\n\n` +
+        `\u{1F4CB} *Rekening Pencairan Gadai Terisi*\n\n` +
         `Gadai #${item.gadaiId} • ${item.namaBarang}\n` +
-        `💰 Nominal: ${formatRupiahValue(item.nominalPinjam)}\n` +
-        `🏦 Rekening: ${namaBank} - ${noRekening}\n\n` +
+        `\u{1F4B0} Nominal: ${formatRupiahValue(item.nominalPinjam)}\n` +
+        `\u{1F3E6} Rekening: ${namaBank} - ${noRekening}\n\n` +
         `Mohon diproses pencairan dananya.`
       )
       window.open(`https://wa.me/${FINANCE_WA_NUMBER}?text=${waMessage}`, '_blank', 'noopener,noreferrer')
