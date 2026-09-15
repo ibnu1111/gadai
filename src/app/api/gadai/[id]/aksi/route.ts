@@ -172,6 +172,7 @@ export async function POST(
         fotoPendukungTambahan: existing.fotoPendukungTambahan,
         noRekening: existing.noRekening,
         namaBank: existing.namaBank,
+        namaRekening: existing.namaRekening,
         nomorPolisi: existing.nomorPolisi,
         status: 'AKTIF',
         parentGadaiID: gadaiID,

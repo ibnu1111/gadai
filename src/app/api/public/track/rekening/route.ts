@@ -8,9 +8,9 @@ import { normalizePhoneNumber } from '@/lib/helpers'
 // one-off /rekening/[token] link. Moves the gadai on to MENUNGGU_TRANSFER.
 export async function POST(request: NextRequest) {
   try {
-    const { phone, gadaiId, noRekening, namaBank } = await request.json()
+    const { phone, gadaiId, noRekening, namaBank, namaRekening } = await request.json()
 
-    if (!phone || !gadaiId || !noRekening || !namaBank) {
+    if (!phone || !gadaiId || !noRekening || !namaBank || !namaRekening) {
       return NextResponse.json({ success: false, message: 'Data tidak lengkap' }, { status: 400 })
     }
 
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     const transferToken = randomBytes(24).toString('hex')
     await prisma.gadai.update({
       where: { gadaiID: gadai.gadaiID },
-      data: { noRekening, namaBank, status: 'MENUNGGU_TRANSFER', transferToken }
+      data: { noRekening, namaBank, namaRekening, status: 'MENUNGGU_TRANSFER', transferToken }
     })
 
     return NextResponse.json({

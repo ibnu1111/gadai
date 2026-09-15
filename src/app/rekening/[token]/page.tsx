@@ -20,6 +20,7 @@ export default function RekeningPage() {
   const [data, setData] = useState<any>(null)
   const [noRekening, setNoRekening] = useState('')
   const [namaBank, setNamaBank] = useState('')
+  const [namaRekening, setNamaRekening] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(false)
 
@@ -41,8 +42,8 @@ export default function RekeningPage() {
     e.preventDefault()
     setError('')
 
-    if (!noRekening || !namaBank) {
-      setError('Nomor rekening dan nama bank wajib diisi')
+    if (!noRekening || !namaBank || !namaRekening) {
+      setError('Nomor rekening, nama bank, dan atas nama rekening wajib diisi')
       return
     }
 
@@ -51,7 +52,7 @@ export default function RekeningPage() {
       const res = await fetch(`/api/public/rekening/${token}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ noRekening, namaBank })
+        body: JSON.stringify({ noRekening, namaBank, namaRekening })
       })
       const result = await res.json()
       if (!result.success) {
@@ -63,7 +64,7 @@ export default function RekeningPage() {
         `\u{1F4CB} *Rekening Pencairan Gadai Terisi*\n\n` +
         `Gadai #${data.gadaiID} • ${data.customerNama} • ${data.namaBarang}\n` +
         `\u{1F4B0} Nominal: ${formatRupiah(Number(data.nominalPinjam))}\n` +
-        `\u{1F3E6} Rekening: ${namaBank} - ${noRekening}\n\n` +
+        `\u{1F3E6} Rekening: ${namaBank} - ${noRekening} a.n. ${namaRekening}\n\n` +
         `Mohon diproses pencairan dananya.`
       )
       const financeWaNumber = '62819676216' // 0819-676-216
@@ -133,6 +134,18 @@ export default function RekeningPage() {
               type="text"
               value={noRekening}
               onChange={(e) => setNoRekening(e.target.value)}
+              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="rek-nama-rekening" className="block text-sm font-medium text-gray-700 mb-1.5">Atas Nama Rekening</label>
+            <input
+              id="rek-nama-rekening"
+              type="text"
+              value={namaRekening}
+              onChange={(e) => setNamaRekening(e.target.value)}
+              placeholder="Nama pemilik rekening"
               className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
               required
             />

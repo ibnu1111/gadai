@@ -51,12 +51,12 @@ export async function POST(
 ) {
   try {
     const { token } = await params
-    const { noRekening, namaBank } = await request.json()
+    const { noRekening, namaBank, namaRekening } = await request.json()
 
-    if (!noRekening || !namaBank) {
+    if (!noRekening || !namaBank || !namaRekening) {
       return NextResponse.json({
         success: false,
-        message: 'Nomor rekening dan nama bank wajib diisi'
+        message: 'Nomor rekening, nama bank, dan atas nama rekening wajib diisi'
       }, { status: 400 })
     }
 
@@ -75,7 +75,7 @@ export async function POST(
     const transferToken = randomBytes(24).toString('hex')
     await prisma.gadai.update({
       where: { gadaiID: gadai.gadaiID },
-      data: { noRekening, namaBank, status: 'MENUNGGU_TRANSFER', transferToken }
+      data: { noRekening, namaBank, namaRekening, status: 'MENUNGGU_TRANSFER', transferToken }
     })
 
     return NextResponse.json({

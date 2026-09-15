@@ -198,10 +198,12 @@ export function getMissingAdminCompletion(gadai: {
 export function getMissingCustomerRekening(gadai: {
   noRekening?: string | null
   namaBank?: string | null
+  namaRekening?: string | null
 }): string[] {
   const missing: string[] = []
   if (!gadai.noRekening) missing.push('Nomor Rekening')
   if (!gadai.namaBank) missing.push('Nama Bank')
+  if (!gadai.namaRekening) missing.push('Atas Nama Rekening')
   return missing
 }
 

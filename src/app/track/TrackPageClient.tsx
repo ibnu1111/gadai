@@ -35,6 +35,7 @@ function formatRupiahValue(num: number): string {
 function RekeningForm({ item, phone, onDone }: { item: any; phone: string; onDone: () => void }) {
   const [namaBank, setNamaBank] = useState('')
   const [noRekening, setNoRekening] = useState('')
+  const [namaRekening, setNamaRekening] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState('')
 
@@ -44,8 +45,8 @@ function RekeningForm({ item, phone, onDone }: { item: any; phone: string; onDon
     e.preventDefault()
     setMessage('')
 
-    if (!namaBank || !noRekening) {
-      setMessage('Nama bank dan nomor rekening wajib diisi')
+    if (!namaBank || !noRekening || !namaRekening) {
+      setMessage('Nama bank, nomor rekening, dan atas nama rekening wajib diisi')
       return
     }
 
@@ -54,7 +55,7 @@ function RekeningForm({ item, phone, onDone }: { item: any; phone: string; onDon
       const res = await fetch('/api/public/track/rekening', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, gadaiId: item.gadaiId, noRekening, namaBank })
+        body: JSON.stringify({ phone, gadaiId: item.gadaiId, noRekening, namaBank, namaRekening })
       })
       const data = await res.json()
       if (!data.success) {
@@ -66,7 +67,7 @@ function RekeningForm({ item, phone, onDone }: { item: any; phone: string; onDon
         `\u{1F4CB} *Rekening Pencairan Gadai Terisi*\n\n` +
         `Gadai #${item.gadaiId} • ${item.namaBarang}\n` +
         `\u{1F4B0} Nominal: ${formatRupiahValue(item.nominalPinjam)}\n` +
-        `\u{1F3E6} Rekening: ${namaBank} - ${noRekening}\n\n` +
+        `\u{1F3E6} Rekening: ${namaBank} - ${noRekening} a.n. ${namaRekening}\n\n` +
         `Mohon diproses pencairan dananya.`
       )
       window.open(`https://wa.me/${FINANCE_WA_NUMBER}?text=${waMessage}`, '_blank', 'noopener,noreferrer')
@@ -94,6 +95,13 @@ function RekeningForm({ item, phone, onDone }: { item: any; phone: string; onDon
           value={noRekening}
           onChange={(e) => setNoRekening(e.target.value)}
           placeholder="Nomor Rekening"
+          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm"
+        />
+        <input
+          type="text"
+          value={namaRekening}
+          onChange={(e) => setNamaRekening(e.target.value)}
+          placeholder="Atas Nama Rekening"
           className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm"
         />
         {message && <p className="text-xs text-red-500">{message}</p>}

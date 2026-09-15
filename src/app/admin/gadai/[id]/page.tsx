@@ -56,6 +56,7 @@ interface GadaiDetail {
   fotoPendukungTambahan: string[]
   noRekening: string | null
   namaBank: string | null
+  namaRekening: string | null
   nomorPolisi: string | null
   rekeningToken: string | null
   transferToken: string | null
@@ -243,6 +244,7 @@ export default function AdminGadaiDetailPage() {
   // Fallback: admin isi rekening manual (jika customer tidak bisa akses link)
   const [rekManualNoRekening, setRekManualNoRekening] = useState('')
   const [rekManualNamaBank, setRekManualNamaBank] = useState('')
+  const [rekManualNamaRekening, setRekManualNamaRekening] = useState('')
   const [rekManualSaving, setRekManualSaving] = useState(false)
 
   // Konfirmasi transfer pencairan
@@ -440,8 +442,8 @@ export default function AdminGadaiDetailPage() {
 
   const handleSaveRekeningManual = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!rekManualNoRekening || !rekManualNamaBank) {
-      setActionMessage('Nomor rekening dan nama bank wajib diisi')
+    if (!rekManualNoRekening || !rekManualNamaBank || !rekManualNamaRekening) {
+      setActionMessage('Nomor rekening, nama bank, dan atas nama rekening wajib diisi')
       return
     }
     setRekManualSaving(true)
@@ -451,13 +453,14 @@ export default function AdminGadaiDetailPage() {
       const res = await fetch(`/api/gadai/${id}/rekening`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ noRekening: rekManualNoRekening, namaBank: rekManualNamaBank })
+        body: JSON.stringify({ noRekening: rekManualNoRekening, namaBank: rekManualNamaBank, namaRekening: rekManualNamaRekening })
       })
       const data = await res.json()
       if (data.success) {
         setActionMessage('Rekening disimpan, gadai siap untuk pencairan dana')
         setRekManualNoRekening('')
         setRekManualNamaBank('')
+        setRekManualNamaRekening('')
         fetchGadai()
       } else {
         setActionMessage(data.message || 'Gagal menyimpan rekening')
@@ -607,7 +610,7 @@ export default function AdminGadaiDetailPage() {
   const sisaBunga = Math.max(0, fee - bungaTerbayar)
   const origin = globalThis.window === undefined ? '' : globalThis.location.origin
   const financeWaMessage = gadai.transferToken
-    ? `Mohon upload bukti transfer pencairan gadai #${gadai.gadaiID} (${gadai.namaBarang}) sebesar ${formatRupiah(nominal)} ke rekening ${gadai.namaBank || '-'} ${gadai.noRekening || '-'}.` +
+    ? `Mohon upload bukti transfer pencairan gadai #${gadai.gadaiID} (${gadai.namaBarang}) sebesar ${formatRupiah(nominal)} ke rekening ${gadai.namaBank || '-'} ${gadai.noRekening || '-'} a.n. ${gadai.namaRekening || '-'}.` +
       `\n\nLink upload: ${origin}/transfer/${gadai.transferToken}`
     : ''
   const financeWaLink = `https://wa.me/${FINANCE_WA_NUMBER}?text=${encodeURIComponent(financeWaMessage)}`
@@ -830,6 +833,7 @@ export default function AdminGadaiDetailPage() {
                   <div>
                     <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Rekening Tujuan</p>
                     <p className="text-sm font-semibold text-stone-800">{gadai.namaBank || '-'} &mdash; {gadai.noRekening || '-'}</p>
+                    {gadai.namaRekening && <p className="text-xs text-stone-500">a.n. {gadai.namaRekening}</p>}
                   </div>
                 )}
                 {gadai.nomorPolisi && (
@@ -951,6 +955,13 @@ export default function AdminGadaiDetailPage() {
                     onChange={(e) => setRekManualNoRekening(e.target.value)}
                     placeholder="Nomor Rekening"
                     className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm"
+                  />
+                  <input
+                    type="text"
+                    value={rekManualNamaRekening}
+                    onChange={(e) => setRekManualNamaRekening(e.target.value)}
+                    placeholder="Atas Nama Rekening"
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm sm:col-span-2"
                   />
                   <button
                     type="submit"
@@ -1127,34 +1138,30 @@ export default function AdminGadaiDetailPage() {
             </div>
           )}
 
-          <div className="bg-white rounded-xl border border-stone-100 p-6">
-            <h2 className="font-semibold text-stone-800 mb-4">Ubah Status</h2>
-            <select
-              value={statusValue}
-              onChange={(e) => setStatusValue(e.target.value)}
-              className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-sm mb-3"
-            >
-              {gadai.status === 'PENDING' ? (
-                <>
-                  <option value="PENDING" disabled>Menunggu (pilih aksi)</option>
-                  <option value="AKTIF">Terima / Aktifkan</option>
-                  <option value="DITOLAK">Tolak</option>
-                </>
-              ) : (
-                Object.keys(STATUS_LABELS).map((s) => (
-                  <option key={s} value={s}>{STATUS_LABELS[s]}</option>
-                ))
-              )}
-            </select>
-            <button
-              onClick={handleUpdateStatus}
-              disabled={savingStatus || statusValue === gadai.status}
-              className="w-full px-4 py-2.5 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50 transition"
-            >
-              {savingStatus ? 'Menyimpan...' : 'Simpan Status'}
-            </button>
-            {actionMessage && <p className="text-xs text-stone-500 mt-3">{actionMessage}</p>}
-          </div>
+          {!showKelengkapan && (
+            <div className="bg-white rounded-xl border border-stone-100 p-6">
+              <h2 className="font-semibold text-stone-800 mb-4">Ubah Status</h2>
+              <select
+                value={statusValue}
+                onChange={(e) => setStatusValue(e.target.value)}
+                className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-sm mb-3"
+              >
+                {Object.keys(STATUS_LABELS)
+                  .filter((s) => s !== 'AKTIF' || gadai.status === 'AKTIF')
+                  .map((s) => (
+                    <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+                  ))}
+              </select>
+              <button
+                onClick={handleUpdateStatus}
+                disabled={savingStatus || statusValue === gadai.status}
+                className="w-full px-4 py-2.5 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50 transition"
+              >
+                {savingStatus ? 'Menyimpan...' : 'Simpan Status'}
+              </button>
+              {actionMessage && <p className="text-xs text-stone-500 mt-3">{actionMessage}</p>}
+            </div>
+          )}
 
           {showPerjanjian && (
             <div className="bg-white rounded-xl border border-stone-100 p-6">

@@ -33,6 +33,7 @@ export async function GET(
         customerNama: gadai.customer.nama,
         noRekening: gadai.noRekening,
         namaBank: gadai.namaBank,
+        namaRekening: gadai.namaRekening,
         nominalPinjam: gadai.nominalPinjam
       }
     })

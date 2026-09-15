@@ -117,6 +117,7 @@ export default function TransferUploadPage() {
         <div className="bg-gray-50 rounded-xl p-4 mb-4 text-sm space-y-1">
           <p className="text-gray-500">Rekening tujuan</p>
           <p className="font-semibold text-gray-800">{data.namaBank || '-'} &mdash; {data.noRekening || '-'}</p>
+          {data.namaRekening && <p className="text-xs text-gray-500">a.n. {data.namaRekening}</p>}
           <p className="text-gray-500 mt-2">Nominal pinjaman</p>
           <p className="font-semibold text-gray-800">{formatRupiah(Number(data.nominalPinjam))}</p>
         </div>

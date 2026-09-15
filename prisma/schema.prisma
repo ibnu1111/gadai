@@ -52,6 +52,7 @@ model Gadai {
   fotoPendukungTambahan String[] @default([])
   noRekening            String?
   namaBank              String?
+  namaRekening          String?
   nomorPolisi           String?
 
   // Pencairan dana (transfer dari toko/keuangan ke customer)
