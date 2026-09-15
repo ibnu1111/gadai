@@ -47,8 +47,44 @@ function CreateForm() {
   const [error, setError] = useState('')
   const [uploadingKtp, setUploadingKtp] = useState(false)
   const [uploadingStnk, setUploadingStnk] = useState(false)
+  const [riwayat, setRiwayat] = useState<any>(null)
+  const [riwayatDismissed, setRiwayatDismissed] = useState(false)
+  const [pengajuanDipilih, setPengajuanDipilih] = useState<number | null>(null)
 
   const needsStnk = formData.kategoriBarang === 'Motor' || formData.kategoriBarang === 'Mobil'
+
+  const cekRiwayat = async (phone: string) => {
+    const digits = phone.replace(/\D/g, '')
+    if (digits.length < 9) return
+    try {
+      const res = await fetch(`/api/public/riwayat?phone=${encodeURIComponent(phone)}`)
+      const data = await res.json()
+      if (data.success && data.data.ditemukan) {
+        setRiwayat(data.data)
+        setRiwayatDismissed(false)
+      }
+    } catch {
+      // Diam-diam gagal - ini cuma saran, bukan wajib.
+    }
+  }
+
+  const gunakanPengajuanSebelumnya = (gadaiID: number) => {
+    const item = riwayat?.pengajuan.find((p: any) => p.gadaiID === gadaiID)
+    if (!item) return
+    const plat = (item.nomorPolisi || '').trim().split(/\s+/)
+    setFormData((prev) => ({
+      ...prev,
+      customerName: prev.customerName || riwayat.nama,
+      kategoriBarang: item.kategoriBarang,
+      namaBarang: item.namaBarang,
+      deskripsi: item.deskripsi || '',
+      atributTinggal: item.atributTinggal || '',
+      platWilayah: plat[0] || '',
+      platNomor: plat[1] || '',
+      platSeri: plat[2] || ''
+    }))
+    setPengajuanDipilih(gadaiID)
+  }
 
   const uploadPhoto = async (file: File): Promise<string> => {
     const body = new FormData()
@@ -356,11 +392,58 @@ function CreateForm() {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onBlur={(e) => cekRiwayat(e.target.value)}
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
                 placeholder="08xxxxxxxxxx"
                 required
               />
             </div>
+
+            {riwayat && !riwayatDismissed && (
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-sm text-blue-800">
+                    Halo <span className="font-semibold">{riwayat.nama}</span>, kami menemukan pengajuan Anda sebelumnya. Masih pakai barang yang sama?
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setRiwayatDismissed(true)}
+                    className="text-blue-400 hover:text-blue-600 text-xs shrink-0"
+                  >
+                    Tutup
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {riwayat.pengajuan.map((p: any) => (
+                    <div
+                      key={p.gadaiID}
+                      className={`flex items-center justify-between gap-3 bg-white rounded-lg border px-3 py-2 ${
+                        pengajuanDipilih === p.gadaiID ? 'border-blue-400 ring-1 ring-blue-200' : 'border-blue-100'
+                      }`}
+                    >
+                      <div className="text-sm">
+                        <p className="font-medium text-gray-800">{p.namaBarang}</p>
+                        <p className="text-xs text-gray-500">{p.kategoriBarang}{p.nomorPolisi ? ` • ${p.nomorPolisi}` : ''}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => gunakanPengajuanSebelumnya(p.gadaiID)}
+                        className={`text-xs font-medium px-3 py-1.5 rounded-lg transition shrink-0 ${
+                          pengajuanDipilih === p.gadaiID
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                        }`}
+                      >
+                        {pengajuanDipilih === p.gadaiID ? '✓ Dipakai' : 'Gunakan data ini'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-blue-600">
+                  Foto barang & surat perjanjian tetap akan dibuat baru saat Anda datang membawa barang jaminan.
+                </p>
+              </div>
+            )}
 
             <div>
               <label htmlFor="fotoKtp" className="block text-sm font-medium text-gray-700 mb-1.5">Foto KTP <span className="text-gray-400 font-normal">(opsional)</span></label>

@@ -27,13 +27,24 @@ export async function GET(
       }, { status: 400 })
     }
 
+    const rekeningTerakhir = await prisma.gadai.findFirst({
+      where: {
+        customerID: gadai.customerID,
+        gadaiID: { not: gadai.gadaiID },
+        noRekening: { not: null }
+      },
+      orderBy: { createdAt: 'desc' },
+      select: { noRekening: true, namaBank: true, namaRekening: true }
+    })
+
     return NextResponse.json({
       success: true,
       data: {
         gadaiID: gadai.gadaiID,
         namaBarang: gadai.namaBarang,
         customerNama: gadai.customer.nama,
-        nominalPinjam: gadai.nominalPinjam
+        nominalPinjam: gadai.nominalPinjam,
+        rekeningTerakhir
       }
     })
   } catch (error) {

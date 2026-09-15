@@ -38,6 +38,19 @@ function RekeningForm({ item, phone, onDone }: { item: any; phone: string; onDon
   const [namaRekening, setNamaRekening] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState('')
+  const [rekeningTerakhir, setRekeningTerakhir] = useState<any>(null)
+  const [pakaiRekeningLama, setPakaiRekeningLama] = useState(false)
+
+  useEffect(() => {
+    fetch(`/api/public/riwayat?phone=${encodeURIComponent(phone)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data.rekeningTerakhir) {
+          setRekeningTerakhir(data.data.rekeningTerakhir)
+        }
+      })
+      .catch(() => {})
+  }, [phone])
 
   if (item.status !== 'MENUNGGU_REKENING') return null
 
@@ -82,6 +95,33 @@ function RekeningForm({ item, phone, onDone }: { item: any; phone: string; onDon
   return (
     <div className="mt-3 pt-3 border-t border-gray-100 bg-blue-50 -mx-5 px-5 py-3">
       <p className="text-xs font-semibold text-blue-800 mb-2">Pengajuan disetujui &mdash; isi rekening untuk pencairan dana:</p>
+      {rekeningTerakhir && !pakaiRekeningLama && (
+        <div className="bg-white border border-blue-100 rounded-lg p-3 mb-2 text-xs">
+          <p className="text-gray-700 mb-1.5">Pakai rekening yang sama seperti sebelumnya?</p>
+          <p className="text-gray-500 mb-2">{rekeningTerakhir.namaBank} - {rekeningTerakhir.noRekening} a.n. {rekeningTerakhir.namaRekening}</p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setNamaBank(rekeningTerakhir.namaBank)
+                setNoRekening(rekeningTerakhir.noRekening)
+                setNamaRekening(rekeningTerakhir.namaRekening)
+                setPakaiRekeningLama(true)
+              }}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1.5 rounded-lg transition"
+            >
+              Ya, pakai ini
+            </button>
+            <button
+              type="button"
+              onClick={() => setPakaiRekeningLama(true)}
+              className="flex-1 bg-white border border-gray-200 text-gray-600 font-medium py-1.5 rounded-lg hover:bg-gray-50 transition"
+            >
+              Rekening baru
+            </button>
+          </div>
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="space-y-2">
         <input
           type="text"

@@ -23,6 +23,7 @@ export default function RekeningPage() {
   const [namaRekening, setNamaRekening] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(false)
+  const [pakaiRekeningLama, setPakaiRekeningLama] = useState(false)
 
   useEffect(() => {
     fetch(`/api/public/rekening/${token}`)
@@ -113,6 +114,34 @@ export default function RekeningPage() {
           <p className="text-gray-500">Nominal pinjaman</p>
           <p className="font-semibold text-gray-800">{formatRupiah(Number(data.nominalPinjam))}</p>
         </div>
+
+        {data.rekeningTerakhir && !pakaiRekeningLama && (
+          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-4 text-sm">
+            <p className="text-gray-700 mb-2">Pakai rekening yang sama seperti sebelumnya?</p>
+            <p className="text-gray-500 mb-3">{data.rekeningTerakhir.namaBank} - {data.rekeningTerakhir.noRekening} a.n. {data.rekeningTerakhir.namaRekening}</p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setNamaBank(data.rekeningTerakhir.namaBank)
+                  setNoRekening(data.rekeningTerakhir.noRekening)
+                  setNamaRekening(data.rekeningTerakhir.namaRekening)
+                  setPakaiRekeningLama(true)
+                }}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 rounded-lg transition"
+              >
+                Ya, pakai ini
+              </button>
+              <button
+                type="button"
+                onClick={() => setPakaiRekeningLama(true)}
+                className="flex-1 bg-white border border-gray-200 text-gray-600 text-sm font-medium py-2 rounded-lg hover:bg-gray-50 transition"
+              >
+                Rekening baru
+              </button>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
