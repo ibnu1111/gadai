@@ -302,6 +302,8 @@ export default function AdminGadaiDetailPage() {
       if (data.success) {
         setGadai(data.data)
         setStatusValue(data.data.status)
+        // Prefill dengan nominal yang diajukan, tapi jangan timpa jika admin sudah mengetik nominal lain.
+        setTransferNominal((prev) => prev || data.data.nominalTransferCair || data.data.nominalPinjam || '')
       } else {
         setError(data.message || 'Pengajuan tidak ditemukan')
       }
@@ -594,6 +596,10 @@ export default function AdminGadaiDetailPage() {
   }
   const totalPendanaan = pendanaan.reduce((sum, _row, i) => sum + getEffectiveNominal(i), 0)
   const sisaPendanaan = pokokCair - totalPendanaan
+  const rowNominalDisplay = (index: number) => {
+    const effective = getEffectiveNominal(index)
+    return effective > 0 ? String(effective) : ''
+  }
   const pendanaanSiap =
     pokokCair > 0 &&
     sisaPendanaan === 0 &&
@@ -667,13 +673,9 @@ export default function AdminGadaiDetailPage() {
               </select>
               <input
                 type="number"
-                value={row.nominal}
+                value={row.nominal !== '' ? row.nominal : rowNominalDisplay(index)}
                 onChange={(e) => updatePendanaan(index, { nominal: e.target.value })}
-                placeholder={
-                  row.nominal === '' && getEffectiveNominal(index) > 0
-                    ? `Otomatis ${formatRupiah(getEffectiveNominal(index))}`
-                    : 'Nominal'
-                }
+                placeholder="Nominal"
                 aria-label="Nominal sumber dana"
                 className="w-40 px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm"
               />
