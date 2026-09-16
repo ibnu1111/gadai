@@ -1,3 +1,6 @@
+'use client'
+
+import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import WhatsAppIcon from './WhatsAppIcon'
@@ -6,6 +9,8 @@ import { whatsappLink } from '@/lib/business'
 // Shared across the homepage and every service landing page. Section links are
 // absolute (`/#layanan`) so they resolve correctly from any route.
 export default function SiteHeader() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
   return (
     <header className="bg-white border-b border-gray-100 sticky top-0 z-50 backdrop-blur-lg bg-white/90">
       <div className="max-w-6xl mx-auto px-4">
@@ -33,9 +38,36 @@ export default function SiteHeader() {
               <WhatsAppIcon className="w-4 h-4" />
               Hubungi Kami
             </a>
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen((prev) => !prev)}
+              aria-label="Buka menu navigasi"
+              aria-expanded={mobileMenuOpen}
+              className="lg:hidden flex items-center justify-center w-9 h-9 rounded-lg text-gray-600 hover:bg-gray-50 transition"
+            >
+              {mobileMenuOpen ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
           </div>
         </div>
+        {mobileMenuOpen && (
+          <nav className="lg:hidden flex flex-col gap-1 pb-4">
+            <Link href="/#layanan" onClick={() => setMobileMenuOpen(false)} className="px-4 py-2 text-gray-600 hover:text-blue-600 font-medium rounded-lg hover:bg-blue-50 transition">Layanan</Link>
+            <Link href="/#cara-kerja" onClick={() => setMobileMenuOpen(false)} className="px-4 py-2 text-gray-600 hover:text-blue-600 font-medium rounded-lg hover:bg-blue-50 transition">Cara Kerja</Link>
+            <Link href="/#wilayah" onClick={() => setMobileMenuOpen(false)} className="px-4 py-2 text-gray-600 hover:text-blue-600 font-medium rounded-lg hover:bg-blue-50 transition">Wilayah</Link>
+            <Link href="/#faq" onClick={() => setMobileMenuOpen(false)} className="px-4 py-2 text-gray-600 hover:text-blue-600 font-medium rounded-lg hover:bg-blue-50 transition">FAQ</Link>
+            <Link href="/track" onClick={() => setMobileMenuOpen(false)} className="px-4 py-2 text-gray-600 hover:text-blue-600 font-medium rounded-lg hover:bg-blue-50 transition">Lacak Pengajuan</Link>
+          </nav>
+        )}
       </div>
     </header>
   )
 }
+

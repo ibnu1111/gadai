@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
+import ToastProvider from '@/components/admin/Toast'
 
 export default function AdminLayoutClient({ children }: Readonly<{ children: React.ReactNode }>) {
   const router = useRouter()
@@ -34,7 +35,7 @@ export default function AdminLayoutClient({ children }: Readonly<{ children: Rea
   }
 
   if (pathname === '/admin/login') {
-    return <>{children}</>
+    return <ToastProvider>{children}</ToastProvider>
   }
 
   const navLinkClass = (active: boolean) =>
@@ -43,6 +44,7 @@ export default function AdminLayoutClient({ children }: Readonly<{ children: Rea
     }`
 
   return (
+    <ToastProvider>
     <div className="min-h-screen bg-stone-50">
       <header className="bg-white border-b border-stone-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4">
@@ -143,5 +145,6 @@ export default function AdminLayoutClient({ children }: Readonly<{ children: Rea
       </header>
       <main className="max-w-7xl mx-auto px-4 py-6">{children}</main>
     </div>
+    </ToastProvider>
   )
 }

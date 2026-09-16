@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { handleUnauthorized } from '@/lib/adminSession'
 import ConfirmDialog from '@/components/admin/ConfirmDialog'
 import PhotoLightbox from '@/components/admin/PhotoLightbox'
+import { useToast } from '@/components/admin/Toast'
 
 interface Payment {
   id: number
@@ -215,6 +216,7 @@ function KelTextField({
 export default function AdminGadaiDetailPage() {
   const params = useParams()
   const id = params.id as string
+  const { showToast } = useToast()
 
   const [gadai, setGadai] = useState<GadaiDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -224,7 +226,6 @@ export default function AdminGadaiDetailPage() {
   const [paymentAmount, setPaymentAmount] = useState('')
   const [paymentNote, setPaymentNote] = useState('')
   const [savingPayment, setSavingPayment] = useState(false)
-  const [actionMessage, setActionMessage] = useState('')
   const [showRejectConfirm, setShowRejectConfirm] = useState(false)
   const [rejectError, setRejectError] = useState('')
 
@@ -255,8 +256,6 @@ export default function AdminGadaiDetailPage() {
   // Pencatatan ke buku besar saat pencairan
   const [sumberDanaOptions, setSumberDanaOptions] = useState<SumberDanaOption[]>([])
   const [pendanaan, setPendanaan] = useState<PendanaanRow[]>([newPendanaanRow()])
-  const [nominalKembali, setNominalKembali] = useState('')
-  const [kembaliDiubah, setKembaliDiubah] = useState(false)
 
   // Aksi Ambil / Perpanjang
   const [aksiType, setAksiType] = useState<'AMBIL' | 'PERPANJANG'>('AMBIL')
@@ -321,7 +320,6 @@ export default function AdminGadaiDetailPage() {
   const handleUpdateStatus = async () => {
     if (!gadai || statusValue === gadai.status) return
     setSavingStatus(true)
-    setActionMessage('')
     try {
       const token = localStorage.getItem('adminToken')
       const res = await fetch(`/api/gadai/${id}/status`, {
@@ -331,13 +329,13 @@ export default function AdminGadaiDetailPage() {
       })
       const data = await res.json()
       if (data.success) {
-        setActionMessage('Status berhasil diperbarui')
+        showToast('Status berhasil diperbarui')
         fetchGadai()
       } else {
-        setActionMessage(data.message || 'Gagal memperbarui status')
+        showToast(data.message || 'Gagal memperbarui status', 'error')
       }
     } catch {
-      setActionMessage('Gagal memperbarui status')
+      showToast('Gagal memperbarui status', 'error')
     } finally {
       setSavingStatus(false)
     }
@@ -347,7 +345,6 @@ export default function AdminGadaiDetailPage() {
     e.preventDefault()
     if (!paymentAmount) return
     setSavingPayment(true)
-    setActionMessage('')
     try {
       const token = localStorage.getItem('adminToken')
       const res = await fetch('/api/payment', {
@@ -357,15 +354,15 @@ export default function AdminGadaiDetailPage() {
       })
       const data = await res.json()
       if (data.success) {
-        setActionMessage('Pembayaran berhasil dicatat')
+        showToast('Pembayaran berhasil dicatat')
         setPaymentAmount('')
         setPaymentNote('')
         fetchGadai()
       } else {
-        setActionMessage(data.message || 'Gagal mencatat pembayaran')
+        showToast(data.message || 'Gagal mencatat pembayaran', 'error')
       }
     } catch {
-      setActionMessage('Gagal mencatat pembayaran')
+      showToast('Gagal mencatat pembayaran', 'error')
     } finally {
       setSavingPayment(false)
     }
@@ -443,11 +440,10 @@ export default function AdminGadaiDetailPage() {
   const handleSaveRekeningManual = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!rekManualNoRekening || !rekManualNamaBank || !rekManualNamaRekening) {
-      setActionMessage('Nomor rekening, nama bank, dan atas nama rekening wajib diisi')
+      showToast('Nomor rekening, nama bank, dan atas nama rekening wajib diisi', 'error')
       return
     }
     setRekManualSaving(true)
-    setActionMessage('')
     try {
       const token = localStorage.getItem('adminToken')
       const res = await fetch(`/api/gadai/${id}/rekening`, {
@@ -457,16 +453,16 @@ export default function AdminGadaiDetailPage() {
       })
       const data = await res.json()
       if (data.success) {
-        setActionMessage('Rekening disimpan, gadai siap untuk pencairan dana')
+        showToast('Rekening disimpan, gadai siap untuk pencairan dana')
         setRekManualNoRekening('')
         setRekManualNamaBank('')
         setRekManualNamaRekening('')
         fetchGadai()
       } else {
-        setActionMessage(data.message || 'Gagal menyimpan rekening')
+        showToast(data.message || 'Gagal menyimpan rekening', 'error')
       }
     } catch {
-      setActionMessage('Gagal menyimpan rekening')
+      showToast('Gagal menyimpan rekening', 'error')
     } finally {
       setRekManualSaving(false)
     }
@@ -475,13 +471,12 @@ export default function AdminGadaiDetailPage() {
   const handleConfirmTransfer = async (manual: boolean) => {
     if (!gadai) return
     setTransferConfirming(true)
-    setActionMessage('')
     try {
       const token = localStorage.getItem('adminToken')
       let body: Record<string, unknown> = {}
       if (manual) {
         if (!transferFile || !transferNominal) {
-          setActionMessage('Nominal dan bukti transfer wajib diisi')
+          showToast('Nominal dan bukti transfer wajib diisi', 'error')
           setTransferConfirming(false)
           return
         }
@@ -489,13 +484,10 @@ export default function AdminGadaiDetailPage() {
         body = { buktiTransferCair: url, nominalTransferCair: transferNominal }
       }
 
-      const pokok = Number(manual ? transferNominal : gadai.nominalTransferCair) || 0
       body.sumberDana = pendanaan
-        .filter((row) => row.sumberDanaId && Number(row.nominal) > 0)
+        .map((row, i) => ({ sumberDanaId: row.sumberDanaId, nominal: getEffectiveNominal(i) }))
+        .filter((row) => row.sumberDanaId && row.nominal > 0)
         .map((row) => ({ sumberDanaId: Number(row.sumberDanaId), nominal: row.nominal }))
-      body.nominalKembali = kembaliDiubah
-        ? nominalKembali
-        : Math.round(pokok * (1 + Number(gadai.bungaPersentase) / 100))
 
       const res = await fetch(`/api/gadai/${id}/confirm-transfer`, {
         method: 'PUT',
@@ -504,18 +496,16 @@ export default function AdminGadaiDetailPage() {
       })
       const data = await res.json()
       if (data.success) {
-        setActionMessage('Transfer dikonfirmasi, gadai aktif dan tercatat di buku besar')
+        showToast('Transfer dikonfirmasi, gadai aktif dan tercatat di buku besar')
         setTransferFile(null)
         setTransferNominal('')
         setPendanaan([newPendanaanRow()])
-        setNominalKembali('')
-        setKembaliDiubah(false)
         fetchGadai()
       } else {
-        setActionMessage(data.message || 'Gagal konfirmasi transfer')
+        showToast(data.message || 'Gagal konfirmasi transfer', 'error')
       }
     } catch (err: any) {
-      setActionMessage(err.message || 'Gagal konfirmasi transfer')
+      showToast(err.message || 'Gagal konfirmasi transfer', 'error')
     } finally {
       setTransferConfirming(false)
     }
@@ -535,7 +525,7 @@ export default function AdminGadaiDetailPage() {
       const data = await res.json()
       if (data.success) {
         setShowRejectConfirm(false)
-        setActionMessage('Pengajuan berhasil ditolak')
+        showToast('Pengajuan berhasil ditolak')
         fetchGadai()
       } else {
         setRejectError(data.message || 'Gagal menolak pengajuan')
@@ -549,7 +539,6 @@ export default function AdminGadaiDetailPage() {
 
   const handleAksi = async (body: Record<string, unknown>) => {
     setAksiSaving(true)
-    setActionMessage('')
     try {
       const token = localStorage.getItem('adminToken')
       const res = await fetch(`/api/gadai/${id}/aksi`, {
@@ -558,13 +547,13 @@ export default function AdminGadaiDetailPage() {
         body: JSON.stringify(body)
       })
       const data = await res.json()
-      setActionMessage(data.message || (data.success ? 'Berhasil' : 'Gagal memproses aksi'))
+      showToast(data.message || (data.success ? 'Berhasil' : 'Gagal memproses aksi'), data.success ? 'success' : 'error')
       if (data.success) {
         setAksiNominal('')
         fetchGadai()
       }
     } catch {
-      setActionMessage('Gagal memproses aksi')
+      showToast('Gagal memproses aksi', 'error')
     } finally {
       setAksiSaving(false)
     }
@@ -595,16 +584,23 @@ export default function AdminGadaiDetailPage() {
   const showRekeningMenunggu = gadai.status === 'MENUNGGU_REKENING'
   const showTransferConfirm = ['MENUNGGU_TRANSFER', 'MENUNGGU_VERIFIKASI_TRANSFER'].includes(gadai.status)
   const pokokCair = Number(transferNominal || gadai.nominalTransferCair || 0)
-  const totalPendanaan = pendanaan.reduce((sum, row) => sum + (Number(row.nominal) || 0), 0)
+  // Sumber dana yang belum diisi nominalnya otomatis dianggap menutup sisa pokok yang belum dialokasikan.
+  const getEffectiveNominal = (index: number) => {
+    const row = pendanaan[index]
+    if (!row) return 0
+    if (row.nominal.trim() !== '') return Number(row.nominal) || 0
+    const others = pendanaan.reduce((sum, r, i) => (i === index ? sum : sum + (Number(r.nominal) || 0)), 0)
+    return Math.max(0, pokokCair - others)
+  }
+  const totalPendanaan = pendanaan.reduce((sum, _row, i) => sum + getEffectiveNominal(i), 0)
   const sisaPendanaan = pokokCair - totalPendanaan
   const pendanaanSiap =
     pokokCair > 0 &&
     sisaPendanaan === 0 &&
-    pendanaan.every((row) => row.sumberDanaId && Number(row.nominal) > 0)
+    pendanaan.every((row, i) => row.sumberDanaId && getEffectiveNominal(i) > 0)
   const kembaliOtomatis = pokokCair
-    ? String(Math.round(pokokCair * (1 + Number(gadai.bungaPersentase) / 100)))
-    : ''
-  const nominalKembaliView = kembaliDiubah ? nominalKembali : kembaliOtomatis
+    ? Math.round(pokokCair * (1 + Number(gadai.bungaPersentase) / 100))
+    : 0
   const isDue = isDueOrOverdue(gadai.status, gadai.tanggalKembali)
   const bungaTerbayar = Number(gadai.bungaTerbayar)
   const sisaBunga = Math.max(0, fee - bungaTerbayar)
@@ -658,13 +654,7 @@ export default function AdminGadaiDetailPage() {
             <div key={row.key} className="flex gap-2">
               <select
                 value={row.sumberDanaId}
-                onChange={(e) => {
-                  const sisa = pokokCair - totalPendanaan + (Number(row.nominal) || 0)
-                  updatePendanaan(index, {
-                    sumberDanaId: e.target.value,
-                    nominal: row.nominal || (sisa > 0 ? String(sisa) : '')
-                  })
-                }}
+                onChange={(e) => updatePendanaan(index, { sumberDanaId: e.target.value })}
                 aria-label="Sumber dana"
                 className="flex-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm"
               >
@@ -679,9 +669,13 @@ export default function AdminGadaiDetailPage() {
                 type="number"
                 value={row.nominal}
                 onChange={(e) => updatePendanaan(index, { nominal: e.target.value })}
-                placeholder="Nominal"
+                placeholder={
+                  row.nominal === '' && getEffectiveNominal(index) > 0
+                    ? `Otomatis ${formatRupiah(getEffectiveNominal(index))}`
+                    : 'Nominal'
+                }
                 aria-label="Nominal sumber dana"
-                className="w-36 px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm"
+                className="w-40 px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm"
               />
               {pendanaan.length > 1 && (
                 <button
@@ -717,18 +711,9 @@ export default function AdminGadaiDetailPage() {
         </div>
       )}
 
-      <div>
-        <label htmlFor="nominal-kembali" className="block text-xs text-stone-500 mb-1">Nominal kembali (hasil nego)</label>
-        <input
-          id="nominal-kembali"
-          type="number"
-          value={nominalKembaliView}
-          onChange={(e) => {
-            setKembaliDiubah(true)
-            setNominalKembali(e.target.value)
-          }}
-          className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm"
-        />
+      <div className="flex items-center justify-between text-xs pt-1">
+        <span className="text-stone-500">Nominal kembali (pokok + bunga, otomatis)</span>
+        <span className="font-semibold text-stone-800">{formatRupiah(kembaliOtomatis)}</span>
       </div>
     </div>
   )
@@ -1178,7 +1163,6 @@ export default function AdminGadaiDetailPage() {
               >
                 {savingStatus ? 'Menyimpan...' : 'Simpan Status'}
               </button>
-              {actionMessage && <p className="text-xs text-stone-500 mt-3">{actionMessage}</p>}
             </div>
           )}
 
