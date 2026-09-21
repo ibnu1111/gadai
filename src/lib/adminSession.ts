@@ -1,5 +1,5 @@
 // Shared helper for admin pages: the JWT stored in localStorage expires after
-// 24h (see lib/auth.ts signToken), but the admin layout only checks whether a
+// 90d (see lib/auth.ts signToken), but the admin layout only checks whether a
 // token *exists* in localStorage, not whether it's still valid. That means a
 // stale/expired token still shows the admin as "logged in" (name + nav visible)
 // while every authenticated API call fails with 401. Call this after checking

@@ -9,7 +9,7 @@ export interface AdminPayload {
 }
 
 export function signToken(payload: AdminPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' })
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '90d' })
 }
 
 export function verifyToken(token: string): AdminPayload | null {
