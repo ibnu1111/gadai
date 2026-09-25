@@ -11,7 +11,7 @@ export const BUSINESS = {
   phoneDisplay: '0822-9974-8978',
   whatsappNumber: '6282299748978',
   email: 'cs@gadaijogja.com',
-  streetAddress: 'Jl. Kamboja, Jl. Mawar, Blotan No. 4, RT 01, Krajan, Wedomartani, Kec. Ngemplak',
+  streetAddress: 'Jl. Kamboja, Blotan, RT 01, Krajan, Wedomartani, Kec. Ngemplak',
   addressLocality: 'Sleman',
   addressRegion: 'Daerah Istimewa Yogyakarta',
   postalCode: '55584',

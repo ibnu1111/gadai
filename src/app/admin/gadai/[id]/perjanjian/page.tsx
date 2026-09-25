@@ -195,13 +195,15 @@ export default function SuratPerjanjianPage() {
             adanya somasi atau peringatan tertulis lebih lanjut.
           </li>
           <li>
-            Terhitung sejak 1 (satu) hari setelah Tanggal Jatuh Tempo sampai dengan batas toleransi tanggal{' '}
-            <strong>{formatTanggalPanjang(tanggalLelang)}</strong> (&quot;H+3&quot;), PIHAK KEDUA dikenakan denda
-            keterlambatan sebesar Rp100.000,- (seratus ribu rupiah) per hari, yang wajib dibayarkan bersamaan
-            dengan pelunasan kewajiban. Apabila dalam waktu 3 (tiga) hari kalender setelah Tanggal Jatuh Tempo
-            tersebut PIHAK KEDUA tetap tidak melakukan pembayaran maupun perpanjangan, maka PIHAK PERTAMA berhak
-            sepenuhnya untuk menjual dan/atau melelang barang jaminan kepada pihak mana pun tanpa memerlukan
-            persetujuan maupun pemberitahuan tertulis lebih lanjut kepada PIHAK KEDUA.
+            PIHAK KEDUA masih diberikan masa toleransi selama 3 (tiga) hari kalender setelah Tanggal Jatuh Tempo,
+            yaitu sampai dengan tanggal <strong>{formatTanggalPanjang(tanggalLelang)}</strong> (&quot;H+3&quot;),
+            untuk melunasi maupun memperpanjang Perjanjian ini. Apabila pelunasan atau perpanjangan dilakukan
+            dalam masa toleransi tersebut, PIHAK KEDUA dikenakan tambahan denda keterlambatan sebesar
+            Rp100.000,- (seratus ribu rupiah) per hari, dihitung sejak Tanggal Jatuh Tempo sampai dengan tanggal
+            pelunasan/perpanjangan dilakukan. Apabila sampai dengan H+3 PIHAK KEDUA tetap tidak melakukan
+            pelunasan maupun perpanjangan, maka PIHAK PERTAMA berhak sepenuhnya untuk menjual dan/atau melelang
+            barang jaminan kepada pihak mana pun tanpa memerlukan persetujuan maupun pemberitahuan tertulis
+            lebih lanjut kepada PIHAK KEDUA.
           </li>
           <li>
             Hasil penjualan/pelelangan barang jaminan akan diperhitungkan untuk melunasi seluruh kewajiban PIHAK
