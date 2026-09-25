@@ -22,6 +22,7 @@ interface GadaiPerjanjian {
 
 const ROMAN_MONTHS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII']
 const HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
+const PIHAK_PERTAMA_NAMA = 'Pipin Ibnu Faqih'
 
 function formatTanggalPanjang(date: Date) {
   return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -37,7 +38,6 @@ export default function SuratPerjanjianPage() {
   const params = useParams()
   const id = params.id as string
   const [gadai, setGadai] = useState<GadaiPerjanjian | null>(null)
-  const [adminNama, setAdminNama] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -46,10 +46,7 @@ export default function SuratPerjanjianPage() {
       try {
         const token = localStorage.getItem('adminToken')
         const headers = { Authorization: `Bearer ${token}` }
-        const [gadaiRes, profileRes] = await Promise.all([
-          fetch(`/api/gadai/${id}`, { headers }),
-          fetch('/api/auth/profile', { headers })
-        ])
+        const gadaiRes = await fetch(`/api/gadai/${id}`, { headers })
         if (handleUnauthorized(gadaiRes.status, `/admin/gadai/${id}/perjanjian`)) return
         const gadaiData = await gadaiRes.json()
         if (!gadaiData.success) {
@@ -57,9 +54,6 @@ export default function SuratPerjanjianPage() {
           return
         }
         setGadai(gadaiData.data)
-
-        const profileData = await profileRes.json()
-        if (profileData.success) setAdminNama(profileData.data.nama)
       } catch {
         setError('Gagal memuat data surat perjanjian')
       } finally {
@@ -107,7 +101,7 @@ export default function SuratPerjanjianPage() {
         <div className="mb-4">
           <p className="font-semibold">I. PIHAK PERTAMA</p>
           <div className="ml-4">
-            <div className="flex gap-3"><span className="w-36 shrink-0">Nama</span><span>: {adminNama || '_________________________'}</span></div>
+            <div className="flex gap-3"><span className="w-36 shrink-0">Nama</span><span>: {PIHAK_PERTAMA_NAMA}</span></div>
             <div className="flex gap-3"><span className="w-36 shrink-0">Jabatan</span><span>: Pengelola / Perwakilan sah {BUSINESS.name}</span></div>
             <div className="flex gap-3"><span className="w-36 shrink-0">Alamat</span><span>: {ADDRESS_LINES.join(', ')}</span></div>
           </div>
@@ -150,10 +144,14 @@ export default function SuratPerjanjianPage() {
             </li>
           )}
           <li>
-            PIHAK KEDUA menjamin bahwa barang jaminan tersebut adalah benar milik sah PIHAK KEDUA, bebas dari
-            sengketa, tidak sedang dijadikan jaminan/agunan pada pihak lain, dan tidak berasal dari hasil tindak
-            pidana. Apabila di kemudian hari pernyataan ini terbukti tidak benar, maka segala akibat hukum yang
-            timbul menjadi tanggung jawab penuh PIHAK KEDUA.
+            PIHAK KEDUA menjamin bahwa barang jaminan tersebut benar berada dalam penguasaan dan menjadi hak
+            PIHAK KEDUA untuk digadaikan, baik yang berstatus milik penuh (lunas) maupun yang masih dalam masa
+            angsuran/pembiayaan pada lembaga leasing/pembiayaan, tidak sedang dalam sengketa, tidak sedang dijadikan
+            jaminan/agunan pada pihak lain selain lembaga pembiayaan yang bersangkutan (apabila ada), dan tidak
+            berasal dari hasil tindak pidana. Apabila di kemudian hari pernyataan ini terbukti tidak benar,
+            termasuk apabila timbul penarikan atau tuntutan dari lembaga leasing/pembiayaan akibat kelalaian
+            PIHAK KEDUA dalam memenuhi kewajiban angsurannya, maka segala akibat hukum dan kerugian yang timbul
+            menjadi tanggung jawab penuh PIHAK KEDUA.
           </li>
         </ol>
 
@@ -201,17 +199,20 @@ export default function SuratPerjanjianPage() {
             adanya somasi atau peringatan tertulis lebih lanjut.
           </li>
           <li>
-            Apabila dalam waktu 3 (tiga) hari kalender setelah Tanggal Jatuh Tempo, yaitu terhitung sampai dengan
-            tanggal <strong>{formatTanggalPanjang(tanggalLelang)}</strong> (&quot;H+3&quot;), PIHAK KEDUA tetap tidak
-            melakukan pembayaran maupun perpanjangan, maka PIHAK PERTAMA berhak sepenuhnya untuk menjual dan/atau
-            melelang barang jaminan kepada pihak mana pun tanpa memerlukan persetujuan maupun pemberitahuan tertulis
-            lebih lanjut kepada PIHAK KEDUA.
+            Terhitung sejak 1 (satu) hari setelah Tanggal Jatuh Tempo sampai dengan batas toleransi tanggal{' '}
+            <strong>{formatTanggalPanjang(tanggalLelang)}</strong> (&quot;H+3&quot;), PIHAK KEDUA dikenakan denda
+            keterlambatan sebesar Rp100.000,- (seratus ribu rupiah) per hari, yang wajib dibayarkan bersamaan
+            dengan pelunasan kewajiban. Apabila dalam waktu 3 (tiga) hari kalender setelah Tanggal Jatuh Tempo
+            tersebut PIHAK KEDUA tetap tidak melakukan pembayaran maupun perpanjangan, maka PIHAK PERTAMA berhak
+            sepenuhnya untuk menjual dan/atau melelang barang jaminan kepada pihak mana pun tanpa memerlukan
+            persetujuan maupun pemberitahuan tertulis lebih lanjut kepada PIHAK KEDUA.
           </li>
           <li>
-            Hasil penjualan/pelelangan barang jaminan akan diperhitungkan terlebih dahulu untuk melunasi seluruh
-            kewajiban PIHAK KEDUA kepada PIHAK PERTAMA (pokok pinjaman, biaya jasa, dan biaya-biaya lain yang timbul
-            sehubungan dengan pelelangan). Apabila terdapat kelebihan hasil lelang, kelebihan tersebut menjadi hak
-            PIHAK KEDUA.
+            Hasil penjualan/pelelangan barang jaminan akan diperhitungkan untuk melunasi seluruh kewajiban PIHAK
+            KEDUA kepada PIHAK PERTAMA, yang meliputi pokok pinjaman, biaya jasa, denda keterlambatan (apabila ada),
+            serta biaya-biaya lain yang timbul sehubungan dengan pelaksanaan penjualan/pelelangan tersebut.
+            Sehubungan dengan hal tersebut, PIHAK KEDUA dengan ini menyatakan melepaskan haknya atas selisih maupun
+            kelebihan nilai yang mungkin timbul dari hasil penjualan/pelelangan barang jaminan dimaksud.
           </li>
           <li>
             Apabila hasil penjualan/pelelangan tidak mencukupi untuk melunasi seluruh kewajiban PIHAK KEDUA, maka
@@ -234,7 +235,7 @@ export default function SuratPerjanjianPage() {
         <p className="font-semibold mt-6 mb-1">PASAL 7 &mdash; PENUTUP</p>
         <ol className="list-decimal ml-6 space-y-1 text-justify">
           <li>Perjanjian ini dibuat dalam keadaan sadar dan sehat jasmani maupun rohani, tanpa paksaan dari pihak mana pun, serta berlaku sah dan mengikat PARA PIHAK sejak ditandatangani.</li>
-          <li>Perjanjian ini dibuat rangkap 2 (dua) yang masing-masing memiliki kekuatan hukum yang sama, satu untuk PIHAK PERTAMA dan satu untuk PIHAK KEDUA.</li>
+          <li>Perjanjian ini dibuat dalam 1 (satu) rangkap asli yang disimpan oleh PIHAK PERTAMA. PIHAK KEDUA berhak memperoleh salinan/dokumentasi (foto) atas Perjanjian ini apabila dikehendaki, yang memiliki kekuatan pembuktian yang sama dengan aslinya.</li>
         </ol>
 
         <p className="mt-6 text-justify">
@@ -245,7 +246,7 @@ export default function SuratPerjanjianPage() {
           <div className="text-center">
             <p>PIHAK PERTAMA,</p>
             <div className="h-24" />
-            <p className="font-semibold underline">{adminNama || '_________________________'}</p>
+            <p className="font-semibold underline">{PIHAK_PERTAMA_NAMA}</p>
             <p>{BUSINESS.name}</p>
           </div>
           <div className="text-center">
