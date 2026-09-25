@@ -144,14 +144,10 @@ export default function SuratPerjanjianPage() {
             </li>
           )}
           <li>
-            PIHAK KEDUA menjamin bahwa barang jaminan tersebut benar berada dalam penguasaan dan menjadi hak
-            PIHAK KEDUA untuk digadaikan, baik yang berstatus milik penuh (lunas) maupun yang masih dalam masa
-            angsuran/pembiayaan pada lembaga leasing/pembiayaan, tidak sedang dalam sengketa, tidak sedang dijadikan
-            jaminan/agunan pada pihak lain selain lembaga pembiayaan yang bersangkutan (apabila ada), dan tidak
-            berasal dari hasil tindak pidana. Apabila di kemudian hari pernyataan ini terbukti tidak benar,
-            termasuk apabila timbul penarikan atau tuntutan dari lembaga leasing/pembiayaan akibat kelalaian
-            PIHAK KEDUA dalam memenuhi kewajiban angsurannya, maka segala akibat hukum dan kerugian yang timbul
-            menjadi tanggung jawab penuh PIHAK KEDUA.
+            PIHAK KEDUA menjamin bahwa barang jaminan tersebut adalah benar milik sah PIHAK KEDUA, bebas dari
+            sengketa, tidak sedang dijadikan jaminan/agunan pada pihak lain, dan tidak berasal dari hasil tindak
+            pidana. Apabila di kemudian hari pernyataan ini terbukti tidak benar, maka segala akibat hukum dan
+            kerugian yang timbul menjadi tanggung jawab penuh PIHAK KEDUA.
           </li>
         </ol>
 
