@@ -6,7 +6,7 @@ import AjukanFormTabs from '@/components/home/AjukanFormTabs'
 import SiteHeader from '@/components/SiteHeader'
 import SiteFooter from '@/components/SiteFooter'
 import WhatsAppIcon from '@/components/WhatsAppIcon'
-import { BUSINESS, addressSchema, openingHoursSchema, whatsappLink } from '@/lib/business'
+import { BUSINESS, ASSET_VERSION, addressSchema, openingHoursSchema, whatsappLink } from '@/lib/business'
 
 export default function Home() {
   const faqs = [
@@ -103,7 +103,7 @@ export default function Home() {
     '@type': 'FinancialService',
     name: BUSINESS.name,
     description: 'Gadai Jogja melayani gadai HP, laptop, motor, dan mobil di Yogyakarta. Pengajuan dan taksiran harga dilakukan online lewat website atau WhatsApp, sedangkan serah terima serta penyimpanan barang dilakukan langsung di tempat kami.',
-    image: `${BUSINESS.url}/og-image.jpg`,
+    image: `${BUSINESS.url}/og-image.jpg?v=${ASSET_VERSION}`,
     url: BUSINESS.url,
     telephone: BUSINESS.telephone,
     email: BUSINESS.email,

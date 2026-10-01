@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import WhatsAppIcon from './WhatsAppIcon'
-import { ADDRESS_LINES, BUSINESS, OPENING_HOURS_DISPLAY } from '@/lib/business'
+import { ADDRESS_LINES, BUSINESS, OPENING_HOURS_DISPLAY, ASSET_VERSION } from '@/lib/business'
 import { SERVICES } from '@/lib/services'
 
 // Shared across the homepage and every service landing page. The visible NAP here
@@ -13,7 +13,7 @@ export default function SiteFooter() {
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <Image src="/logo-gadai.png" alt="Gadai Jogja" width={40} height={40} className="h-10 w-auto" />
+              <Image src={`/logo-gadai.png?v=${ASSET_VERSION}`} alt="Gadai Jogja" width={40} height={40} className="h-10 w-auto" />
             </div>
             <p className="text-gray-400 text-sm">
               Gadai HP, laptop, motor & mobil terpercaya di Yogyakarta. Pengajuan online, serah terima unit di tempat kami. Jasa 10% per 2 minggu, tanpa biaya tersembunyi.

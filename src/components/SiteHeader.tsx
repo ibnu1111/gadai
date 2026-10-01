@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import WhatsAppIcon from './WhatsAppIcon'
-import { whatsappLink } from '@/lib/business'
+import { whatsappLink, ASSET_VERSION } from '@/lib/business'
 
 // Shared across the homepage and every service landing page. Section links are
 // absolute (`/#layanan`) so they resolve correctly from any route.
@@ -16,7 +16,7 @@ export default function SiteHeader() {
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           <Link href="/" className="flex items-center gap-3">
-            <Image src="/logo-gadai.png" alt="Gadai Jogja" width={40} height={40} className="h-10 w-auto" priority />
+            <Image src={`/logo-gadai.png?v=${ASSET_VERSION}`} alt="Gadai Jogja" width={40} height={40} className="h-10 w-auto" priority />
             <span className="hidden sm:block text-xs text-gray-400">gadaijogja.com</span>
           </Link>
           <nav className="hidden lg:flex items-center gap-1">

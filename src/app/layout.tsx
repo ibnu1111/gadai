@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { ASSET_VERSION } from '@/lib/business'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -26,8 +27,8 @@ export const metadata: Metadata = {
   creator: 'Gadai Jogja',
   publisher: 'Gadai Jogja',
   icons: {
-    icon: '/favicon-gadai.png',
-    apple: '/favicon-gadai.png',
+    icon: `/favicon-gadai.png?v=${ASSET_VERSION}`,
+    apple: `/favicon-gadai.png?v=${ASSET_VERSION}`,
   },
   openGraph: {
     type: 'website',
@@ -38,7 +39,7 @@ export const metadata: Metadata = {
     description: 'Ajukan taksiran online, unit diantar & disimpan aman di tempat kami. Cair 15 menit, jasa 10% per 2 minggu, terima utuh tanpa potongan.',
     images: [
       {
-        url: '/og-image.jpg',
+        url: `/og-image.jpg?v=${ASSET_VERSION}`,
         width: 1200,
         height: 630,
         alt: 'Gadai Jogja - Gadai HP, Laptop, Motor & Mobil di Yogyakarta',
@@ -49,7 +50,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Gadai Jogja - Gadai HP, Laptop, Motor & Mobil di Yogyakarta',
     description: 'Ajukan taksiran online, unit diantar & disimpan aman di tempat kami. Cair 15 menit, jasa transparan.',
-    images: ['/og-image.jpg'],
+    images: [`/og-image.jpg?v=${ASSET_VERSION}`],
   },
   alternates: {
     canonical: 'https://gadaijogja.com',

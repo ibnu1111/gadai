@@ -4,6 +4,10 @@
 // JSON-LD, and — externally — the Google Business Profile listing. Keep this file
 // and the GBP listing in sync whenever either one changes.
 
+// Bump whenever logo-gadai.png / favicon-gadai.png / og-image.jpg are replaced, so
+// browsers fetch the new file instead of serving a stale cached copy of the old URL.
+export const ASSET_VERSION = '20261001'
+
 export const BUSINESS = {
   name: 'Gadai Jogja',
   url: 'https://gadaijogja.com',
@@ -49,7 +53,7 @@ export const providerSchema = {
   name: BUSINESS.name,
   url: BUSINESS.url,
   telephone: BUSINESS.telephone,
-  image: `${BUSINESS.url}/og-image.jpg`,
+  image: `${BUSINESS.url}/og-image.jpg?v=${ASSET_VERSION}`,
   priceRange: '$$',
   address: addressSchema,
   openingHoursSpecification: openingHoursSchema,

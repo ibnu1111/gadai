@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import BreadcrumbSchema from '@/components/BreadcrumbSchema'
 import { FINANCE_WA_NUMBER } from '@/lib/helpers'
+import { ASSET_VERSION } from '@/lib/business'
 
 function isAdminLoggedIn(): boolean {
   return Boolean(localStorage.getItem('adminToken') && localStorage.getItem('adminData'))
@@ -504,7 +505,7 @@ export default function TrackPageClient() {
         <div className="max-w-2xl mx-auto px-4">
           <div className="flex justify-between items-center h-16">
             <Link href="/" className="flex items-center gap-3">
-              <Image src="/logo-gadai.png" alt="Gadai Jogja" width={40} height={40} className="h-10 w-auto" priority />
+              <Image src={`/logo-gadai.png?v=${ASSET_VERSION}`} alt="Gadai Jogja" width={40} height={40} className="h-10 w-auto" priority />
               <div className="hidden sm:block">
                 <span className="text-xs text-gray-400">gadaijogja.com</span>
               </div>
