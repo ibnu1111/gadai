@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
       const [data, total] = await Promise.all([
         prisma.siklus.findMany({
           where,
-          orderBy: [{ tanggalJatuhTempo: 'asc' }, { id: 'asc' }],
+          orderBy: [{ pinjaman: { tanggalCair: 'desc' } }, { id: 'asc' }],
           skip: (page - 1) * limit,
           take: limit,
           select: {
@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
                 namaBarang: true,
                 pokok: true,
                 gadaiID: true,
+                tanggalCair: true,
                 customer: { select: { id: true, nama: true, noHp: true } }
               }
             }
@@ -87,6 +88,7 @@ export async function GET(request: NextRequest) {
           namaBarang: true,
           pokok: true,
           gadaiID: true,
+          tanggalCair: true,
           nominalAkhir: true,
           tanggalSelesai: true,
           customer: { select: { id: true, nama: true, noHp: true } },
@@ -110,6 +112,7 @@ export async function GET(request: NextRequest) {
           namaBarang: p.namaBarang,
           pokok: p.pokok,
           gadaiID: p.gadaiID,
+          tanggalCair: p.tanggalCair,
           customer: p.customer
         },
         nominalAkhir: p.nominalAkhir,
