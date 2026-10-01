@@ -180,7 +180,7 @@ export default function AdminDaftarPinjamanPage() {
   const [pengajuan, setPengajuan] = useState<GadaiRingkas[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [hari, setHari] = useState<number | null>(0)
+  const [hari, setHari] = useState<number | null>(null)
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
