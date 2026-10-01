@@ -6,6 +6,8 @@ const nextConfig = {
       { protocol: 'http', hostname: 'localhost' },
       { protocol: 'https', hostname: 'gadai-production.up.railway.app' },
     ],
+    // Allows the ?v=<ASSET_VERSION> cache-busting query param on the logo (see src/lib/business.ts).
+    localPatterns: [{ pathname: '/logo-gadai.png' }],
   },
   async redirects() {
     return [
