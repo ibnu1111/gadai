@@ -375,11 +375,18 @@ export default function AdminGadaiDetailPage() {
     if (!file) return
     setKelUploading(field)
     setKelMessage('')
+    // Reset input value so picking the same file again still triggers onChange.
+    e.target.value = ''
     try {
       const url = await uploadFile(file)
       if (field === 'ktp') setKelFotoKtp(url)
       if (field === 'stnk') setKelFotoStnk(url)
       if (field === 'customerBarang') setKelFotoCustomerBarang(url)
+      // Auto-save the new photo URL to the database immediately so the upload
+      // is durable on its own (no need to scroll down and click "Simpan"
+      // before navigating away — critical for mobile usage).
+      await saveKelPhotos({ [field === 'ktp' ? 'fotoKtp' : field === 'stnk' ? 'fotoStnk' : 'fotoCustomerBarang']: url })
+      showToast('Foto berhasil diunggah dan disimpan')
     } catch (err: any) {
       setKelMessage(err.message || 'Gagal mengunggah foto')
     } finally {
@@ -392,19 +399,49 @@ export default function AdminGadaiDetailPage() {
     if (!file) return
     setKelUploading('pendukungTambahan')
     setKelMessage('')
+    e.target.value = ''
     try {
       const url = await uploadFile(file)
-      setKelFotoPendukungTambahan(prev => [...prev, url])
+      const next = [...kelFotoPendukungTambahan, url]
+      setKelFotoPendukungTambahan(next)
+      await saveKelPhotos({ fotoPendukungTambahan: next })
+      showToast('Foto pendukung berhasil diunggah dan disimpan')
     } catch (err: any) {
       setKelMessage(err.message || 'Gagal mengunggah foto')
     } finally {
       setKelUploading('')
-      e.target.value = ''
     }
   }
 
-  const handleRemovePendukungTambahan = (index: number) => {
-    setKelFotoPendukungTambahan(prev => prev.filter((_, i) => i !== index))
+  // Persist a partial kelengkapan payload (only the photo fields) to the
+  // database. Used for auto-saving each photo right after upload, so the
+  // upload is durable independent of the user clicking "Simpan" later.
+  const saveKelPhotos = async (partial: { fotoKtp?: string; fotoStnk?: string; fotoCustomerBarang?: string; fotoPendukungTambahan?: string[] }) => {
+    const token = localStorage.getItem('adminToken')
+    const res = await fetch(`/api/gadai/${id}/complete`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ ...partial, submit: false })
+    })
+    const data = await res.json()
+    if (!res.ok || !data.success) {
+      throw new Error(data.message || 'Gagal menyimpan foto')
+    }
+    // Refresh from DB so any other derived fields (e.g. progress count) stay in sync.
+    fetchGadai()
+  }
+
+  const handleRemovePendukungTambahan = async (index: number) => {
+    const next = kelFotoPendukungTambahan.filter((_, i) => i !== index)
+    setKelFotoPendukungTambahan(next)
+    // Auto-persist the removal so the deletion survives a refresh / navigation
+    // away without requiring the admin to also press "Simpan" at the bottom.
+    try {
+      await saveKelPhotos({ fotoPendukungTambahan: next })
+    } catch (err: any) {
+      setKelMessage(err.message || 'Gagal menghapus foto pendukung')
+      fetchGadai()
+    }
   }
 
   const handleSaveKelengkapan = async (submit: boolean) => {
