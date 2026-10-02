@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { handleUnauthorized } from '@/lib/adminSession'
 import AksiPinjamanDialog, { AksiTarget, JenisAksi } from '@/components/admin/AksiPinjamanDialog'
 
@@ -71,16 +72,25 @@ function BarisPinjaman({
   aksiAktif,
   onAksi
 }: Readonly<{ item: SiklusTempo; hariIni: string; aksiAktif: boolean; onAksi?: (aksi: JenisAksi) => void }>) {
+  const router = useRouter()
   const { pinjaman } = item
   const pokok = Number(pinjaman.pokok)
   const bunga = Number(item.nominalBunga)
+  const detailHref = `/admin/pinjaman/${pinjaman.id}`
+
+  const pergiKeDetail = () => {
+    router.push(detailHref)
+  }
 
   return (
-    <tr className="hover:bg-stone-50 transition">
+    <tr
+      onClick={pergiKeDetail}
+      className="hover:bg-stone-50 transition cursor-pointer"
+    >
       <td className="px-4 py-3">
-        <Link href={`/admin/pinjaman/${pinjaman.id}`} className="text-sm font-medium text-stone-800 hover:text-amber-600 transition">
+        <span className="text-sm font-medium text-stone-800 group-hover:text-amber-600 transition">
           {pinjaman.customer.nama}
-        </Link>
+        </span>
         <p className="text-xs text-stone-400">{pinjaman.customer.noHp}</p>
       </td>
       <td className="px-4 py-3 hidden sm:table-cell">
@@ -105,7 +115,7 @@ function BarisPinjaman({
       </td>
       <td className="px-4 py-3">
         {aksiAktif && onAksi ? (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
             <button type="button" onClick={() => onAksi('PERPANJANG')} className="px-2.5 py-1 bg-amber-600 text-white rounded-lg text-xs font-medium hover:bg-amber-700 transition">
               Perpanjang
             </button>
@@ -122,7 +132,11 @@ function BarisPinjaman({
             </button>
           </div>
         ) : (
-          <Link href={`/admin/pinjaman/${pinjaman.id}`} className="inline-flex items-center gap-1 text-sm text-amber-600 hover:text-amber-700 font-medium transition">
+          <Link
+            href={detailHref}
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center gap-1 text-sm text-amber-600 hover:text-amber-700 font-medium transition"
+          >
             Detail
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -143,8 +157,14 @@ const STATUS_BADGE: Record<string, string> = {
 }
 
 function BarisPengajuan({ item }: Readonly<{ item: GadaiRingkas }>) {
+  const router = useRouter()
+  const detailHref = `/admin/gadai/${item.gadaiID}`
+
   return (
-    <tr className="hover:bg-stone-50 transition">
+    <tr
+      onClick={() => router.push(detailHref)}
+      className="hover:bg-stone-50 transition cursor-pointer"
+    >
       <td className="px-4 py-3 text-sm font-medium text-stone-600">#{item.gadaiID}</td>
       <td className="px-4 py-3 text-sm font-medium text-stone-800">{item.customer.nama}</td>
       <td className="px-4 py-3 hidden sm:table-cell text-sm text-stone-700">{item.namaBarang}</td>
@@ -156,7 +176,11 @@ function BarisPengajuan({ item }: Readonly<{ item: GadaiRingkas }>) {
         </span>
       </td>
       <td className="px-4 py-3">
-        <Link href={`/admin/gadai/${item.gadaiID}`} className="inline-flex items-center gap-1 text-sm text-amber-600 hover:text-amber-700 font-medium transition">
+        <Link
+          href={detailHref}
+          onClick={(e) => e.stopPropagation()}
+          className="inline-flex items-center gap-1 text-sm text-amber-600 hover:text-amber-700 font-medium transition"
+        >
           Detail
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
