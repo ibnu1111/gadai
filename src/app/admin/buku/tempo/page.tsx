@@ -5,6 +5,9 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { handleUnauthorized } from '@/lib/adminSession'
 import AksiPinjamanDialog, { AksiTarget, JenisAksi } from '@/components/admin/AksiPinjamanDialog'
+import EditGadaiDialog, { GadaiEditTarget } from '@/components/admin/EditGadaiDialog'
+import EditPinjamanDialog, { PinjamanEditTarget } from '@/components/admin/EditPinjamanDialog'
+import { useToast } from '@/components/admin/Toast'
 
 interface SiklusTempo {
   id: number
@@ -15,10 +18,12 @@ interface SiklusTempo {
   pinjaman: {
     id: number
     jenis: string
+    status: string
     namaBarang: string | null
     pokok: string
     gadaiID: number | null
     tanggalCair: string
+    catatan: string | null
     customer: { id: number; nama: string; noHp: string }
   }
   nominalAkhir?: string | null
@@ -27,7 +32,15 @@ interface SiklusTempo {
 interface GadaiRingkas {
   gadaiID: number
   namaBarang: string
+  kategoriBarang: string
   nominalPinjam: string
+  bungaPersentase: string
+  fee: string
+  tanggalPinjam: string
+  tanggalKembali: string
+  deskripsi: string | null
+  atributTinggal: string
+  nomorPolisi: string | null
   status: string
   createdAt: string
   customer: { nama: string; noHp: string }
@@ -70,8 +83,15 @@ function BarisPinjaman({
   item,
   hariIni,
   aksiAktif,
-  onAksi
-}: Readonly<{ item: SiklusTempo; hariIni: string; aksiAktif: boolean; onAksi?: (aksi: JenisAksi) => void }>) {
+  onAksi,
+  onUbah
+}: Readonly<{
+  item: SiklusTempo
+  hariIni: string
+  aksiAktif: boolean
+  onAksi?: (aksi: JenisAksi) => void
+  onUbah?: () => void
+}>) {
   const router = useRouter()
   const { pinjaman } = item
   const pokok = Number(pinjaman.pokok)
@@ -114,35 +134,46 @@ function BarisPinjaman({
         <p className="text-xs text-stone-400 mt-1">{formatTanggal(item.tanggalJatuhTempo)}</p>
       </td>
       <td className="px-4 py-3">
-        {aksiAktif && onAksi ? (
-          <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
-            <button type="button" onClick={() => onAksi('PERPANJANG')} className="px-2.5 py-1 bg-amber-600 text-white rounded-lg text-xs font-medium hover:bg-amber-700 transition">
-              Perpanjang
+        <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+          {onUbah && (
+            <button
+              type="button"
+              onClick={onUbah}
+              className="text-sm text-stone-500 hover:text-stone-700 font-medium transition"
+            >
+              Ubah
             </button>
-            <button type="button" onClick={() => onAksi('LUNAS')} className="px-2.5 py-1 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700 transition">
-              Lunas
-            </button>
-            {pinjaman.jenis === 'GADAI' && (
-              <button type="button" onClick={() => onAksi('LELANG')} className="px-2.5 py-1 bg-stone-100 text-stone-700 rounded-lg text-xs font-medium hover:bg-stone-200 transition">
-                Lelang
+          )}
+          {aksiAktif && onAksi ? (
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={() => onAksi('PERPANJANG')} className="px-2.5 py-1 bg-amber-600 text-white rounded-lg text-xs font-medium hover:bg-amber-700 transition">
+                Perpanjang
               </button>
-            )}
-            <button type="button" onClick={() => onAksi('WRITEOFF')} className="px-2.5 py-1 text-red-600 rounded-lg text-xs font-medium hover:bg-red-50 transition">
-              Hapus buku
-            </button>
-          </div>
-        ) : (
-          <Link
-            href={detailHref}
-            onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1 text-sm text-amber-600 hover:text-amber-700 font-medium transition"
-          >
-            Detail
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </Link>
-        )}
+              <button type="button" onClick={() => onAksi('LUNAS')} className="px-2.5 py-1 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700 transition">
+                Lunas
+              </button>
+              {pinjaman.jenis === 'GADAI' && (
+                <button type="button" onClick={() => onAksi('LELANG')} className="px-2.5 py-1 bg-stone-100 text-stone-700 rounded-lg text-xs font-medium hover:bg-stone-200 transition">
+                  Lelang
+                </button>
+              )}
+              <button type="button" onClick={() => onAksi('WRITEOFF')} className="px-2.5 py-1 text-red-600 rounded-lg text-xs font-medium hover:bg-red-50 transition">
+                Hapus buku
+              </button>
+            </div>
+          ) : (
+            <Link
+              href={detailHref}
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1 text-sm text-amber-600 hover:text-amber-700 font-medium transition"
+            >
+              Detail
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          )}
+        </div>
       </td>
     </tr>
   )
@@ -156,7 +187,7 @@ const STATUS_BADGE: Record<string, string> = {
   DITOLAK: 'bg-red-50 text-red-600'
 }
 
-function BarisPengajuan({ item }: Readonly<{ item: GadaiRingkas }>) {
+function BarisPengajuan({ item, onUbah }: Readonly<{ item: GadaiRingkas; onUbah?: () => void }>) {
   const router = useRouter()
   const detailHref = `/admin/gadai/${item.gadaiID}`
 
@@ -176,16 +207,27 @@ function BarisPengajuan({ item }: Readonly<{ item: GadaiRingkas }>) {
         </span>
       </td>
       <td className="px-4 py-3">
-        <Link
-          href={detailHref}
-          onClick={(e) => e.stopPropagation()}
-          className="inline-flex items-center gap-1 text-sm text-amber-600 hover:text-amber-700 font-medium transition"
-        >
-          Detail
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </Link>
+        <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+          {onUbah && (
+            <button
+              type="button"
+              onClick={onUbah}
+              className="text-sm text-stone-500 hover:text-stone-700 font-medium transition"
+            >
+              Ubah
+            </button>
+          )}
+          <Link
+            href={detailHref}
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center gap-1 text-sm text-amber-600 hover:text-amber-700 font-medium transition"
+          >
+            Detail
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
+        </div>
       </td>
     </tr>
   )
@@ -211,6 +253,12 @@ export default function AdminDaftarPinjamanPage() {
   const [target, setTarget] = useState<AksiTarget | null>(null)
   const [memproses, setMemproses] = useState(false)
   const [aksiError, setAksiError] = useState('')
+  const [editGadaiTarget, setEditGadaiTarget] = useState<GadaiEditTarget | null>(null)
+  const [editPinjamanTarget, setEditPinjamanTarget] = useState<PinjamanEditTarget | null>(null)
+  const [editMemproses, setEditMemproses] = useState(false)
+  const [editError, setEditError] = useState('')
+
+  const { showToast } = useToast()
 
   const hariIni = tanggalWib(new Date().toISOString())
 
@@ -300,6 +348,91 @@ export default function AdminDaftarPinjamanPage() {
       nominalBunga: Number(item.nominalBunga),
       siklusKe: item.siklusKe
     })
+  }
+
+  const bukaEditGadai = (item: GadaiRingkas) => {
+    setEditError('')
+    setEditGadaiTarget({
+      gadaiID: item.gadaiID,
+      nama: item.customer.nama,
+      namaBarang: item.namaBarang,
+      kategoriBarang: item.kategoriBarang,
+      nominalPinjam: Number(item.nominalPinjam),
+      bungaPersentase: Number(item.bungaPersentase),
+      tanggalPinjam: item.tanggalPinjam,
+      tanggalKembali: item.tanggalKembali,
+      deskripsi: item.deskripsi,
+      atributTinggal: item.atributTinggal,
+      nomorPolisi: item.nomorPolisi
+    })
+  }
+
+  const bukaEditPinjaman = (item: SiklusTempo) => {
+    setEditError('')
+    setEditPinjamanTarget({
+      pinjamanId: item.pinjaman.id,
+      nama: item.pinjaman.customer.nama,
+      namaBarang: item.pinjaman.namaBarang,
+      pokok: Number(item.pinjaman.pokok),
+      nominalBunga: Number(item.nominalBunga),
+      tanggalJatuhTempo: item.tanggalJatuhTempo,
+      catatan: item.pinjaman.catatan,
+      status: item.pinjaman.status
+    })
+  }
+
+  const kirimEditGadai = async (payload: Record<string, unknown>) => {
+    if (!editGadaiTarget) return
+    setEditMemproses(true)
+    setEditError('')
+    try {
+      const token = localStorage.getItem('adminToken')
+      const res = await fetch(`/api/gadai/${editGadaiTarget.gadaiID}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(payload)
+      })
+      if (handleUnauthorized(res.status, '/admin/buku/tempo')) return
+      const data = await res.json()
+      if (data.success) {
+        setEditGadaiTarget(null)
+        showToast(data.message || 'Pengajuan berhasil diperbarui')
+        muat()
+      } else {
+        setEditError(data.message || 'Gagal memperbarui pengajuan')
+      }
+    } catch {
+      setEditError('Gagal memperbarui pengajuan')
+    } finally {
+      setEditMemproses(false)
+    }
+  }
+
+  const kirimEditPinjaman = async (payload: Record<string, unknown>) => {
+    if (!editPinjamanTarget) return
+    setEditMemproses(true)
+    setEditError('')
+    try {
+      const token = localStorage.getItem('adminToken')
+      const res = await fetch(`/api/pinjaman/${editPinjamanTarget.pinjamanId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(payload)
+      })
+      if (handleUnauthorized(res.status, '/admin/buku/tempo')) return
+      const data = await res.json()
+      if (data.success) {
+        setEditPinjamanTarget(null)
+        showToast(data.message || 'Pinjaman berhasil diperbarui')
+        muat()
+      } else {
+        setEditError(data.message || 'Gagal memperbarui pinjaman')
+      }
+    } catch {
+      setEditError('Gagal memperbarui pinjaman')
+    } finally {
+      setEditMemproses(false)
+    }
   }
 
   const totalPokok = items.reduce((sum, item) => sum + Number(item.pinjaman.pokok), 0)
@@ -432,7 +565,9 @@ export default function AdminDaftarPinjamanPage() {
                       </tr>
                     )
                   }
-                  return pengajuan.map((item) => <BarisPengajuan key={item.gadaiID} item={item} />)
+                  return pengajuan.map((item) => (
+                    <BarisPengajuan key={item.gadaiID} item={item} onUbah={() => bukaEditGadai(item)} />
+                  ))
                 }
 
                 if (items.length === 0) {
@@ -449,6 +584,7 @@ export default function AdminDaftarPinjamanPage() {
                     hariIni={hariIni}
                     aksiAktif={tab === 'AKTIF'}
                     onAksi={tab === 'AKTIF' ? (aksi) => bukaAksi(item, aksi) : undefined}
+                    onUbah={() => bukaEditPinjaman(item)}
                   />
                 ))
               })()}
@@ -480,6 +616,28 @@ export default function AdminDaftarPinjamanPage() {
       )}
 
       <AksiPinjamanDialog target={target} loading={memproses} errorMessage={aksiError} onSubmit={kirimAksi} onCancel={() => setTarget(null)} />
+
+      <EditGadaiDialog
+        target={editGadaiTarget}
+        loading={editMemproses}
+        errorMessage={editError}
+        onSubmit={kirimEditGadai}
+        onCancel={() => {
+          setEditGadaiTarget(null)
+          setEditError('')
+        }}
+      />
+
+      <EditPinjamanDialog
+        target={editPinjamanTarget}
+        loading={editMemproses}
+        errorMessage={editError}
+        onSubmit={kirimEditPinjaman}
+        onCancel={() => {
+          setEditPinjamanTarget(null)
+          setEditError('')
+        }}
+      />
     </div>
   )
 }

@@ -48,11 +48,23 @@ export async function GET(request: NextRequest) {
               select: {
                 id: true,
                 jenis: true,
+                status: true,
                 namaBarang: true,
                 pokok: true,
                 gadaiID: true,
                 tanggalCair: true,
-                customer: { select: { id: true, nama: true, noHp: true } }
+                catatan: true,
+                customer: { select: { id: true, nama: true, noHp: true } },
+                gadai: {
+                  select: {
+                    gadaiID: true,
+                    namaBarang: true,
+                    kategoriBarang: true,
+                    bungaPersentase: true,
+                    fee: true,
+                    tanggalKembali: true
+                  }
+                }
               }
             }
           }
@@ -85,13 +97,25 @@ export async function GET(request: NextRequest) {
         select: {
           id: true,
           jenis: true,
+          status: true,
           namaBarang: true,
           pokok: true,
           gadaiID: true,
           tanggalCair: true,
+          catatan: true,
           nominalAkhir: true,
           tanggalSelesai: true,
           customer: { select: { id: true, nama: true, noHp: true } },
+          gadai: {
+            select: {
+              gadaiID: true,
+              namaBarang: true,
+              kategoriBarang: true,
+              bungaPersentase: true,
+              fee: true,
+              tanggalKembali: true
+            }
+          },
           siklus: { orderBy: { siklusKe: 'desc' }, take: 1 }
         }
       }),
@@ -109,10 +133,12 @@ export async function GET(request: NextRequest) {
         pinjaman: {
           id: p.id,
           jenis: p.jenis,
+          status: p.status,
           namaBarang: p.namaBarang,
           pokok: p.pokok,
           gadaiID: p.gadaiID,
           tanggalCair: p.tanggalCair,
+          catatan: p.catatan,
           customer: p.customer
         },
         nominalAkhir: p.nominalAkhir,

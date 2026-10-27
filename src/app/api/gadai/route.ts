@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getAdminFromRequest } from '@/lib/auth'
 import { normalizePhoneNumber } from '@/lib/helpers'
-
-const VALID_KATEGORI = ['Mobil', 'Motor', 'Elektronik', 'HP', 'Laptop', 'Perhiasan', 'Lainnya']
+import { VALID_KATEGORI } from '@/lib/kategoriBarang'
 
 // GET /api/gadai - Get all gadai with pagination and filters
 export async function GET(request: NextRequest) {
