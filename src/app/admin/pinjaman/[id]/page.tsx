@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { handleUnauthorized } from '@/lib/adminSession'
@@ -26,6 +26,9 @@ interface SiklusRow {
   tanggalBayar: string | null
   nominalDibayar: string | null
   catatan: string | null
+  dibuatOleh: string | null
+  createdAt: string
+  updatedAt: string
 }
 
 interface PinjamanDetail {
@@ -70,6 +73,21 @@ function formatDate(date: string) {
   return new Date(date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
+function formatDateTime(date: string) {
+  return new Date(date).toLocaleString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Asia/Jakarta'
+  })
+}
+
+function selisihHari(dari: string, sampai: string): number {
+  return Math.round((Date.parse(`${sampai}T00:00:00Z`) - Date.parse(`${dari}T00:00:00Z`)) / 86400000)
+}
+
 let rowKeySeq = 0
 interface EditRow { key: number; sumberDanaId: string; nominal: string }
 const newEditRow = (): EditRow => ({ key: ++rowKeySeq, sumberDanaId: '', nominal: '' })
@@ -87,6 +105,7 @@ export default function AdminPinjamanDetailPage() {
   const [editRows, setEditRows] = useState<EditRow[]>([])
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
+  const [siklusTerbuka, setSiklusTerbuka] = useState<number[]>([])
 
   const fetchPinjaman = async () => {
     try {
@@ -240,18 +259,113 @@ export default function AdminPinjamanDetailPage() {
                 <tbody className="divide-y divide-stone-100">
                   {pinjaman.siklus.map((s) => {
                     const style = STATUS_STYLES[s.status] || STATUS_STYLES.BERJALAN
+                    const terbuka = siklusTerbuka.includes(s.id)
+                    const bungaNum = Number(s.nominalBunga)
+                    const dibayar = s.nominalDibayar ? Number(s.nominalDibayar) : null
+                    const durasiHari = selisihHari(s.tanggalMulai, s.tanggalJatuhTempo)
+                    const telatHari = s.tanggalBayar
+                      ? selisihHari(s.tanggalJatuhTempo, s.tanggalBayar)
+                      : null
                     return (
-                      <tr key={s.id}>
-                        <td className="px-4 py-3 text-sm font-medium text-stone-700">ke-{s.siklusKe}</td>
-                        <td className="px-4 py-3 text-sm text-stone-500">{formatDate(s.tanggalMulai)}</td>
-                        <td className="px-4 py-3 text-sm text-stone-500">{formatDate(s.tanggalJatuhTempo)}</td>
-                        <td className="px-4 py-3 text-sm font-semibold text-stone-700">{formatRupiah(Number(s.nominalBunga))}</td>
-                        <td className="px-4 py-3">
-                          <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${style.bg} ${style.text}`}>
-                            {STATUS_LABELS[s.status] || s.status}
-                          </span>
-                        </td>
-                      </tr>
+                      <Fragment key={s.id}>
+                        <tr
+                          onClick={() =>
+                            setSiklusTerbuka((prev) =>
+                              prev.includes(s.id) ? prev.filter((x) => x !== s.id) : [...prev, s.id]
+                            )
+                          }
+                          className="cursor-pointer hover:bg-stone-50 transition"
+                        >
+                          <td className="px-4 py-3 text-sm font-medium text-stone-700">
+                            <span className="flex items-center gap-1.5">
+                              <svg
+                                aria-hidden="true"
+                                className={`w-3.5 h-3.5 text-stone-400 transition-transform ${terbuka ? 'rotate-90' : ''}`}
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                              </svg>
+                              ke-{s.siklusKe}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-stone-500">{formatDate(s.tanggalMulai)}</td>
+                          <td className="px-4 py-3 text-sm text-stone-500">{formatDate(s.tanggalJatuhTempo)}</td>
+                          <td className="px-4 py-3 text-sm font-semibold text-stone-700">{formatRupiah(bungaNum)}</td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${style.bg} ${style.text}`}>
+                              {STATUS_LABELS[s.status] || s.status}
+                            </span>
+                          </td>
+                        </tr>
+                        {terbuka && (
+                          <tr>
+                            <td colSpan={5} className="px-4 pb-4 -mt-2">
+                              <div className="bg-stone-50 border border-stone-200 rounded-lg p-4 space-y-3">
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                  <div>
+                                    <p className="text-xs text-stone-500">Mulai</p>
+                                    <p className="text-sm font-medium text-stone-800">{formatDate(s.tanggalMulai)}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-stone-500">Jatuh tempo</p>
+                                    <p className="text-sm font-medium text-stone-800">{formatDate(s.tanggalJatuhTempo)}</p>
+                                    <p className="text-xs text-stone-400">Durasi {durasiHari} hari</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-stone-500">Bunga siklus ini</p>
+                                    <p className="text-sm font-medium text-stone-800">{formatRupiah(bungaNum)}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-stone-500">Tanggal bayar</p>
+                                    <p className="text-sm font-medium text-stone-800">
+                                      {s.tanggalBayar ? formatDate(s.tanggalBayar) : '-'}
+                                    </p>
+                                    {telatHari !== null && (
+                                      <p className={`text-xs ${telatHari > 0 ? 'text-red-500' : 'text-stone-400'}`}>
+                                        {telatHari > 0 ? `Telat ${telatHari} hari` : 'Tepat waktu'}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1 border-t border-stone-200">
+                                  <div>
+                                    <p className="text-xs text-stone-500">Nominal dibayar</p>
+                                    <p className="text-sm font-medium text-stone-800">
+                                      {dibayar !== null ? formatRupiah(dibayar) : 'Belum dibayar'}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-stone-500">Selisih vs bunga</p>
+                                    <p className="text-sm font-medium text-stone-800">
+                                      {dibayar !== null
+                                        ? formatRupiah(dibayar - bungaNum)
+                                        : '-'}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-stone-500">Dicatat oleh</p>
+                                    <p className="text-sm font-medium text-stone-800">{s.dibuatOleh || '-'}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-stone-500">Diperbarui</p>
+                                    <p className="text-sm font-medium text-stone-800">{formatDateTime(s.updatedAt)}</p>
+                                  </div>
+                                </div>
+
+                                {s.catatan && (
+                                  <div className="pt-1 border-t border-stone-200">
+                                    <p className="text-xs text-stone-500">Catatan</p>
+                                    <p className="text-sm text-stone-700 whitespace-pre-wrap">{s.catatan}</p>
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
                     )
                   })}
                 </tbody>
