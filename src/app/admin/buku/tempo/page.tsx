@@ -145,6 +145,15 @@ function BarisPinjaman({
         )}
         <p className="text-xs text-stone-400 mt-1">{formatTanggal(item.tanggalJatuhTempo)}</p>
       </td>
+      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+        {onGantiJenis && (
+          <SwitchJenisPinjaman
+            jenis={pinjaman.jenis === 'GADAI' ? 'GADAI' : 'DAPIN'}
+            disabled={sedangBerganti}
+            onToggle={onGantiJenis}
+          />
+        )}
+      </td>
       <td className="px-4 py-3">
         <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
           {onUbah && (
@@ -155,13 +164,6 @@ function BarisPinjaman({
             >
               Ubah
             </button>
-          )}
-          {onGantiJenis && (
-            <SwitchJenisPinjaman
-              jenis={pinjaman.jenis === 'GADAI' ? 'GADAI' : 'DAPIN'}
-              disabled={sedangBerganti}
-              onToggle={onGantiJenis}
-            />
           )}
           {aksiAktif && onAksi ? (
             <div className="flex flex-wrap gap-2">
@@ -586,6 +588,7 @@ export default function AdminDaftarPinjamanPage() {
                     <th className="px-4 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wide hidden md:table-cell">Bunga</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wide hidden md:table-cell">Tanggal Pengajuan</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wide">{tab === 'AKTIF' ? 'Jatuh Tempo' : 'Nominal Akhir'}</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wide">Jenis</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wide">Aksi</th>
                   </>
                 )}
@@ -593,7 +596,7 @@ export default function AdminDaftarPinjamanPage() {
             </thead>
             <tbody className="divide-y divide-stone-100">
               {(() => {
-                const kolom = 7
+                const kolom = tab === 'PENGAJUAN' ? 7 : 8
                 if (loading) {
                   return (
                     <tr>
