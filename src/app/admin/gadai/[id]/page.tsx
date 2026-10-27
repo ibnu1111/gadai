@@ -69,6 +69,7 @@ interface GadaiDetail {
   pendingAksiNominal: string | null
   pendingAksiBukti: string | null
   pendingAksiCreatedAt: string | null
+  pinjaman: { id: number; status: string } | null
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -784,6 +785,15 @@ export default function AdminGadaiDetailPage() {
               </span>
             </div>
             <p className="text-stone-500">{gadai.kategoriBarang} &bull; Diajukan {formatDate(gadai.createdAt)}</p>
+            {gadai.pinjaman && (
+              <p className="text-xs text-stone-400 mt-1">
+                Tercatat di buku besar sebagai{' '}
+                <Link href={`/admin/pinjaman/${gadai.pinjaman.id}`} className="text-amber-600 hover:underline">
+                  pinjaman #{gadai.pinjaman.id}
+                </Link>{' '}
+                ({gadai.pinjaman.status})
+              </p>
+            )}
             {gadai.parentGadaiID !== null && (
               <p className="text-xs text-stone-400 mt-1">
                 Perpanjangan dari{' '}

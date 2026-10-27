@@ -60,9 +60,14 @@ export async function GET(request: NextRequest) {
                     gadaiID: true,
                     namaBarang: true,
                     kategoriBarang: true,
+                    nominalPinjam: true,
                     bungaPersentase: true,
                     fee: true,
-                    tanggalKembali: true
+                    tanggalPinjam: true,
+                    tanggalKembali: true,
+                    deskripsi: true,
+                    atributTinggal: true,
+                    nomorPolisi: true
                   }
                 }
               }
@@ -111,9 +116,14 @@ export async function GET(request: NextRequest) {
               gadaiID: true,
               namaBarang: true,
               kategoriBarang: true,
+              nominalPinjam: true,
               bungaPersentase: true,
               fee: true,
-              tanggalKembali: true
+              tanggalPinjam: true,
+              tanggalKembali: true,
+              deskripsi: true,
+              atributTinggal: true,
+              nomorPolisi: true
             }
           },
           siklus: { orderBy: { siklusKe: 'desc' }, take: 1 }
@@ -139,7 +149,8 @@ export async function GET(request: NextRequest) {
           gadaiID: p.gadaiID,
           tanggalCair: p.tanggalCair,
           catatan: p.catatan,
-          customer: p.customer
+          customer: p.customer,
+          gadai: p.gadai
         },
         nominalAkhir: p.nominalAkhir,
         tanggalSelesai: p.tanggalSelesai

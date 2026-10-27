@@ -34,6 +34,7 @@ interface Pinjaman {
   tanggalCair: string
   tanggalSelesai: string | null
   nominalAkhir: string | null
+  gadaiID: number | null
   siklus: Siklus[]
 }
 
@@ -212,12 +213,13 @@ export default function AdminCustomerDetailPage() {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wide hidden md:table-cell">Tanggal Cair</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wide hidden md:table-cell">Jatuh Tempo</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wide">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
               {customer.pinjaman.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center text-stone-400">Belum ada pinjaman</td>
+                  <td colSpan={6} className="px-4 py-12 text-center text-stone-400">Belum ada pinjaman</td>
                 </tr>
               ) : (
                 customer.pinjaman.map((p) => {
@@ -238,6 +240,14 @@ export default function AdminCustomerDetailPage() {
                         <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${style.bg} ${style.text}`}>
                           {STATUS_LABELS[p.status] || p.status}
                         </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <Link
+                          href={p.gadaiID ? `/admin/gadai/${p.gadaiID}` : `/admin/pinjaman/${p.id}`}
+                          className="text-sm text-amber-600 hover:text-amber-700 font-medium"
+                        >
+                          Detail
+                        </Link>
                       </td>
                     </tr>
                   )

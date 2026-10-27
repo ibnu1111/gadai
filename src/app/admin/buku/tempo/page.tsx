@@ -25,6 +25,7 @@ interface SiklusTempo {
     tanggalCair: string
     catatan: string | null
     customer: { id: number; nama: string; noHp: string }
+    gadai: { gadaiID: number } | null
   }
   nominalAkhir?: string | null
 }
@@ -96,7 +97,13 @@ function BarisPinjaman({
   const { pinjaman } = item
   const pokok = Number(pinjaman.pokok)
   const bunga = Number(item.nominalBunga)
-  const detailHref = `/admin/pinjaman/${pinjaman.id}`
+  // Pinjaman yang berasal dari pengajuan online punya gadai terkait; buka
+  // halaman gadai itu karena di sana ada status, rekening tujuan, nopol, foto,
+  // dan surat perjanjian. Pinjaman impor (tanpa gadai online) tetap ke
+  // halaman pinjaman.
+  const detailHref = pinjaman.gadaiID
+    ? `/admin/gadai/${pinjaman.gadaiID}`
+    : `/admin/pinjaman/${pinjaman.id}`
 
   const pergiKeDetail = () => {
     router.push(detailHref)

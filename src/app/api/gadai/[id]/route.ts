@@ -22,7 +22,8 @@ export async function GET(
         customer: true,
         payments: { orderBy: { createdAt: 'desc' } },
         parentGadai: true,
-        extensions: true
+        extensions: true,
+        pinjaman: { select: { id: true, status: true } }
       }
     })
 

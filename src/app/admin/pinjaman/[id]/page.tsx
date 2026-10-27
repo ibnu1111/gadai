@@ -4,6 +4,7 @@ import { Fragment, useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { handleUnauthorized } from '@/lib/adminSession'
+import PhotoLightbox from '@/components/admin/PhotoLightbox'
 
 interface SumberDanaOption {
   id: number
@@ -31,6 +32,28 @@ interface SiklusRow {
   updatedAt: string
 }
 
+interface GadaiRelasi {
+  gadaiID: number
+  status: string
+  namaBarang: string
+  kategoriBarang: string
+  nominalPinjam: string
+  bungaPersentase: string
+  fee: string
+  tanggalPinjam: string
+  tanggalKembali: string
+  deskripsi: string | null
+  atributTinggal: string
+  nomorPolisi: string | null
+  noRekening: string | null
+  namaBank: string | null
+  namaRekening: string | null
+  fotoBarang: string | null
+  fotoPendukung: string | null
+  fotoCustomerBarang: string | null
+  fotoPendukungTambahan: string[]
+}
+
 interface PinjamanDetail {
   id: number
   jenis: string
@@ -41,8 +64,8 @@ interface PinjamanDetail {
   tanggalSelesai: string | null
   nominalAkhir: string | null
   catatan: string | null
-  customer: { id: number; nama: string; noHp: string }
-  gadai: { gadaiID: number; status: string } | null
+  customer: { id: number; nama: string; noHp: string; fotoKtp: string | null }
+  gadai: GadaiRelasi | null
   siklus: SiklusRow[]
   pendanaan: PendanaanRow[]
 }
@@ -85,7 +108,11 @@ function formatDateTime(date: string) {
 }
 
 function selisihHari(dari: string, sampai: string): number {
-  return Math.round((Date.parse(`${sampai}T00:00:00Z`) - Date.parse(`${dari}T00:00:00Z`)) / 86400000)
+  // Tanggal dari API berupa ISO lengkap (ada jamnya), jadi ambil bagian
+  // tanggalnya dulu sebelum dibandingkan - menempelkan jam ke string yang
+  // sudah punya jam membuat Date.parse jadi NaN.
+  const tgl = (iso: string) => iso.slice(0, 10)
+  return Math.round((Date.parse(`${tgl(sampai)}T00:00:00Z`) - Date.parse(`${tgl(dari)}T00:00:00Z`)) / 86400000)
 }
 
 let rowKeySeq = 0
@@ -106,6 +133,7 @@ export default function AdminPinjamanDetailPage() {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [siklusTerbuka, setSiklusTerbuka] = useState<number[]>([])
+  const [previewPhoto, setPreviewPhoto] = useState<string | null>(null)
 
   const fetchPinjaman = async () => {
     try {
@@ -225,7 +253,7 @@ export default function AdminPinjamanDetailPage() {
             <p className="text-stone-500">Pokok {formatRupiah(Number(pinjaman.pokok))} &bull; Cair {formatDate(pinjaman.tanggalCair)}</p>
             {pinjaman.gadai && (
               <Link href={`/admin/gadai/${pinjaman.gadai.gadaiID}`} className="text-xs text-amber-600 hover:underline mt-1 inline-block">
-                Lihat pengajuan online #{pinjaman.gadai.gadaiID} &rarr;
+                Lihat pengajuan online #{pinjaman.gadai.gadaiID} →
               </Link>
             )}
           </div>
@@ -375,6 +403,104 @@ export default function AdminPinjamanDetailPage() {
         </div>
 
         <div className="space-y-6">
+          {pinjaman.gadai && (
+            <div className="bg-white rounded-xl border border-stone-100 p-6">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-semibold text-stone-800">Detail Pengajuan</h2>
+                <Link
+                  href={`/admin/gadai/${pinjaman.gadai.gadaiID}`}
+                  className="text-xs font-medium text-amber-600 hover:text-amber-700"
+                >
+                  Buka halaman gadai →
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
+                <div>
+                  <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Nominal</p>
+                  <p className="text-sm font-semibold text-stone-800">{formatRupiah(Number(pinjaman.gadai.nominalPinjam))}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Jasa</p>
+                  <p className="text-sm font-semibold text-stone-800">
+                    {formatRupiah(Number(pinjaman.gadai.fee))} ({Number(pinjaman.gadai.bungaPersentase)}%)
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Tanggal Kembali</p>
+                  <p className="text-sm font-semibold text-stone-800">{formatDate(pinjaman.gadai.tanggalKembali)}</p>
+                </div>
+              </div>
+
+              <div className="border-t border-stone-100 pt-4">
+                <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Atribut Kelengkapan</p>
+                <p className="text-sm text-stone-700">{pinjaman.gadai.atributTinggal || '-'}</p>
+                {pinjaman.gadai.deskripsi && (
+                  <>
+                    <p className="text-xs text-stone-500 uppercase tracking-wide mb-1 mt-3">Deskripsi</p>
+                    <p className="text-sm text-stone-700 whitespace-pre-wrap">{pinjaman.gadai.deskripsi}</p>
+                  </>
+                )}
+              </div>
+
+              {(pinjaman.gadai.noRekening || pinjaman.gadai.namaBank || pinjaman.gadai.nomorPolisi) && (
+                <div className="border-t border-stone-100 mt-4 pt-4 grid grid-cols-2 gap-4">
+                  {(pinjaman.gadai.noRekening || pinjaman.gadai.namaBank) && (
+                    <div>
+                      <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Rekening Tujuan</p>
+                      <p className="text-sm font-semibold text-stone-800">
+                        {pinjaman.gadai.namaBank || '-'} &mdash; {pinjaman.gadai.noRekening || '-'}
+                      </p>
+                      {pinjaman.gadai.namaRekening && (
+                        <p className="text-xs text-stone-500">a.n. {pinjaman.gadai.namaRekening}</p>
+                      )}
+                    </div>
+                  )}
+                  {pinjaman.gadai.nomorPolisi && (
+                    <div>
+                      <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Nomor Polisi</p>
+                      <p className="text-sm font-semibold text-stone-800">{pinjaman.gadai.nomorPolisi}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {(pinjaman.customer.fotoKtp ||
+                pinjaman.gadai.fotoBarang ||
+                pinjaman.gadai.fotoPendukung ||
+                pinjaman.gadai.fotoCustomerBarang ||
+                pinjaman.gadai.fotoPendukungTambahan?.length > 0) && (
+                <div className="flex flex-wrap gap-3 mt-4">
+                  {pinjaman.customer.fotoKtp && (
+                    <button type="button" onClick={() => setPreviewPhoto(pinjaman.customer.fotoKtp)} className="inline-flex items-center gap-1.5 text-sm text-amber-600 hover:text-amber-700 font-medium bg-amber-50 px-3 py-1.5 rounded-lg">
+                      Foto KTP
+                    </button>
+                  )}
+                  {pinjaman.gadai.fotoBarang && pinjaman.gadai.fotoBarang !== '-' && (
+                    <button type="button" onClick={() => setPreviewPhoto(pinjaman.gadai!.fotoBarang)} className="inline-flex items-center gap-1.5 text-sm text-amber-600 hover:text-amber-700 font-medium bg-amber-50 px-3 py-1.5 rounded-lg">
+                      Foto Barang
+                    </button>
+                  )}
+                  {pinjaman.gadai.fotoPendukung && (
+                    <button type="button" onClick={() => setPreviewPhoto(pinjaman.gadai!.fotoPendukung)} className="inline-flex items-center gap-1.5 text-sm text-amber-600 hover:text-amber-700 font-medium bg-amber-50 px-3 py-1.5 rounded-lg">
+                      Foto STNK
+                    </button>
+                  )}
+                  {pinjaman.gadai.fotoCustomerBarang && (
+                    <button type="button" onClick={() => setPreviewPhoto(pinjaman.gadai!.fotoCustomerBarang)} className="inline-flex items-center gap-1.5 text-sm text-amber-600 hover:text-amber-700 font-medium bg-amber-50 px-3 py-1.5 rounded-lg">
+                      Foto Customer+Barang
+                    </button>
+                  )}
+                  {pinjaman.gadai.fotoPendukungTambahan?.map((url, i) => (
+                    <button key={url} type="button" onClick={() => setPreviewPhoto(url)} className="inline-flex items-center gap-1.5 text-sm text-amber-600 hover:text-amber-700 font-medium bg-amber-50 px-3 py-1.5 rounded-lg">
+                      Pendukung {i + 1}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="bg-white rounded-xl border border-stone-100 p-6">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-semibold text-stone-800">Sumber Dana</h2>
@@ -462,6 +588,8 @@ export default function AdminPinjamanDetailPage() {
           </div>
         </div>
       </div>
+
+      {previewPhoto && <PhotoLightbox src={previewPhoto} onClose={() => setPreviewPhoto(null)} />}
     </div>
   )
 }

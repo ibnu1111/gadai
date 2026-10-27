@@ -25,8 +25,30 @@ export async function GET(
     const pinjaman = await prisma.pinjaman.findUnique({
       where: { id: pinjamanId },
       include: {
-        customer: { select: { id: true, nama: true, noHp: true } },
-        gadai: { select: { gadaiID: true, status: true } },
+        customer: { select: { id: true, nama: true, noHp: true, fotoKtp: true } },
+        gadai: {
+          select: {
+            gadaiID: true,
+            status: true,
+            namaBarang: true,
+            kategoriBarang: true,
+            nominalPinjam: true,
+            bungaPersentase: true,
+            fee: true,
+            tanggalPinjam: true,
+            tanggalKembali: true,
+            deskripsi: true,
+            atributTinggal: true,
+            nomorPolisi: true,
+            noRekening: true,
+            namaBank: true,
+            namaRekening: true,
+            fotoBarang: true,
+            fotoPendukung: true,
+            fotoCustomerBarang: true,
+            fotoPendukungTambahan: true
+          }
+        },
         siklus: { orderBy: { siklusKe: 'desc' } },
         pendanaan: { include: { sumberDana: { select: { id: true, nama: true } } } }
       }
