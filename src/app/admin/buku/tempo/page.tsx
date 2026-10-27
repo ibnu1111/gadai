@@ -7,6 +7,7 @@ import { handleUnauthorized } from '@/lib/adminSession'
 import AksiPinjamanDialog, { AksiTarget, JenisAksi } from '@/components/admin/AksiPinjamanDialog'
 import EditGadaiDialog, { GadaiEditTarget } from '@/components/admin/EditGadaiDialog'
 import EditPinjamanDialog, { PinjamanEditTarget } from '@/components/admin/EditPinjamanDialog'
+import SwitchJenisPinjaman from '@/components/admin/SwitchJenisPinjaman'
 import { useToast } from '@/components/admin/Toast'
 
 interface SiklusTempo {
@@ -85,13 +86,17 @@ function BarisPinjaman({
   hariIni,
   aksiAktif,
   onAksi,
-  onUbah
+  onUbah,
+  onGantiJenis,
+  sedangBerganti
 }: Readonly<{
   item: SiklusTempo
   hariIni: string
   aksiAktif: boolean
   onAksi?: (aksi: JenisAksi) => void
   onUbah?: () => void
+  onGantiJenis?: (jenisBaru: 'GADAI' | 'DAPIN') => void
+  sedangBerganti?: boolean
 }>) {
   const router = useRouter()
   const { pinjaman } = item
@@ -150,6 +155,13 @@ function BarisPinjaman({
             >
               Ubah
             </button>
+          )}
+          {onGantiJenis && (
+            <SwitchJenisPinjaman
+              jenis={pinjaman.jenis === 'GADAI' ? 'GADAI' : 'DAPIN'}
+              disabled={sedangBerganti}
+              onToggle={onGantiJenis}
+            />
           )}
           {aksiAktif && onAksi ? (
             <div className="flex flex-wrap gap-2">
@@ -264,6 +276,7 @@ export default function AdminDaftarPinjamanPage() {
   const [editPinjamanTarget, setEditPinjamanTarget] = useState<PinjamanEditTarget | null>(null)
   const [editMemproses, setEditMemproses] = useState(false)
   const [editError, setEditError] = useState('')
+  const [gantiJenisId, setGantiJenisId] = useState<number | null>(null)
 
   const { showToast } = useToast()
 
@@ -442,6 +455,39 @@ export default function AdminDaftarPinjamanPage() {
     }
   }
 
+  const gantiJenis = async (item: SiklusTempo, jenisBaru: 'GADAI' | 'DAPIN') => {
+    const jenisSekarang = item.pinjaman.jenis === 'GADAI' ? 'GADAI' : 'DAPIN'
+    if (jenisSekarang === jenisBaru) return
+
+    const tujuan = jenisBaru === 'GADAI' ? 'gadai' : 'pinjaman biasa (dapin)'
+    const konfirmasi = jenisBaru === 'GADAI'
+      ? `Pindahkan data ${item.pinjaman.customer.nama} ke gadai? Data gadai akan dibuat dari data pinjaman ini.`
+      : `Kembalikan data ${item.pinjaman.customer.nama} ke ${tujuan}? Data gadai akan dihapus.`
+    if (!confirm(konfirmasi)) return
+
+    setGantiJenisId(item.pinjaman.id)
+    try {
+      const token = localStorage.getItem('adminToken')
+      const res = await fetch(`/api/pinjaman/${item.pinjaman.id}/jenis`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ jenis: jenisBaru })
+      })
+      if (handleUnauthorized(res.status, '/admin/buku/tempo')) return
+      const data = await res.json()
+      if (data.success) {
+        showToast(data.message || 'Data berhasil dipindahkan')
+        muat()
+      } else {
+        showToast(data.message || 'Gagal memindahkan data', 'error')
+      }
+    } catch {
+      showToast('Gagal memindahkan data', 'error')
+    } finally {
+      setGantiJenisId(null)
+    }
+  }
+
   const totalPokok = items.reduce((sum, item) => sum + Number(item.pinjaman.pokok), 0)
   const totalBunga = items.reduce((sum, item) => sum + Number(item.nominalBunga), 0)
   const jumlahTelat = tab === 'AKTIF' ? items.filter((item) => selisihHari(tanggalWib(item.tanggalJatuhTempo), hariIni) > 0).length : 0
@@ -592,6 +638,8 @@ export default function AdminDaftarPinjamanPage() {
                     aksiAktif={tab === 'AKTIF'}
                     onAksi={tab === 'AKTIF' ? (aksi) => bukaAksi(item, aksi) : undefined}
                     onUbah={() => bukaEditPinjaman(item)}
+                    onGantiJenis={(jenisBaru) => gantiJenis(item, jenisBaru)}
+                    sedangBerganti={gantiJenisId === item.pinjaman.id}
                   />
                 ))
               })()}
