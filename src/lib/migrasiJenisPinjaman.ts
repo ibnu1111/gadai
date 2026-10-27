@@ -70,15 +70,15 @@ export async function migrasiJenisPinjaman(
       }
     }
 
-    const siklusTerakhir = pinjaman.siklus[pinjaman.siklus.length - 1]
+    const siklusTerakhir = pinjaman.siklus.at(-1)
     // Fee = bunga siklus yang sedang berjalan, bukan jumlah seluruh siklus;
     // penjumlahan akan jauh melebihi nominal pokok untuk pinjaman yang sudah
     // diperpanjang beberapa kali.
     const fee = siklusTerakhir?.nominalBunga ?? new Prisma.Decimal(0)
-    const totalDibayar = pinjaman.siklus.reduce(
-      (sum, s) => sum.plus(s.nominalDibayar ?? new Prisma.Decimal(0)),
-      new Prisma.Decimal(0)
-    )
+    // Total pembayaran = nominal siklus terakhir yang sudah dibayar (pokok +
+    // bunga). Pakai ini, bukan jumlah semua siklus, supaya "Sisa Tagihan" di
+    // halaman gadai tidak jadi negatif untuk pinjaman yang sudah lunas.
+    const totalDibayar = siklusTerakhir?.nominalDibayar ?? new Prisma.Decimal(0)
     const tanggalKembali = siklusTerakhir?.tanggalJatuhTempo ?? pinjaman.tanggalSelesai ?? pinjaman.tanggalCair
     const namaBarang = pinjaman.namaBarang?.trim() || 'Tanpa jaminan'
 
@@ -129,9 +129,10 @@ export async function migrasiJenisPinjaman(
     }
   }
 
+  const asalGadai = gadai.namaBarang ? ` (${gadai.namaBarang})` : ''
   const catatanBaru = [
     pinjaman.catatan?.trim(),
-    `Migrasi dari gadai #${gadai.gadaiID}${gadai.namaBarang ? ` (${gadai.namaBarang})` : ''}`
+    `Migrasi dari gadai #${gadai.gadaiID}${asalGadai}`
   ]
     .filter(Boolean)
     .join(' - ')
