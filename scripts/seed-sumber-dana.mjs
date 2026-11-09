@@ -87,7 +87,7 @@ async function main() {
       continue
     }
 
-    const hash = await bcrypt.hash(passwordDariEnv(akun.nama), 10)
+    const hash = await bcrypt.hash(await passwordDariEnv(akun.nama), 10)
     const ada = await prisma.admin.findUnique({ where: { email: akun.email } })
 
     if (ada) {
