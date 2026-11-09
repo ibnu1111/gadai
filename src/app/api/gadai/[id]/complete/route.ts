@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { randomBytes } from 'node:crypto'
 import { prisma } from '@/lib/prisma'
-import { getAdminFromRequest } from '@/lib/auth'
+import { guardMutasi } from '@/lib/adminAuth'
 import { getMissingAdminCompletion, getMissingInitialDocs } from '@/lib/helpers'
 
 // PUT /api/gadai/[id]/complete - Admin fills in the on-site "kelengkapan" data
@@ -13,10 +13,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const admin = getAdminFromRequest(request)
-    if (!admin) {
-      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
-    }
+    const guard = await guardMutasi(request, 'melengkapi data gadai')
+    if ('response' in guard) return guard.response
+    const { admin } = guard
 
     const { id } = await params
     const gadaiID = parseInt(id)

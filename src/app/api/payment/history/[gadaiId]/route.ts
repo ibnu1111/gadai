@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getAdminFromRequest } from '@/lib/auth'
+import { getAdminDenganScope } from '@/lib/adminAuth'
+import { adminTerbatas } from '@/lib/adminScope'
 
 // GET /api/payment/history/[gadaiId] - Get payment history
 export async function GET(
@@ -8,10 +9,11 @@ export async function GET(
   { params }: { params: Promise<{ gadaiId: string }> }
 ) {
   try {
-    const admin = getAdminFromRequest(request)
-    if (!admin) {
+    const auth = await getAdminDenganScope(request)
+    if (!auth) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
     }
+    const { scope } = auth
 
     const { gadaiId } = await params
 
@@ -21,6 +23,19 @@ export async function GET(
 
     if (!gadai) {
       return NextResponse.json({ success: false, message: 'Gadai not found' }, { status: 404 })
+    }
+
+    // Admin terkunci hanya boleh melihat riwayat pembayaran gadai miliknya.
+    if (adminTerbatas(scope)) {
+      const milikDia = await prisma.pinjaman.count({
+        where: {
+          gadaiID: gadai.gadaiID,
+          pendanaan: { some: { sumberDanaId: scope.sumberDanaId as number } }
+        }
+      })
+      if (milikDia === 0) {
+        return NextResponse.json({ success: false, message: 'Gadai not found' }, { status: 404 })
+      }
     }
 
     const payments = await prisma.payment.findMany({

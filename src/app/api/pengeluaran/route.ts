@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-import { getAdminFromRequest } from '@/lib/auth'
+import { guardMutasi } from '@/lib/adminAuth'
 
 // GET /api/pengeluaran?bulan=YYYY-MM - Daftar pengeluaran bulan tsb (default bulan berjalan).
 export async function GET(request: NextRequest) {
   try {
-    const admin = getAdminFromRequest(request)
-    if (!admin) {
-      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
-    }
+    const guard = await guardMutasi(request, 'mencatat pengeluaran')
+    if ('response' in guard) return guard.response
+    const { admin } = guard
 
     const bulanParam = request.nextUrl.searchParams.get('bulan')
     const cocok = bulanParam ? /^(\d{4})-(\d{2})$/.exec(bulanParam) : null
@@ -34,10 +33,9 @@ export async function GET(request: NextRequest) {
 // POST /api/pengeluaran - Catat pengeluaran baru.
 export async function POST(request: NextRequest) {
   try {
-    const admin = getAdminFromRequest(request)
-    if (!admin) {
-      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
-    }
+    const guard = await guardMutasi(request, 'mencatat pengeluaran')
+    if ('response' in guard) return guard.response
+    const { admin } = guard
 
     const body = await request.json()
     const keterangan = String(body?.keterangan ?? '').trim()

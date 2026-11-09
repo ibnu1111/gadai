@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getAdminFromRequest } from '@/lib/auth'
+import { guardMutasi } from '@/lib/adminAuth'
 
 // POST /api/payment/extend - Extend gadai
 export async function POST(request: NextRequest) {
   try {
-    const admin = getAdminFromRequest(request)
-    if (!admin) {
-      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
-    }
+    const guard = await guardMutasi(request, 'memperpanjang gadai')
+    if ('response' in guard) return guard.response
+    const { admin } = guard
 
     const { gadaiID, extensionPeriod, feePayment, newFee } = await request.json()
 

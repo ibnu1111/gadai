@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getAdminFromRequest } from '@/lib/auth'
+import { getAdminDenganScope } from '@/lib/adminAuth'
 import { formatAngka, isoWib, tanggalRekap, bulanPanjang, bulanSingkat, nomorBaris } from '@/lib/rekap'
+import { predicatePinjaman, terapkanScope, type AdminScope } from '@/lib/adminScope'
 
 const TIPE_VALID = new Set(['harian', 'modal', 'closing'])
 
@@ -23,9 +24,12 @@ function labelPinjaman(nama: string, namaBarang: string | null): string {
   return barang ? `${nama} ${barang.toUpperCase()}` : nama
 }
 
-async function rekapHarian(): Promise<string> {
+async function rekapHarian(scope: AdminScope): Promise<string> {
   const data = await prisma.siklus.findMany({
-    where: { status: 'BERJALAN', pinjaman: { status: 'AKTIF' } },
+    where: terapkanScope(
+      { status: 'BERJALAN', pinjaman: { status: 'AKTIF' } },
+      predicatePinjaman(scope)
+    ),
     orderBy: [{ tanggalMulai: 'asc' }, { nomorUrut: 'asc' }, { id: 'asc' }],
     select: {
       nomorUrut: true,
@@ -67,9 +71,12 @@ async function rekapHarian(): Promise<string> {
   return blok.join('\n\n')
 }
 
-async function rekapModal(): Promise<string> {
+async function rekapModal(scope: AdminScope): Promise<string> {
   const data = await prisma.pinjamanDana.findMany({
-    where: { pinjaman: { status: 'AKTIF', jenis: 'GADAI' } },
+    where: terapkanScope(
+      { pinjaman: { status: 'AKTIF', jenis: 'GADAI' } },
+      predicatePinjaman(scope)
+    ),
     orderBy: [{ sumberDana: { urutan: 'asc' } }, { sumberDanaId: 'asc' }, { id: 'asc' }],
     select: {
       nominal: true,
@@ -112,19 +119,26 @@ async function rekapModal(): Promise<string> {
   ].join('\n')
 }
 
-async function rekapClosing(tahun: number, bulan: number): Promise<string> {
+async function rekapClosing(tahun: number, bulan: number, scope: AdminScope): Promise<string> {
   const awal = new Date(Date.UTC(tahun, bulan - 1, 1))
   const akhir = new Date(Date.UTC(tahun, bulan, 1))
+  const scopePinjaman = predicatePinjaman(scope)
 
   const [terputar, perSumber, keuntungan, sumberDana, pengeluaran] = await Promise.all([
-    prisma.pinjaman.aggregate({ where: { status: 'AKTIF' }, _sum: { pokok: true } }),
+    prisma.pinjaman.aggregate({
+      where: terapkanScope({ status: 'AKTIF' }, scopePinjaman),
+      _sum: { pokok: true }
+    }),
     prisma.pinjamanDana.groupBy({
       by: ['sumberDanaId'],
-      where: { pinjaman: { status: 'AKTIF' } },
+      where: terapkanScope({ pinjaman: { status: 'AKTIF' } }, scopePinjaman),
       _sum: { nominal: true }
     }),
     prisma.siklus.aggregate({
-      where: { tanggalJatuhTempo: { gte: awal, lt: akhir } },
+      where: terapkanScope(
+        { tanggalJatuhTempo: { gte: awal, lt: akhir } },
+        scopePinjaman
+      ),
       _sum: { nominalBunga: true }
     }),
     prisma.sumberDana.findMany({ orderBy: [{ urutan: 'asc' }, { nama: 'asc' }], select: { id: true, nama: true } }),
@@ -193,10 +207,11 @@ function baca(bulanParam: string | null): { tahun: number; bulan: number } | nul
 // GET /api/rekap?tipe=harian|modal|closing&bulan=YYYY-MM
 export async function GET(request: NextRequest) {
   try {
-    const admin = getAdminFromRequest(request)
-    if (!admin) {
+    const auth = await getAdminDenganScope(request)
+    if (!auth) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
     }
+    const { scope } = auth
 
     const tipe = request.nextUrl.searchParams.get('tipe') ?? 'harian'
     if (!TIPE_VALID.has(tipe)) {
@@ -209,9 +224,9 @@ export async function GET(request: NextRequest) {
     }
 
     let teks: string
-    if (tipe === 'harian') teks = await rekapHarian()
-    else if (tipe === 'modal') teks = await rekapModal()
-    else teks = await rekapClosing(periode.tahun, periode.bulan)
+    if (tipe === 'harian') teks = await rekapHarian(scope)
+    else if (tipe === 'modal') teks = await rekapModal(scope)
+    else teks = await rekapClosing(periode.tahun, periode.bulan, scope)
 
     return NextResponse.json({ success: true, data: { tipe, teks } })
   } catch (error) {

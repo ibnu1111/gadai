@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getAdminFromRequest } from '@/lib/auth'
+import { getAdminDenganScope } from '@/lib/adminAuth'
 import { akhirHariWib } from '@/lib/bukuBesar'
+import { predicatePinjaman, terapkanScope } from '@/lib/adminScope'
 
 // GET /api/pinjaman?status=AKTIF|LUNAS|LELANG|WRITEOFF&hari=&search=&page=&limit=
 // Daftar pinjaman terpadu: status=AKTIF menampilkan siklus berjalan (dengan tanggal
@@ -9,10 +10,11 @@ import { akhirHariWib } from '@/lib/bukuBesar'
 // yang sebelumnya terpisah.
 export async function GET(request: NextRequest) {
   try {
-    const admin = getAdminFromRequest(request)
-    if (!admin) {
+    const auth = await getAdminDenganScope(request)
+    if (!auth) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
     }
+    const { scope } = auth
 
     const params = request.nextUrl.searchParams
     const status = (params.get('status') ?? 'AKTIF').toUpperCase()
@@ -23,14 +25,17 @@ export async function GET(request: NextRequest) {
 
     if (status === 'AKTIF') {
       const hari = hariParam !== null ? Math.min(Math.max(Number(hariParam) || 0, 0), 3650) : null
-      const where = {
-        status: 'BERJALAN',
-        pinjaman: {
-          status: 'AKTIF',
-          ...(search ? { customer: { nama: { contains: search, mode: 'insensitive' as const } } } : {})
+      const where = terapkanScope(
+        {
+          status: 'BERJALAN',
+          pinjaman: {
+            status: 'AKTIF',
+            ...(search ? { customer: { nama: { contains: search, mode: 'insensitive' as const } } } : {})
+          },
+          ...(hari !== null ? { tanggalJatuhTempo: { lte: akhirHariWib(hari) } } : {})
         },
-        ...(hari !== null ? { tanggalJatuhTempo: { lte: akhirHariWib(hari) } } : {})
-      }
+        predicatePinjaman(scope)
+      )
 
       const [data, total] = await Promise.all([
         prisma.siklus.findMany({
@@ -88,10 +93,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'Status tidak valid' }, { status: 400 })
     }
 
-    const pinjamanWhere = {
-      status,
-      ...(search ? { customer: { nama: { contains: search, mode: 'insensitive' as const } } } : {})
-    }
+    const pinjamanWhere = terapkanScope(
+      {
+        status,
+        ...(search ? { customer: { nama: { contains: search, mode: 'insensitive' as const } } } : {})
+      },
+      predicatePinjaman(scope)
+    )
 
     const [pinjaman, total] = await Promise.all([
       prisma.pinjaman.findMany({

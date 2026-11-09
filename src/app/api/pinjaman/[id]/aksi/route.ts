@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-import { getAdminFromRequest } from '@/lib/auth'
+import { guardMutasi } from '@/lib/adminAuth'
 import { parseTanggalWib, hariIniWib } from '@/lib/bukuBesar'
 
 const AKSI_VALID = new Set(['PERPANJANG', 'LUNAS', 'LELANG', 'WRITEOFF'])
@@ -149,8 +149,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const admin = getAdminFromRequest(request)
-    if (!admin) return gagal('Unauthorized', 401)
+    const guard = await guardMutasi(request, 'menjalankan aksi pinjaman')
+    if ('response' in guard) return guard.response
+    const { admin } = guard
 
     const { id } = await params
     const pinjamanId = Number.parseInt(id)

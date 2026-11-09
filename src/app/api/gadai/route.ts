@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getAdminFromRequest } from '@/lib/auth'
+import { getAdminDenganScope } from '@/lib/adminAuth'
 import { normalizePhoneNumber } from '@/lib/helpers'
 import { VALID_KATEGORI } from '@/lib/kategoriBarang'
+import { predicateGadai, terapkanScope, tolakJikaAdminTerbatas } from '@/lib/adminScope'
 
 // GET /api/gadai - Get all gadai with pagination and filters
 export async function GET(request: NextRequest) {
   try {
-    const admin = getAdminFromRequest(request)
-    if (!admin) {
+    const auth = await getAdminDenganScope(request)
+    if (!auth) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
     }
+    const { scope } = auth
 
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
@@ -40,15 +42,17 @@ export async function GET(request: NextRequest) {
       ]
     }
 
+    const whereScope = terapkanScope(where, predicateGadai(scope))
+
     const [gadais, total] = await Promise.all([
       prisma.gadai.findMany({
-        where,
+        where: whereScope,
         include: { customer: true },
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit
       }),
-      prisma.gadai.count({ where })
+      prisma.gadai.count({ where: whereScope })
     ])
 
     return NextResponse.json({
@@ -70,9 +74,15 @@ export async function GET(request: NextRequest) {
 // POST /api/gadai - Create new gadai
 export async function POST(request: NextRequest) {
   try {
-    const admin = getAdminFromRequest(request)
-    if (!admin) {
+    const auth = await getAdminDenganScope(request)
+    if (!auth) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
+    }
+    const { admin, scope } = auth
+
+    const tolak = tolakJikaAdminTerbatas(scope, 'membuat pengajuan baru')
+    if (tolak) {
+      return NextResponse.json({ success: false, message: tolak }, { status: 403 })
     }
 
     const body = await request.json()

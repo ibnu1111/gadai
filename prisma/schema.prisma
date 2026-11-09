@@ -87,10 +87,14 @@ model Payment {
 }
 
 model Admin {
-  id        Int      @id @default(autoincrement())
-  nama      String
-  email     String   @unique
-  password  String
+  id       Int     @id @default(autoincrement())
+  nama     String
+  email    String  @unique
+  password String
+  /// Bila terisi, admin ini hanya boleh melihat dan bukan mengubah transaksi
+  /// yang pendanaannya berasal dari sumber dana tersebut. Null = admin penuh.
+  sumberDanaId Int?
+  sumberDana   SumberDana? @relation(fields: [sumberDanaId], references: [id])
   createdAt DateTime @default(now())
 }
 
@@ -110,6 +114,7 @@ model SumberDana {
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
   pendanaan PinjamanDana[]
+  admins    Admin[]
 }
 
 /// Biaya operasional (mis. servis kendaraan, pulsa, dsb) yang mengurangi keuntungan bulan berjalan.

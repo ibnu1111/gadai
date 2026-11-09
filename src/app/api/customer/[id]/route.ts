@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-import { getAdminFromRequest } from '@/lib/auth'
+import { getAdminDenganScope } from '@/lib/adminAuth'
+import { adminTerbatas, predicateCustomer } from '@/lib/adminScope'
 
 // GET /api/customer/[id] - Get single customer with full pengajuan history
 export async function GET(
@@ -8,10 +10,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const admin = getAdminFromRequest(request)
-    if (!admin) {
+    const auth = await getAdminDenganScope(request)
+    if (!auth) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
     }
+    const { scope } = auth
 
     const { id } = await params
     const customer = await prisma.customer.findUnique({
@@ -33,6 +36,16 @@ export async function GET(
 
     if (!customer) {
       return NextResponse.json({ success: false, message: 'Customer not found' }, { status: 404 })
+    }
+
+    // Admin terkunci hanya boleh membuka customer yang relevan baginya.
+    if (adminTerbatas(scope)) {
+      const relevan = await prisma.customer.count({
+        where: { AND: [{ id: customer.id }, predicateCustomer(scope)] } as Prisma.CustomerWhereInput
+      })
+      if (relevan === 0) {
+        return NextResponse.json({ success: false, message: 'Customer not found' }, { status: 404 })
+      }
     }
 
     return NextResponse.json({ success: true, data: customer })

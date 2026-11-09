@@ -1,26 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getAdminFromRequest } from '@/lib/auth'
+import { getAdminDenganScope } from '@/lib/adminAuth'
 import { akhirHariWib } from '@/lib/bukuBesar'
+import { predicatePinjaman, terapkanScope } from '@/lib/adminScope'
 
 // GET /api/pinjaman/tempo?hari=0 - Siklus berjalan yang sudah lewat tempo atau
 // jatuh tempo dalam N hari ke depan.
 export async function GET(request: NextRequest) {
   try {
-    const admin = getAdminFromRequest(request)
-    if (!admin) {
+    const auth = await getAdminDenganScope(request)
+    if (!auth) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
     }
+    const { scope } = auth
 
     const hariParam = Number(request.nextUrl.searchParams.get('hari') ?? 0)
     const hari = Number.isFinite(hariParam) ? Math.min(Math.max(Math.trunc(hariParam), 0), 60) : 0
 
     const data = await prisma.siklus.findMany({
-      where: {
-        status: 'BERJALAN',
-        tanggalJatuhTempo: { lte: akhirHariWib(hari) },
-        pinjaman: { status: 'AKTIF' }
-      },
+      where: terapkanScope(
+        {
+          status: 'BERJALAN',
+          tanggalJatuhTempo: { lte: akhirHariWib(hari) },
+          pinjaman: { status: 'AKTIF' }
+        },
+        predicatePinjaman(scope)
+      ),
       orderBy: [{ tanggalJatuhTempo: 'asc' }, { id: 'asc' }],
       select: {
         id: true,

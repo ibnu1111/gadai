@@ -1,17 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getAdminFromRequest } from '@/lib/auth'
+import { getAdminDenganScope } from '@/lib/adminAuth'
+import { adminTerbatas } from '@/lib/adminScope'
 
 // GET /api/sumber-dana - Daftar kas asal pencairan (MEGA, TAB ANAK, TAB EMAS)
 export async function GET(request: NextRequest) {
   try {
-    const admin = getAdminFromRequest(request)
-    if (!admin) {
+    const auth = await getAdminDenganScope(request)
+    if (!auth) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
     }
+    const { scope } = auth
 
     const data = await prisma.sumberDana.findMany({
-      where: { aktif: true },
+      // Admin terkunci hanya boleh melihat sumber dana miliknya sendiri.
+      where: adminTerbatas(scope)
+        ? { id: scope.sumberDanaId as number }
+        : { aktif: true },
       orderBy: [{ urutan: 'asc' }, { nama: 'asc' }],
       select: { id: true, nama: true }
     })

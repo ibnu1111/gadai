@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getAdminFromRequest } from '@/lib/auth'
+import { guardMutasi } from '@/lib/adminAuth'
 import { migrasiJenisPinjaman, JenisPinjaman } from '@/lib/migrasiJenisPinjaman'
 
 const JENIS_VALID = new Set<string>(['GADAI', 'DAPIN'])
@@ -15,10 +15,8 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const admin = getAdminFromRequest(request)
-    if (!admin) {
-      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
-    }
+    const guard = await guardMutasi(request, 'memindahkan jenis pinjaman')
+    if ('response' in guard) return guard.response
 
     const { id } = await params
     const pinjamanId = Number.parseInt(id)

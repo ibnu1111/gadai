@@ -8,6 +8,7 @@ import AksiPinjamanDialog, { AksiTarget, JenisAksi } from '@/components/admin/Ak
 import EditGadaiDialog, { GadaiEditTarget } from '@/components/admin/EditGadaiDialog'
 import EditPinjamanDialog, { PinjamanEditTarget } from '@/components/admin/EditPinjamanDialog'
 import SwitchJenisPinjaman from '@/components/admin/SwitchJenisPinjaman'
+import { adminTerkunci, namaSumberDanaAdmin } from '@/lib/adminSessionScope'
 import { useToast } from '@/components/admin/Toast'
 
 interface SiklusTempo {
@@ -88,7 +89,8 @@ function BarisPinjaman({
   onAksi,
   onUbah,
   onGantiJenis,
-  sedangBerganti
+  sedangBerganti,
+  readOnly
 }: Readonly<{
   item: SiklusTempo
   hariIni: string
@@ -97,6 +99,7 @@ function BarisPinjaman({
   onUbah?: () => void
   onGantiJenis?: (jenisBaru: 'GADAI' | 'DAPIN') => void
   sedangBerganti?: boolean
+  readOnly?: boolean
 }>) {
   const router = useRouter()
   const { pinjaman } = item
@@ -146,17 +149,21 @@ function BarisPinjaman({
         <p className="text-xs text-stone-400 mt-1">{formatTanggal(item.tanggalJatuhTempo)}</p>
       </td>
       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-        {onGantiJenis && (
+        {onGantiJenis && !readOnly ? (
           <SwitchJenisPinjaman
             jenis={pinjaman.jenis === 'GADAI' ? 'GADAI' : 'DAPIN'}
             disabled={sedangBerganti}
             onToggle={onGantiJenis}
           />
+        ) : (
+          <span className="text-xs font-medium text-stone-500">
+            {pinjaman.jenis === 'GADAI' ? 'Gadai' : 'Pinjaman'}
+          </span>
         )}
       </td>
       <td className="px-4 py-3">
         <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
-          {onUbah && (
+          {onUbah && !readOnly && (
             <button
               type="button"
               onClick={onUbah}
@@ -165,7 +172,7 @@ function BarisPinjaman({
               Ubah
             </button>
           )}
-          {aksiAktif && onAksi ? (
+          {aksiAktif && onAksi && !readOnly ? (
             <div className="flex flex-wrap gap-2">
               <button type="button" onClick={() => onAksi('PERPANJANG')} className="px-2.5 py-1 bg-amber-600 text-white rounded-lg text-xs font-medium hover:bg-amber-700 transition">
                 Perpanjang
@@ -208,7 +215,7 @@ const STATUS_BADGE: Record<string, string> = {
   DITOLAK: 'bg-red-50 text-red-600'
 }
 
-function BarisPengajuan({ item, onUbah }: Readonly<{ item: GadaiRingkas; onUbah?: () => void }>) {
+function BarisPengajuan({ item, onUbah, readOnly }: Readonly<{ item: GadaiRingkas; onUbah?: () => void; readOnly?: boolean }>) {
   const router = useRouter()
   const detailHref = `/admin/gadai/${item.gadaiID}`
 
@@ -229,7 +236,7 @@ function BarisPengajuan({ item, onUbah }: Readonly<{ item: GadaiRingkas; onUbah?
       </td>
       <td className="px-4 py-3">
         <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
-          {onUbah && (
+          {onUbah && !readOnly && (
             <button
               type="button"
               onClick={onUbah}
@@ -279,8 +286,15 @@ export default function AdminDaftarPinjamanPage() {
   const [editMemproses, setEditMemproses] = useState(false)
   const [editError, setEditError] = useState('')
   const [gantiJenisId, setGantiJenisId] = useState<number | null>(null)
+  // Admin terkunci ke satu sumber dana hanya boleh melihat; aksi Ubah /
+  // Perpanjang / Lunas / Ganti Jenis disembunyikan (server juga menolak).
+  const [readOnly, setReadOnly] = useState(false)
 
   const { showToast } = useToast()
+
+  useEffect(() => {
+    setReadOnly(adminTerkunci())
+  }, [])
 
   const hariIni = tanggalWib(new Date().toISOString())
 
@@ -501,6 +515,13 @@ export default function AdminDaftarPinjamanPage() {
         <p className="text-sm text-stone-500">Semua pinjaman, pengajuan, dan jatuh temponya dalam satu tempat.</p>
       </div>
 
+      {readOnly && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
+          Akun ini hanya dapat melihat data sumber dana {namaSumberDanaAdmin()}. Aksi Ubah, Lunas,
+          Perpanjang, dan Ganti Jenis dinonaktifkan.
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-2 border-b border-stone-200 pb-2">
         {TABS.map((t) => (
           <button
@@ -622,7 +643,7 @@ export default function AdminDaftarPinjamanPage() {
                     )
                   }
                   return pengajuan.map((item) => (
-                    <BarisPengajuan key={item.gadaiID} item={item} onUbah={() => bukaEditGadai(item)} />
+                    <BarisPengajuan key={item.gadaiID} item={item} onUbah={() => bukaEditGadai(item)} readOnly={readOnly} />
                   ))
                 }
 
@@ -643,6 +664,7 @@ export default function AdminDaftarPinjamanPage() {
                     onUbah={() => bukaEditPinjaman(item)}
                     onGantiJenis={(jenisBaru) => gantiJenis(item, jenisBaru)}
                     sedangBerganti={gantiJenisId === item.pinjaman.id}
+                    readOnly={readOnly}
                   />
                 ))
               })()}

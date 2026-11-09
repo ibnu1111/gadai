@@ -8,6 +8,7 @@ import ConfirmDialog from '@/components/admin/ConfirmDialog'
 import PhotoLightbox from '@/components/admin/PhotoLightbox'
 import { useToast } from '@/components/admin/Toast'
 import { kirimFoto } from '@/lib/uploadFoto'
+import { adminTerkunci } from '@/lib/adminSessionScope'
 
 interface Payment {
   id: number
@@ -263,6 +264,8 @@ export default function AdminGadaiDetailPage() {
   const [aksiType, setAksiType] = useState<'AMBIL' | 'PERPANJANG'>('AMBIL')
   const [aksiNominal, setAksiNominal] = useState('')
   const [aksiSaving, setAksiSaving] = useState(false)
+  // Admin terkunci ke satu sumber dana hanya boleh melihat; blokir mutasi.
+  const [readOnly, setReadOnly] = useState(false)
 
   useEffect(() => {
     if (!gadai) return
@@ -288,6 +291,10 @@ export default function AdminGadaiDetailPage() {
     const { url } = await kirimFoto(file)
     return url
   }
+
+  useEffect(() => {
+    setReadOnly(adminTerkunci())
+  }, [])
 
   const fetchGadai = async () => {
     try {
@@ -896,7 +903,7 @@ export default function AdminGadaiDetailPage() {
             )}
           </div>
 
-          {showKelengkapan && (
+          {showKelengkapan && !readOnly && (
             <div className="bg-white rounded-xl border border-stone-100 p-6">
               <h2 className="font-semibold text-stone-800 mb-1">Kelengkapan Data</h2>
               <p className="text-xs text-stone-500 mb-4">Diisi admin saat customer datang membawa barang jaminan.</p>
@@ -973,7 +980,7 @@ export default function AdminGadaiDetailPage() {
             </div>
           )}
 
-          {showRekeningMenunggu && (
+          {showRekeningMenunggu && !readOnly && (
             <div className="bg-white rounded-xl border border-stone-100 p-6">
               <h2 className="font-semibold text-stone-800 mb-1">Menunggu Rekening Customer</h2>
               <p className="text-xs text-stone-500 mb-4">Data sudah disetujui. Customer diminta mengisi nomor rekening &amp; nama bank tujuan pencairan dana sendiri.</p>
@@ -1025,7 +1032,7 @@ export default function AdminGadaiDetailPage() {
             </div>
           )}
 
-          {showTransferConfirm && (
+          {showTransferConfirm && !readOnly && (
             <div className="bg-white rounded-xl border border-stone-100 p-6">
               <h2 className="font-semibold text-stone-800 mb-1">Konfirmasi Transfer Pencairan</h2>
               <p className="text-xs text-stone-500 mb-4">Dana pinjaman ditransfer ke rekening customer, lalu diverifikasi disini.</p>
@@ -1097,6 +1104,7 @@ export default function AdminGadaiDetailPage() {
               </div>
             )}
 
+            {!readOnly && (
             <form onSubmit={handleAddPayment} className="border-t border-stone-100 mt-4 pt-4 flex flex-col sm:flex-row gap-3">
               <input
                 type="number"
@@ -1122,12 +1130,13 @@ export default function AdminGadaiDetailPage() {
                 {savingPayment ? 'Menyimpan...' : 'Catat Bayar'}
               </button>
             </form>
+            )}
           </div>
         </div>
 
         {/* Status panel */}
         <div className="space-y-6">
-          {isDue && (
+          {isDue && !readOnly && (
             <div className="bg-white rounded-xl border border-stone-100 p-6">
               <h2 className="font-semibold text-stone-800 mb-1">Ambil / Perpanjang</h2>
               <p className="text-xs text-stone-500 mb-4">
@@ -1188,7 +1197,7 @@ export default function AdminGadaiDetailPage() {
             </div>
           )}
 
-          {!showKelengkapan && (
+          {!showKelengkapan && !readOnly && (
             <div className="bg-white rounded-xl border border-stone-100 p-6">
               <h2 className="font-semibold text-stone-800 mb-4">Ubah Status</h2>
               <select

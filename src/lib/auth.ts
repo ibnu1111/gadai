@@ -6,6 +6,9 @@ export interface AdminPayload {
   id: number
   email: string
   nama: string
+  /// null = admin penuh. Terisi = admin terkunci ke satu sumber dana.
+  sumberDanaId?: number | null
+  namaSumberDana?: string | null
 }
 
 export function signToken(payload: AdminPayload): string {

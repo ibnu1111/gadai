@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { handleUnauthorized } from '@/lib/adminSession'
+import { adminTerkunci } from '@/lib/adminSessionScope'
 import ConfirmDialog from '@/components/admin/ConfirmDialog'
 
 interface Gadai {
@@ -157,6 +158,12 @@ export default function AdminGadaiPage() {
   const [rejectTarget, setRejectTarget] = useState<number | null>(null)
   const [rejecting, setRejecting] = useState(false)
   const [rejectError, setRejectError] = useState('')
+  // Admin terkunci ke satu sumber dana hanya boleh melihat.
+  const [readOnly, setReadOnly] = useState(false)
+
+  useEffect(() => {
+    setReadOnly(adminTerkunci())
+  }, [])
 
   useEffect(() => {
     fetchData(1)
@@ -250,6 +257,7 @@ export default function AdminGadaiPage() {
           <h1 className="text-2xl font-bold text-stone-800">Pengajuan</h1>
           <p className="text-stone-500 text-sm mt-1">Kelola semua pengajuan gadai ({pagination.total} total)</p>
         </div>
+        {!readOnly && (
         <Link
           href="/admin/gadai/create"
           className="inline-flex items-center gap-2 bg-stone-800 text-white px-5 py-2.5 rounded-lg hover:bg-stone-900 font-medium transition shadow-sm"
@@ -259,6 +267,7 @@ export default function AdminGadaiPage() {
           </svg>
           Tambah Gadai
         </Link>
+        )}
       </div>
 
       {/* Summary Cards */}
@@ -396,7 +405,7 @@ export default function AdminGadaiPage() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                             </svg>
                           </Link>
-                          {gadai.status === 'PENDING' && (
+                          {gadai.status === 'PENDING' && !readOnly && (
                             <button
                               type="button"
                               onClick={() => { setRejectError(''); setRejectTarget(gadai.gadaiID) }}

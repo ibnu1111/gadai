@@ -4,6 +4,7 @@ import { Fragment, useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { handleUnauthorized } from '@/lib/adminSession'
+import { adminTerkunci } from '@/lib/adminSessionScope'
 import PhotoLightbox from '@/components/admin/PhotoLightbox'
 
 interface SumberDanaOption {
@@ -134,6 +135,12 @@ export default function AdminPinjamanDetailPage() {
   const [saveError, setSaveError] = useState('')
   const [siklusTerbuka, setSiklusTerbuka] = useState<number[]>([])
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null)
+  // Admin terkunci ke satu sumber dana hanya boleh melihat.
+  const [readOnly, setReadOnly] = useState(false)
+
+  useEffect(() => {
+    setReadOnly(adminTerkunci())
+  }, [])
 
   const fetchPinjaman = async () => {
     try {
@@ -504,7 +511,7 @@ export default function AdminPinjamanDetailPage() {
           <div className="bg-white rounded-xl border border-stone-100 p-6">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-semibold text-stone-800">Sumber Dana</h2>
-              {!editing && (
+              {!editing && !readOnly && (
                 <button type="button" onClick={startEdit} className="text-xs font-medium text-amber-600 hover:text-amber-700">
                   Edit
                 </button>

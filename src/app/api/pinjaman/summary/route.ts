@@ -1,20 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getAdminFromRequest } from '@/lib/auth'
+import { getAdminDenganScope } from '@/lib/adminAuth'
 import { akhirHariWib } from '@/lib/bukuBesar'
+import { predicateGadai, predicatePinjaman, terapkanScope } from '@/lib/adminScope'
 
 // GET /api/pinjaman/summary - statistik ringkas berbasis buku besar (Pinjaman/Siklus),
 // dipakai dashboard supaya nyambung dengan data yang sama dengan daftar pinjaman.
 export async function GET(request: NextRequest) {
   try {
-    const admin = getAdminFromRequest(request)
-    if (!admin) {
+    const auth = await getAdminDenganScope(request)
+    if (!auth) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
     }
+    const { scope } = auth
 
     const now = new Date()
     const awalBulan = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
     const awalBulanDepan = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1))
+
+    const scopePinjaman = predicatePinjaman(scope)
+    const scopeGadai = predicateGadai(scope)
 
     const [
       aktifCount,
@@ -27,22 +32,40 @@ export async function GET(request: NextRequest) {
       pengeluaranBulanIni,
       pengajuanBaru
     ] = await Promise.all([
-      prisma.pinjaman.count({ where: { status: 'AKTIF' } }),
-      prisma.pinjaman.aggregate({ where: { status: 'AKTIF' }, _sum: { pokok: true } }),
-      prisma.siklus.count({
-        where: { status: 'BERJALAN', pinjaman: { status: 'AKTIF' }, tanggalJatuhTempo: { lte: akhirHariWib(0) } }
+      prisma.pinjaman.count({ where: terapkanScope({ status: 'AKTIF' }, scopePinjaman) }),
+      prisma.pinjaman.aggregate({
+        where: terapkanScope({ status: 'AKTIF' }, scopePinjaman),
+        _sum: { pokok: true }
       }),
       prisma.siklus.count({
-        where: { status: 'BERJALAN', pinjaman: { status: 'AKTIF' }, tanggalJatuhTempo: { lte: akhirHariWib(7) } }
+        where: terapkanScope(
+          { status: 'BERJALAN', pinjaman: { status: 'AKTIF' }, tanggalJatuhTempo: { lte: akhirHariWib(0) } },
+          scopePinjaman
+        )
       }),
       prisma.siklus.count({
-        where: { status: 'BERJALAN', pinjaman: { status: 'AKTIF' }, tanggalJatuhTempo: { lt: akhirHariWib(-1) } }
+        where: terapkanScope(
+          { status: 'BERJALAN', pinjaman: { status: 'AKTIF' }, tanggalJatuhTempo: { lte: akhirHariWib(7) } },
+          scopePinjaman
+        )
+      }),
+      prisma.siklus.count({
+        where: terapkanScope(
+          { status: 'BERJALAN', pinjaman: { status: 'AKTIF' }, tanggalJatuhTempo: { lt: akhirHariWib(-1) } },
+          scopePinjaman
+        )
       }),
       prisma.pinjaman.count({
-        where: { status: 'LUNAS', tanggalSelesai: { gte: awalBulan, lt: awalBulanDepan } }
+        where: terapkanScope(
+          { status: 'LUNAS', tanggalSelesai: { gte: awalBulan, lt: awalBulanDepan } },
+          scopePinjaman
+        )
       }),
       prisma.siklus.aggregate({
-        where: { tanggalJatuhTempo: { gte: awalBulan, lt: awalBulanDepan } },
+        where: terapkanScope(
+          { tanggalJatuhTempo: { gte: awalBulan, lt: awalBulanDepan } },
+          scopePinjaman
+        ),
         _sum: { nominalBunga: true }
       }),
       prisma.pengeluaran.aggregate({
@@ -50,7 +73,10 @@ export async function GET(request: NextRequest) {
         _sum: { nominal: true }
       }),
       prisma.gadai.count({
-        where: { status: { in: ['PENDING', 'MENUNGGU_REKENING', 'MENUNGGU_TRANSFER', 'MENUNGGU_VERIFIKASI_TRANSFER'] } }
+        where: terapkanScope(
+          { status: { in: ['PENDING', 'MENUNGGU_REKENING', 'MENUNGGU_TRANSFER', 'MENUNGGU_VERIFIKASI_TRANSFER'] } },
+          scopeGadai
+        )
       })
     ])
 

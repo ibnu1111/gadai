@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAdminFromRequest } from '@/lib/auth'
+import { getAdminDenganScope } from '@/lib/adminAuth'
 
 export async function GET(request: NextRequest) {
   try {
-    const admin = getAdminFromRequest(request)
+    const auth = await getAdminDenganScope(request)
 
-    if (!admin) {
+    if (!auth) {
       return NextResponse.json(
         { success: false, message: 'Unauthorized' },
         { status: 401 }
@@ -15,9 +15,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        id: admin.id,
-        email: admin.email,
-        nama: admin.nama
+        id: auth.admin.id,
+        email: auth.admin.email,
+        nama: auth.admin.nama,
+        sumberDanaId: auth.scope.sumberDanaId,
+        namaSumberDana: auth.scope.namaSumberDana
       }
     })
   } catch (error) {

@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import ToastProvider from '@/components/admin/Toast'
+import { ambilSessionAdmin, type SessionAdmin } from '@/lib/adminSessionScope'
 
 export default function AdminLayoutClient({ children }: Readonly<{ children: React.ReactNode }>) {
   const router = useRouter()
   const pathname = usePathname()
-  const [admin, setAdmin] = useState<{ nama: string; email: string } | null>(null)
+  const [admin, setAdmin] = useState<SessionAdmin | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
@@ -20,7 +21,7 @@ export default function AdminLayoutClient({ children }: Readonly<{ children: Rea
         router.push('/admin/login')
       }
     } else {
-      setAdmin(JSON.parse(adminData))
+      setAdmin(ambilSessionAdmin())
     }
   }, [pathname, router])
 
@@ -38,10 +39,38 @@ export default function AdminLayoutClient({ children }: Readonly<{ children: Rea
     return <ToastProvider>{children}</ToastProvider>
   }
 
+  // Admin terkunci ke satu sumber dana tidak boleh menambah pengeluaran.
+  const terkunci = Boolean(admin?.sumberDanaId)
+
   const navLinkClass = (active: boolean) =>
     `px-4 py-2 rounded-lg text-sm font-medium transition ${
       active ? 'bg-stone-100 text-stone-900' : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
     }`
+
+  const navLinks = (
+    <>
+      <Link href="/admin/dashboard" className={navLinkClass(pathname === '/admin/dashboard')}>
+        Dashboard
+      </Link>
+      <Link
+        href="/admin/buku/tempo"
+        className={navLinkClass(pathname.startsWith('/admin/buku/tempo') || pathname === '/admin/gadai' || pathname.startsWith('/admin/gadai/'))}
+      >
+        Daftar Pinjaman
+      </Link>
+      <Link href="/admin/buku/rekap" className={navLinkClass(pathname.startsWith('/admin/buku/rekap'))}>
+        Rekap
+      </Link>
+      {!terkunci && (
+        <Link href="/admin/buku/pengeluaran" className={navLinkClass(pathname.startsWith('/admin/buku/pengeluaran'))}>
+          Pengeluaran
+        </Link>
+      )}
+      <Link href="/admin/customer" className={navLinkClass(pathname === '/admin/customer' || pathname.startsWith('/admin/customer/'))}>
+        Customer
+      </Link>
+    </>
+  )
 
   return (
     <ToastProvider>
@@ -59,24 +88,7 @@ export default function AdminLayoutClient({ children }: Readonly<{ children: Rea
                 <span className="text-lg font-semibold text-stone-800">Gadai Jogja</span>
               </Link>
               <nav className="hidden md:flex items-center gap-1">
-                <Link href="/admin/dashboard" className={navLinkClass(pathname === '/admin/dashboard')}>
-                  Dashboard
-                </Link>
-                <Link
-                  href="/admin/buku/tempo"
-                  className={navLinkClass(pathname.startsWith('/admin/buku/tempo') || pathname === '/admin/gadai' || pathname.startsWith('/admin/gadai/'))}
-                >
-                  Daftar Pinjaman
-                </Link>
-                <Link href="/admin/buku/rekap" className={navLinkClass(pathname.startsWith('/admin/buku/rekap'))}>
-                  Rekap
-                </Link>
-                <Link href="/admin/buku/pengeluaran" className={navLinkClass(pathname.startsWith('/admin/buku/pengeluaran'))}>
-                  Pengeluaran
-                </Link>
-                <Link href="/admin/customer" className={navLinkClass(pathname === '/admin/customer' || pathname.startsWith('/admin/customer/'))}>
-                  Customer
-                </Link>
+                {navLinks}
               </nav>
             </div>
             <div className="flex items-center gap-2 sm:gap-4">
@@ -84,6 +96,11 @@ export default function AdminLayoutClient({ children }: Readonly<{ children: Rea
                 <div className="hidden sm:block text-right">
                   <p className="text-sm font-medium text-stone-800">{admin.nama}</p>
                   <p className="text-xs text-stone-500">{admin.email}</p>
+                  {admin.namaSumberDana && (
+                    <p className="text-xs text-amber-600 font-medium mt-0.5">
+                      Sumber dana: {admin.namaSumberDana}
+                    </p>
+                  )}
                 </div>
               )}
               <button
@@ -115,28 +132,16 @@ export default function AdminLayoutClient({ children }: Readonly<{ children: Rea
           </div>
           {mobileMenuOpen && (
             <nav className="md:hidden flex flex-col gap-1 pb-4">
-              <Link href="/admin/dashboard" className={navLinkClass(pathname === '/admin/dashboard')}>
-                Dashboard
-              </Link>
-              <Link
-                href="/admin/buku/tempo"
-                className={navLinkClass(pathname.startsWith('/admin/buku/tempo') || pathname === '/admin/gadai' || pathname.startsWith('/admin/gadai/'))}
-              >
-                Daftar Pinjaman
-              </Link>
-              <Link href="/admin/buku/rekap" className={navLinkClass(pathname.startsWith('/admin/buku/rekap'))}>
-                Rekap
-              </Link>
-              <Link href="/admin/buku/pengeluaran" className={navLinkClass(pathname.startsWith('/admin/buku/pengeluaran'))}>
-                Pengeluaran
-              </Link>
-              <Link href="/admin/customer" className={navLinkClass(pathname === '/admin/customer' || pathname.startsWith('/admin/customer/'))}>
-                Customer
-              </Link>
+              {navLinks}
               {admin && (
                 <div className="sm:hidden px-4 pt-2 mt-1 border-t border-stone-100">
                   <p className="text-sm font-medium text-stone-800">{admin.nama}</p>
                   <p className="text-xs text-stone-500">{admin.email}</p>
+                  {admin.namaSumberDana && (
+                    <p className="text-xs text-amber-600 font-medium mt-0.5">
+                      Sumber dana: {admin.namaSumberDana}
+                    </p>
+                  )}
                 </div>
               )}
             </nav>

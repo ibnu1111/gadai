@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { randomBytes } from 'node:crypto'
 import { prisma } from '@/lib/prisma'
-import { getAdminFromRequest } from '@/lib/auth'
+import { guardMutasi } from '@/lib/adminAuth'
 
 // PUT /api/gadai/[id]/rekening - Admin fallback: fills in the customer's bank
 // account details directly (e.g. customer can't use the self-service link),
@@ -11,10 +11,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const admin = getAdminFromRequest(request)
-    if (!admin) {
-      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
-    }
+    const guard = await guardMutasi(request, 'mengubah rekening gadai')
+    if ('response' in guard) return guard.response
+    const { admin } = guard
 
     const { id } = await params
     const gadaiID = parseInt(id)

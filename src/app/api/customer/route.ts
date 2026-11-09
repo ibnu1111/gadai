@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getAdminFromRequest } from '@/lib/auth'
+import { getAdminDenganScope } from '@/lib/adminAuth'
+import { predicateCustomer, terapkanScope } from '@/lib/adminScope'
 
 const ACTIVE_STATUSES = new Set(['AKTIF', 'JATUH_TEMPO', 'OVERDUE'])
 
 // GET /api/customer - List unique customers (by noHp) with aggregated pengajuan stats
 export async function GET(request: NextRequest) {
   try {
-    const admin = getAdminFromRequest(request)
-    if (!admin) {
+    const auth = await getAdminDenganScope(request)
+    if (!auth) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
     }
+    const { scope } = auth
 
     const { searchParams } = new URL(request.url)
     const page = Number.parseInt(searchParams.get('page') || '1')
@@ -26,11 +28,12 @@ export async function GET(request: NextRequest) {
         }
       : {}
 
+    const whereScope = terapkanScope(where, predicateCustomer(scope))
     const skip = (page - 1) * limit
 
     const [customers, total] = await Promise.all([
       prisma.customer.findMany({
-        where,
+        where: whereScope,
         include: {
           gadais: {
             select: { gadaiID: true, nominalPinjam: true, status: true, createdAt: true }
@@ -45,7 +48,7 @@ export async function GET(request: NextRequest) {
         skip,
         take: limit
       }),
-      prisma.customer.count({ where })
+      prisma.customer.count({ where: whereScope })
     ])
 
     const data = customers.map((c) => {

@@ -15,7 +15,8 @@ export async function POST(request: NextRequest) {
     }
 
     const admin = await prisma.admin.findUnique({
-      where: { email }
+      where: { email },
+      include: { sumberDana: { select: { id: true, nama: true } } }
     })
 
     if (!admin) {
@@ -37,7 +38,9 @@ export async function POST(request: NextRequest) {
     const token = signToken({
       id: admin.id,
       email: admin.email,
-      nama: admin.nama
+      nama: admin.nama,
+      sumberDanaId: admin.sumberDanaId,
+      namaSumberDana: admin.sumberDana?.nama ?? null
     })
 
     return NextResponse.json({
@@ -48,7 +51,9 @@ export async function POST(request: NextRequest) {
         admin: {
           id: admin.id,
           nama: admin.nama,
-          email: admin.email
+          email: admin.email,
+          sumberDanaId: admin.sumberDanaId,
+          namaSumberDana: admin.sumberDana?.nama ?? null
         }
       }
     })

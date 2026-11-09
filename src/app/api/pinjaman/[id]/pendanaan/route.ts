@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-import { getAdminFromRequest } from '@/lib/auth'
+import { guardMutasi } from '@/lib/adminAuth'
 
 type PendanaanRow = { sumberDanaId: number; nominal: Prisma.Decimal }
 
@@ -53,10 +53,8 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const admin = getAdminFromRequest(request)
-    if (!admin) {
-      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
-    }
+    const guard = await guardMutasi(request, 'mengubah sumber dana pinjaman')
+    if ('response' in guard) return guard.response
 
     const { id } = await params
     const pinjamanId = Number.parseInt(id)

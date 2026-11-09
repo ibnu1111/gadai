@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getAdminFromRequest } from '@/lib/auth'
+import { getAdminDenganScope, guardMutasi } from '@/lib/adminAuth'
+import { adminTerbatas } from '@/lib/adminScope'
 import { VALID_KATEGORI } from '@/lib/kategoriBarang'
 import { PatchGadai, terapkanPatchGadai } from '@/lib/ubahDataGadai'
 
@@ -10,10 +11,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const admin = getAdminFromRequest(request)
-    if (!admin) {
+    const auth = await getAdminDenganScope(request)
+    if (!auth) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
     }
+    const { scope } = auth
 
     const { id } = await params
     const gadai = await prisma.gadai.findUnique({
@@ -29,6 +31,21 @@ export async function GET(
 
     if (!gadai) {
       return NextResponse.json({ success: false, message: 'Gadai not found' }, { status: 404 })
+    }
+
+    // Admin terkunci hanya boleh membuka gadai miliknya. Gadai yang belum
+    // pernah dicairan belum punya sumber dana dan tetap boleh dilihat.
+    if (adminTerbatas(scope)) {
+      const milikDia = await prisma.pinjaman.count({
+        where: {
+          gadaiID: gadai.gadaiID,
+          pendanaan: { some: { sumberDanaId: scope.sumberDanaId as number } }
+        }
+      })
+      const belumCair = gadai.pinjaman === null
+      if (!milikDia && !belumCair) {
+        return NextResponse.json({ success: false, message: 'Gadai not found' }, { status: 404 })
+      }
     }
 
     return NextResponse.json({ success: true, data: gadai })
@@ -50,10 +67,8 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const admin = getAdminFromRequest(request)
-    if (!admin) {
-      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
-    }
+    const guard = await guardMutasi(request, 'mengubah data gadai')
+    if ('response' in guard) return guard.response
 
     const { id } = await params
     const gadaiID = parseInt(id)
@@ -175,10 +190,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const admin = getAdminFromRequest(request)
-    if (!admin) {
-      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
-    }
+    const guard = await guardMutasi(request, 'menghapus gadai')
+    if ('response' in guard) return guard.response
 
     const { id } = await params
     const existing = await prisma.gadai.findUnique({
