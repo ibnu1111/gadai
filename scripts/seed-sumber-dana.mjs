@@ -4,15 +4,18 @@
  * Jalankan dari folder project:
  *   BAGONG_PASSWORD='...' node scripts/seed-sumber-dana.mjs
  *
- * Password diambil dari environment variable supaya tidak ada kredensial yang
- * tersimpan di repo ini. Untuk admin lain, set variabel dengan pola
- * <NAMA>_PASSWORD, mis. LANANG_PASSWORD.
+ * Alternatif: password dibaca dari STDIN (tidak muncul di command line):
+ *   printf '...' | node scripts/seed-sumber-dana.mjs
+ *
+ * Untuk admin lain, set variabel dengan pola <NAMA>_PASSWORD, mis.
+ * LANANG_PASSWORD. Kredensial tidak pernah ditulis di repo ini.
  *
  * Idempoten: aman dijalankan berkali-kali. Sumber dana yang sudah ada tidak
  * diduplikasi, dan akun admin di-update (bukan dibuat ulang).
  */
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
+import { createInterface } from 'node:readline'
 
 const prisma = new PrismaClient()
 
@@ -20,20 +23,39 @@ const prisma = new PrismaClient()
 const SUMBER_DANA_BARU = ['Bagong', 'Lanang', 'Restu', 'Abdul']
 
 // Akun admin terkunci ke sumber dana. Password dibaca dari env var
-// <NAMA_UPPER>_PASSWORD, jadi tidak pernah ditulis di repo.
+// <NAMA_UPPER>_PASSWORD atau STDIN, jadi tidak pernah ditulis di repo.
 const ADMIN_TERKUNCI = [
   { email: 'bagong', nama: 'Bagong', sumberDana: 'Bagong' }
 ]
 
-function passwordDariEnv(nama) {
+let stdinPassword = null
+
+async function bacaPasswordStdin() {
+  if (stdinPassword !== null) return stdinPassword
+  if (process.stdin.isTTY) return null
+
+  const rl = createInterface({ input: process.stdin })
+  const baris = await new Promise((resolve) => {
+    rl.once('line', (line) => resolve(line))
+    rl.once('close', () => resolve(null))
+  })
+  rl.close()
+
+  stdinPassword = baris ? baris.trim() : null
+  return stdinPassword
+}
+
+async function passwordDariEnv(nama) {
   const key = `${nama.toUpperCase()}_PASSWORD`
-  const value = process.env[key]
-  if (!value) {
-    throw new Error(
-      `Environment variable ${key} belum diisi. Jalankan: ${key}='...' node scripts/seed-sumber-dana.mjs`
-    )
-  }
-  return value
+  const dariEnv = process.env[key]
+  if (dariEnv) return dariEnv
+
+  const dariStdin = await bacaPasswordStdin()
+  if (dariStdin) return dariStdin
+
+  throw new Error(
+    `Password untuk "${nama}" belum tersedia. Set ${key} atau kirim lewat STDIN.`
+  )
 }
 
 async function main() {
