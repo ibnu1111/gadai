@@ -19,12 +19,14 @@
  * Idempoten: dijalankan dua kali tidak mengubah hasil akhir.
  *
  * Jalankan:
- *   node scripts/fix-qodri-transaksi.mjs
+ *   node scripts/fix-qodri-transaksi.mjs              # jalankan
+ *   DRY_RUN=1 node scripts/fix-qodri-transaksi.mjs   # pratinjau saja
  */
 import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
+const DRY_RUN = process.env.DRY_RUN === '1'
 const POKOK_BARU = 10_000_000
 const BUNGA_PERSEN = 10
 const TANGGAL_CAIR = new Date('2026-10-31T00:00:00.000Z')
@@ -32,13 +34,99 @@ const TANGGAL_KEMBALI = new Date('2026-11-14T00:00:00.000Z')
 const NAMA_BARANG = 'STYLO'
 const SUMBER_DANA = 'Bagong'
 
-function hari(offset) {
+function log(...args) {
+  console.log(...args)
+}function hari(offset) {
   const d = new Date(TANGGAL_CAIR)
   d.setUTCDate(d.getUTCDate() + offset)
   return d
 }
 
+/**
+ * Tutup pinjaman lama: lengkapi nominalDibayar di siklus, set status LUNAS
+ * + nominalAkhir di pinjaman, lalu pindahkan ke customer utama.
+ */
+async function tutupPinjamanLama(pinjamanLama, customerUtamaId) {
+  const siklus = pinjamanLama.siklus.at(-1)
+  // Decimal dari Prisma: operator `+`-nya tidak menjumlahkan, jadi konversi
+  // ke Number dulu supaya pokok + bunga dihitung sebagai angka.
+  const pokok = Number(pinjamanLama.pokok)
+  const bunga = Number(siklus?.nominalBunga ?? 0)
+  const tagihan = pokok + bunga
+
+  console.log(`\n[1] Menutup pinjaman ${pinjamanLama.id} (pokok=${pokok}, bunga=${bunga}, tagihan=${tagihan})`)
+
+  if (DRY_RUN) {
+    console.log(`    (pratinjau) siklus ${siklus?.id}: nominalDibayar -> ${tagihan}`)
+    console.log(`    (pratinjau) pinjaman ${pinjamanLama.id}: status -> LUNAS, nominalAkhir -> ${tagihan}`)
+    console.log(`    (pratinjau) pinjaman ${pinjamanLama.id}: customerID ${pinjamanLama.customerID} -> ${customerUtamaId}`)
+    return
+  }
+
+  await prisma.$transaction(async (tx) => {
+    // Siklus: lengkapi nominalDibayar kalau kosong.
+    if (siklus && !siklus.nominalDibayar) {
+      await tx.siklus.update({
+        where: { id: siklus.id },
+        data: {
+          nominalDibayar: tagihan,
+          catatan: siklus.catatan || 'Pelunasan saat migrasi data Qodri'
+        }
+      })
+      console.log(`    siklus ${siklus.id}: nominalDibayar diisi ${tagihan}`)
+    }
+
+    await tx.pinjaman.update({
+      where: { id: pinjamanLama.id },
+      data: {
+        status: 'LUNAS',
+        tanggalSelesai: siklus?.tanggalBayar ?? TANGGAL_CAIR,
+        nominalAkhir: tagihan,
+        catatan: [pinjamanLama.catatan, 'Migrasi data Qodri: digabung ke customer M Al Qodri']
+          .filter(Boolean)
+          .join(' - ')
+      }
+    })
+    console.log(`    pinjaman ${pinjamanLama.id}: LUNAS, nominalAkhir=${tagihan}`)
+
+    // Pindahkan ke customer utama supaya hanya ada satu customer Qodri.
+    await tx.pinjaman.update({
+      where: { id: pinjamanLama.id },
+      data: { customerID: customerUtamaId }
+    })
+    console.log(`    pinjaman ${pinjamanLama.id}: customerID -> ${customerUtamaId}`)
+  })
+}
+
+/**
+ * Hapus customer import kalau sudah tidak punya transaksi.
+ */
+async function hapusCustomerImportJikaKosong(customerLama, pinjamanLama) {
+  const sisaGadai = await prisma.gadai.count({ where: { customerID: customerLama.id } })
+  // Pinjaman lama dipindah ke customer utama pada langkah [1]. Pada mode
+  // pratinjau langkah itu tidak dijalankan, jadi hitungannya dikoreksi.
+  const dipindah = pinjamanLama && DRY_RUN ? 1 : 0
+  const sisa = (await prisma.pinjaman.count({ where: { customerID: customerLama.id } })) - dipindah
+
+  if (sisa !== 0 || sisaGadai !== 0) {
+    console.log(`\n[2] Customer import id=${customerLama.id} TIDAK dihapus: masih ${sisa} pinjaman, ${sisaGadai} gadai`)
+    return
+  }
+
+  if (DRY_RUN) {
+    console.log(`\n[2] (pratinjau) Customer import id=${customerLama.id} akan dihapus`)
+    return
+  }
+
+  await prisma.customer.delete({ where: { id: customerLama.id } })
+  console.log(`\n[2] Customer import id=${customerLama.id} dihapus (sudah tidak punya transaksi)`)
+}
+
 async function main() {
+  if (DRY_RUN) {
+    console.log('\n*** MODE PRATINJAU (DRY_RUN) - tidak ada perubahan ke database ***\n')
+  }
+
   // --- Cari customer & pinjaman lama -------------------------------------
   const lama = await prisma.customer.findFirst({
     where: { noHp: 'IMPORT-00507' },
@@ -60,58 +148,12 @@ async function main() {
 
   // --- 1. Tutup pinjaman lama dengan benar --------------------------------
   if (pinjamanLama) {
-    const siklus = pinjamanLama.siklus.at(-1)
-    const pokok = pinjamanLama.pokok
-    const bunga = siklus?.nominalBunga ?? 0
-    const tagihan = pokok + bunga
-
-    console.log(`\n[1] Menutup pinjaman ${pinjamanLama.id} (pokok=${pokok}, bunga=${bunga}, tagihan=${tagihan})`)
-
-    await prisma.$transaction(async (tx) => {
-      // Siklus: lengkapi nominalDibayar kalau kosong.
-      if (siklus && !siklus.nominalDibayar) {
-        await tx.siklus.update({
-          where: { id: siklus.id },
-          data: {
-            nominalDibayar: tagihan,
-            catatan: siklus.catatan || 'Pelunasan saat migrasi data Qodri'
-          }
-        })
-        console.log(`    siklus ${siklus.id}: nominalDibayar diisi ${tagihan}`)
-      }
-
-      await tx.pinjaman.update({
-        where: { id: pinjamanLama.id },
-        data: {
-          status: 'LUNAS',
-          tanggalSelesai: siklus?.tanggalBayar ?? TANGGAL_CAIR,
-          nominalAkhir: tagihan,
-          catatan: [pinjamanLama.catatan, 'Migrasi data Qodri: digabung ke customer M Al Qodri']
-            .filter(Boolean)
-            .join(' - ')
-        }
-      })
-      console.log(`    pinjaman ${pinjamanLama.id}: LUNAS, nominalAkhir=${tagihan}`)
-
-      // Pindahkan ke customer utama supaya hanya ada satu customer Qodri.
-      await tx.pinjaman.update({
-        where: { id: pinjamanLama.id },
-        data: { customerID: utama.id }
-      })
-      console.log(`    pinjaman ${pinjamanLama.id}: customerID -> ${utama.id}`)
-    })
+    await tutupPinjamanLama(pinjamanLama, utama.id)
   }
 
   // --- 2. Hapus customer import yang sudah kosong -------------------------
   if (lama && lama.id !== utama.id) {
-    const sisa = await prisma.pinjaman.count({ where: { customerID: lama.id } })
-    const sisaGadai = await prisma.gadai.count({ where: { customerID: lama.id } })
-    if (sisa === 0 && sisaGadai === 0) {
-      await prisma.customer.delete({ where: { id: lama.id } })
-      console.log(`\n[2] Customer import id=${lama.id} dihapus (sudah tidak punya transaksi)`)
-    } else {
-      console.log(`\n[2] Customer import id=${lama.id} TIDAK dihapus: masih ${sisa} pinjaman, ${sisaGadai} gadai`)
-    }
+    await hapusCustomerImportJikaKosong(lama, pinjamanLama)
   }
 
   // --- 3. Buat transaksi baru --------------------------------------------
@@ -122,73 +164,24 @@ async function main() {
 
   // Idempoten: kalau sudah ada pinjaman STYLO 10jt yang dicairkan 31 Okt 2026
   // untuk customer ini, jangan buat lagi.
-  const sudahAda = await prjamanCariBaru(utama.id)
+  const sudahAda = await pinjamanCariBaru(utama.id)
   if (sudahAda) {
     console.log(`\n[3] Transaksi baru sudah ada (pinjaman ${sudahAda.id}), tidak dibuat ulang`)
   } else {
     const fee = (POKOK_BARU * BUNGA_PERSEN) / 100
 
-  const dibuat = await prisma.$transaction(async (tx) => {
-    const pinjaman = await tx.pinjaman.create({
-        data: {
-          customerID: utama.id,
-          jenis: 'GADAI',
-          namaBarang: NAMA_BARANG,
-          pokok: POKOK_BARU,
-          tanggalCair: TANGGAL_CAIR,
-          status: 'AKTIF',
-          dibuatOleh: 'Migrasi data Qodri',
-          siklus: {
-            create: {
-              siklusKe: 1,
-              tanggalMulai: TANGGAL_CAIR,
-              tanggalJatuhTempo: TANGGAL_KEMBALI,
-              nominalBunga: fee,
-              dibuatOleh: 'Migrasi data Qodri'
-            }
-          },
-          pendanaan: {
-            create: {
-              sumberDanaId: sumberDana.id,
-              nominal: POKOK_BARU
-            }
-          }
-        },
-        include: { siklus: true, pendanaan: { include: { sumberDana: true } } }
-      })
-
-      // Gadai penyeimbang supaya detail gadai & surat perjanjian ikut ada.
-      const gadai = await tx.gadai.create({
-        data: {
-          customerID: utama.id,
-          kategoriBarang: 'Motor',
-          namaBarang: NAMA_BARANG,
-          nominalPinjam: POKOK_BARU,
-          bungaPersentase: BUNGA_PERSEN,
-          fee: fee,
-          tanggalPinjam: TANGGAL_CAIR,
-          tanggalKembali: TANGGAL_KEMBALI,
-          atributTinggal: '-',
-          deskripsi: 'Pinjaman motor STYLO - cair 31 Oktober 2026, jatuh tempo 14 November 2026',
-          fotoBarang: '-',
-          status: 'AKTIF',
-          totalPembayaran: 0,
-          createdBy: 'Migrasi data Qodri'
-        }
-      })
-
-      await tx.pinjaman.update({
-        where: { id: pinjaman.id },
-        data: { gadaiID: gadai.gadaiID }
-      })
-
-      return pinjaman
-    })
-
-    console.log(`\n[3] Transaksi baru dibuat:`)
-    console.log(`    Pinjaman #${dibuat.id} | STYLO | pokok=${POKOK_BARU} | bunga=${fee}`)
-    console.log(`    Cair ${TANGGAL_CAIR.toISOString().slice(0, 10)} -> kembali ${TANGGAL_KEMBALI.toISOString().slice(0, 10)}`)
-    console.log(`    Sumber dana: ${sumberDana.nama}`)
+    if (DRY_RUN) {
+      console.log(`\n[3] (pratinjau) Transaksi baru akan dibuat:`)
+      console.log(`    Pinjaman | STYLO | pokok=${POKOK_BARU} | bunga=${fee}`)
+      console.log(`    Cair ${TANGGAL_CAIR.toISOString().slice(0, 10)} -> kembali ${TANGGAL_KEMBALI.toISOString().slice(0, 10)}`)
+      console.log(`    Sumber dana: ${sumberDana.nama} (id=${sumberDana.id})`)
+    } else {
+      const dibuat = await buatTransaksiBaru(utama.id, sumberDana.id, fee)
+      console.log(`\n[3] Transaksi baru dibuat:`)
+      console.log(`    Pinjaman #${dibuat.id} | STYLO | pokok=${POKOK_BARU} | bunga=${fee}`)
+      console.log(`    Cair ${TANGGAL_CAIR.toISOString().slice(0, 10)} -> kembali ${TANGGAL_KEMBALI.toISOString().slice(0, 10)}`)
+      console.log(`    Sumber dana: ${sumberDana.nama}`)
+    }
   }
 
   // --- Ringkasan ----------------------------------------------------------
@@ -226,6 +219,68 @@ async function pinjamanCariBaru(customerID) {
       pokok: POKOK_BARU,
       tanggalCair: TANGGAL_CAIR
     }
+  })
+}
+
+/**
+ * Buat pinjaman + gadai + siklus + pendanaan dalam satu transaksi.
+ */
+async function buatTransaksiBaru(customerID, sumberDanaId, fee) {
+  return prisma.$transaction(async (tx) => {
+    const pinjaman = await tx.pinjaman.create({
+      data: {
+        customerID,
+        jenis: 'GADAI',
+        namaBarang: NAMA_BARANG,
+        pokok: POKOK_BARU,
+        tanggalCair: TANGGAL_CAIR,
+        status: 'AKTIF',
+        dibuatOleh: 'Migrasi data Qodri',
+        siklus: {
+          create: {
+            siklusKe: 1,
+            tanggalMulai: TANGGAL_CAIR,
+            tanggalJatuhTempo: TANGGAL_KEMBALI,
+            nominalBunga: fee,
+            dibuatOleh: 'Migrasi data Qodri'
+          }
+        },
+        pendanaan: {
+          create: {
+            sumberDanaId,
+            nominal: POKOK_BARU
+          }
+        }
+      },
+      include: { siklus: true, pendanaan: { include: { sumberDana: true } } }
+    })
+
+    // Gadai penyeimbang supaya detail gadai & surat perjanjian ikut ada.
+    const gadai = await tx.gadai.create({
+      data: {
+        customerID,
+        kategoriBarang: 'Motor',
+        namaBarang: NAMA_BARANG,
+        nominalPinjam: POKOK_BARU,
+        bungaPersentase: BUNGA_PERSEN,
+        fee,
+        tanggalPinjam: TANGGAL_CAIR,
+        tanggalKembali: TANGGAL_KEMBALI,
+        atributTinggal: '-',
+        deskripsi: 'Pinjaman motor STYLO - cair 31 Oktober 2026, jatuh tempo 14 November 2026',
+        fotoBarang: '-',
+        status: 'AKTIF',
+        totalPembayaran: 0,
+        createdBy: 'Migrasi data Qodri'
+      }
+    })
+
+    await tx.pinjaman.update({
+      where: { id: pinjaman.id },
+      data: { gadaiID: gadai.gadaiID }
+    })
+
+    return pinjaman
   })
 }
 
