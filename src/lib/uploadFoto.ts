@@ -5,7 +5,7 @@
  * halaman admin.
  *
  * Dua masalah yang bikin upload dari handphone terasa "stuck":
- * 1. Foto HP moderneas 3-8MB, sedangkan batas server 5MB -> ditolak.
+ * 1. Foto HP modern 3-8MB, sedangkan batas server 10MB -> ditolak.
  * 2. `fetch` tidak memberi laporan progres, jadi koneksi lambat terlihat seperti
  *    macet tanpa ada feedback.
  *
@@ -165,10 +165,4 @@ export async function kirimFoto(
   const hasil = await kompresFoto(file)
   const url = await uploadFile(hasil.file, onProgress)
   return { url, dikompresi: hasil.dikompresi }
-}
-
-export function formatUkuran(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
