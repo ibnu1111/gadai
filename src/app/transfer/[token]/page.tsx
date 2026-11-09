@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
+import { kirimFoto } from '@/lib/uploadFoto'
 
 function formatRupiah(num: number): string {
   return new Intl.NumberFormat('id-ID', {
@@ -54,20 +55,14 @@ export default function TransferUploadPage() {
 
     setUploading(true)
     try {
-      const body = new FormData()
-      body.append('file', file)
-      const uploadRes = await fetch('/api/upload', { method: 'POST', body })
-      const uploadData = await uploadRes.json()
-      if (!uploadRes.ok || !uploadData.success) {
-        throw new Error(uploadData.message || 'Gagal mengunggah bukti transfer')
-      }
+      const { url: buktiUrl } = await kirimFoto(file)
       setUploading(false)
 
       setSubmitting(true)
       const res = await fetch(`/api/public/transfer/${token}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nominal, bukti: uploadData.url })
+        body: JSON.stringify({ nominal, bukti: buktiUrl })
       })
       const result = await res.json()
       if (!result.success) {
@@ -138,7 +133,7 @@ export default function TransferUploadPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Bukti Transfer</label>
             <input
               type="file"
-              accept="image/jpeg,image/png,image/webp,image/heic"
+              accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
               onChange={(e) => setFile(e.target.files?.[0] || null)}
               className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-blue-100 file:text-blue-700 file:text-sm file:font-medium"
               required

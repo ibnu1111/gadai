@@ -4,6 +4,7 @@ import { useState, Suspense, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import BreadcrumbSchema from '@/components/BreadcrumbSchema'
+import { kirimFoto } from '@/lib/uploadFoto'
 
 const KATEGORI_BARANG = [
   { label: 'HP / Smartphone', value: 'HP' },
@@ -47,6 +48,8 @@ function CreateForm() {
   const [error, setError] = useState('')
   const [uploadingKtp, setUploadingKtp] = useState(false)
   const [uploadingStnk, setUploadingStnk] = useState(false)
+  const [progressKtp, setProgressKtp] = useState<number | null>(null)
+  const [progressStnk, setProgressStnk] = useState<number | null>(null)
   const [riwayat, setRiwayat] = useState<any>(null)
   const [riwayatDismissed, setRiwayatDismissed] = useState(false)
   const [pengajuanDipilih, setPengajuanDipilih] = useState<number | null>(null)
@@ -97,15 +100,9 @@ function CreateForm() {
     setPengajuanDipilih(gadaiID)
   }
 
-  const uploadPhoto = async (file: File): Promise<string> => {
-    const body = new FormData()
-    body.append('file', file)
-    const res = await fetch('/api/upload', { method: 'POST', body })
-    const data = await res.json()
-    if (!res.ok || !data.success) {
-      throw new Error(data.message || 'Gagal mengunggah foto')
-    }
-    return data.url as string
+  const uploadPhoto = async (file: File, onProgress?: (persen: number) => void): Promise<string> => {
+    const { url } = await kirimFoto(file, onProgress)
+    return url
   }
 
   const handleKtpChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -113,14 +110,16 @@ function CreateForm() {
     if (!file) return
     setError('')
     setUploadingKtp(true)
+    setProgressKtp(0)
     try {
-      const url = await uploadPhoto(file)
+      const url = await uploadPhoto(file, setProgressKtp)
       setFormData(prev => ({ ...prev, fotoKtp: url }))
       setFotoKtpDariRiwayat(false)
     } catch (err: any) {
       setError(err.message || 'Gagal mengunggah foto KTP')
     } finally {
       setUploadingKtp(false)
+      setProgressKtp(null)
     }
   }
 
@@ -129,14 +128,16 @@ function CreateForm() {
     if (!file) return
     setError('')
     setUploadingStnk(true)
+    setProgressStnk(0)
     try {
-      const url = await uploadPhoto(file)
+      const url = await uploadPhoto(file, setProgressStnk)
       setFormData(prev => ({ ...prev, fotoStnk: url }))
       setFotoStnkDariRiwayat(false)
     } catch (err: any) {
       setError(err.message || 'Gagal mengunggah foto STNK')
     } finally {
       setUploadingStnk(false)
+      setProgressStnk(null)
     }
   }
 
@@ -481,13 +482,22 @@ function CreateForm() {
                 <input
                   id="fotoKtp"
                   type="file"
-                  accept="image/jpeg,image/png,image/webp,image/heic"
+                  accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
                   onChange={handleKtpChange}
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-blue-100 file:text-blue-700 file:text-sm file:font-medium"
                 />
               )}
-              <p className="text-xs text-gray-500 mt-1.5">KTP asli wajib dibawa saat mengantar barang jaminan.</p>
-              {uploadingKtp && <p className="text-xs text-blue-500 mt-1.5">Mengunggah foto KTP...</p>}
+              <p className="text-xs text-gray-500 mt-1.5">KTP asli wajib dibawa saat mengantar barang jaminan. Foto besar otomatis dikompres agar cepat terunggah.</p>
+              {uploadingKtp && (
+                <div className="mt-1.5">
+                  <div className="h-1.5 bg-blue-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-blue-500 transition-all" style={{ width: `${progressKtp ?? 0}%` }} />
+                  </div>
+                  <p className="text-xs text-blue-500 mt-1">
+                    Mengunggah foto KTP... {progressKtp ?? 0}%
+                  </p>
+                </div>
+              )}
               {formData.fotoKtp && !uploadingKtp && !fotoKtpDariRiwayat && (
                 <p className="text-xs text-green-600 mt-1.5">✓ Foto KTP berhasil diunggah</p>
               )}
@@ -531,13 +541,22 @@ function CreateForm() {
                   <input
                     id="fotoStnk"
                     type="file"
-                    accept="image/jpeg,image/png,image/webp,image/heic"
+                    accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
                     onChange={handleStnkChange}
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-blue-100 file:text-blue-700 file:text-sm file:font-medium"
                   />
                 )}
                 <p className="text-xs text-gray-500 mt-1.5">Jika belum ada, STNK bisa difotokan admin saat mengantar barang jaminan.</p>
-                {uploadingStnk && <p className="text-xs text-blue-500 mt-1.5">Mengunggah foto STNK...</p>}
+                {uploadingStnk && (
+                  <div className="mt-1.5">
+                    <div className="h-1.5 bg-blue-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-500 transition-all" style={{ width: `${progressStnk ?? 0}%` }} />
+                    </div>
+                    <p className="text-xs text-blue-500 mt-1">
+                      Mengunggah foto STNK... {progressStnk ?? 0}%
+                    </p>
+                  </div>
+                )}
                 {formData.fotoStnk && !uploadingStnk && !fotoStnkDariRiwayat && (
                   <p className="text-xs text-green-600 mt-1.5">✓ Foto STNK berhasil diunggah</p>
                 )}

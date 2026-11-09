@@ -7,6 +7,7 @@ import { handleUnauthorized } from '@/lib/adminSession'
 import ConfirmDialog from '@/components/admin/ConfirmDialog'
 import PhotoLightbox from '@/components/admin/PhotoLightbox'
 import { useToast } from '@/components/admin/Toast'
+import { kirimFoto } from '@/lib/uploadFoto'
 
 interface Payment {
   id: number
@@ -174,7 +175,7 @@ function KelPhotoField({
           </span>
           <input
             type="file"
-            accept="image/jpeg,image/png,image/webp,image/heic"
+            accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
             onChange={onChange}
             disabled={uploading}
             className="hidden"
@@ -284,12 +285,8 @@ export default function AdminGadaiDetailPage() {
   }, [])
 
   const uploadFile = async (file: File): Promise<string> => {
-    const body = new FormData()
-    body.append('file', file)
-    const res = await fetch('/api/upload', { method: 'POST', body })
-    const data = await res.json()
-    if (!res.ok || !data.success) throw new Error(data.message || 'Gagal mengunggah file')
-    return data.url as string
+    const { url } = await kirimFoto(file)
+    return url
   }
 
   const fetchGadai = async () => {
@@ -934,7 +931,7 @@ export default function AdminGadaiDetailPage() {
                     <span className="inline-flex items-center justify-center w-full text-xs font-medium text-stone-600 bg-white border border-dashed border-stone-300 rounded-lg px-2 py-2 hover:bg-stone-100 transition">
                       {kelUploading === 'pendukungTambahan' ? 'Mengunggah...' : 'Tambah foto'}
                     </span>
-                    <input id="kel-pendukung-tambahan" type="file" accept="image/jpeg,image/png,image/webp,image/heic" onChange={handleAddPendukungTambahan} disabled={kelUploading === 'pendukungTambahan'} className="hidden" />
+                    <input id="kel-pendukung-tambahan" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" onChange={handleAddPendukungTambahan} disabled={kelUploading === 'pendukungTambahan'} className="hidden" />
                   </label>
                   {kelFotoPendukungTambahan.length > 0 && (
                     <ul className="mt-2 space-y-1">
@@ -1067,7 +1064,7 @@ export default function AdminGadaiDetailPage() {
                   />
                   <input
                     type="file"
-                    accept="image/jpeg,image/png,image/webp,image/heic"
+                    accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
                     onChange={(e) => setTransferFile(e.target.files?.[0] || null)}
                     className="w-full text-xs"
                   />

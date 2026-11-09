@@ -7,9 +7,16 @@ import { useRouter } from 'next/navigation'
 import BreadcrumbSchema from '@/components/BreadcrumbSchema'
 import { FINANCE_WA_NUMBER } from '@/lib/helpers'
 import { ASSET_VERSION } from '@/lib/business'
+import { kirimFoto } from '@/lib/uploadFoto'
 
 function isAdminLoggedIn(): boolean {
   return Boolean(localStorage.getItem('adminToken') && localStorage.getItem('adminData'))
+}
+
+/** Unggah bukti transfer: kompres dulu supaya cepat di jaringan seluler. */
+async function uploadFotoBukti(file: File): Promise<string> {
+  const { url } = await kirimFoto(file)
+  return url
 }
 
 const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
@@ -172,15 +179,9 @@ function KelengkapanForm({ item, phone, onDone }: { item: any; phone: string; on
 
   if (missing.length === 0) return null
 
-  const uploadPhoto = async (file: File): Promise<string> => {
-    const body = new FormData()
-    body.append('file', file)
-    const res = await fetch('/api/upload', { method: 'POST', body })
-    const data = await res.json()
-    if (!res.ok || !data.success) {
-      throw new Error(data.message || 'Gagal mengunggah foto')
-    }
-    return data.url as string
+  const uploadPhoto = async (file: File, onProgress?: (persen: number) => void): Promise<string> => {
+    const { url } = await kirimFoto(file, onProgress)
+    return url
   }
 
   const handleFileChange = async (field: 'ktp' | 'stnk' | 'customerBarang', e: React.ChangeEvent<HTMLInputElement>) => {
@@ -246,7 +247,7 @@ function KelengkapanForm({ item, phone, onDone }: { item: any; phone: string; on
         {missing.includes('Foto KTP') && (
           <div>
             <label htmlFor={`kel-ktp-${item.gadaiId}`} className="block text-xs text-gray-600 mb-1">Foto KTP</label>
-            <input id={`kel-ktp-${item.gadaiId}`} type="file" accept="image/jpeg,image/png,image/webp,image/heic" onChange={(e) => handleFileChange('ktp', e)} className="w-full text-xs" />
+            <input id={`kel-ktp-${item.gadaiId}`} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" onChange={(e) => handleFileChange('ktp', e)} className="w-full text-xs" />
             {uploading === 'ktp' && <p className="text-xs text-blue-500 mt-1">Mengunggah...</p>}
             {fotoKtp && uploading !== 'ktp' && <p className="text-xs text-green-600 mt-1">✓ Terunggah</p>}
           </div>
@@ -254,7 +255,7 @@ function KelengkapanForm({ item, phone, onDone }: { item: any; phone: string; on
         {missing.includes('Foto STNK') && (
           <div>
             <label htmlFor={`kel-stnk-${item.gadaiId}`} className="block text-xs text-gray-600 mb-1">Foto STNK</label>
-            <input id={`kel-stnk-${item.gadaiId}`} type="file" accept="image/jpeg,image/png,image/webp,image/heic" onChange={(e) => handleFileChange('stnk', e)} className="w-full text-xs" />
+            <input id={`kel-stnk-${item.gadaiId}`} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" onChange={(e) => handleFileChange('stnk', e)} className="w-full text-xs" />
             {uploading === 'stnk' && <p className="text-xs text-blue-500 mt-1">Mengunggah...</p>}
             {fotoStnk && uploading !== 'stnk' && <p className="text-xs text-green-600 mt-1">✓ Terunggah</p>}
           </div>
@@ -262,7 +263,7 @@ function KelengkapanForm({ item, phone, onDone }: { item: any; phone: string; on
         {missing.includes('Foto Customer dengan Barang') && (
           <div>
             <label htmlFor={`kel-customer-barang-${item.gadaiId}`} className="block text-xs text-gray-600 mb-1">Foto Anda bersama barang jaminan</label>
-            <input id={`kel-customer-barang-${item.gadaiId}`} type="file" accept="image/jpeg,image/png,image/webp,image/heic" onChange={(e) => handleFileChange('customerBarang', e)} className="w-full text-xs" />
+            <input id={`kel-customer-barang-${item.gadaiId}`} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" onChange={(e) => handleFileChange('customerBarang', e)} className="w-full text-xs" />
             {uploading === 'customerBarang' && <p className="text-xs text-blue-500 mt-1">Mengunggah...</p>}
             {fotoCustomerBarang && uploading !== 'customerBarang' && <p className="text-xs text-green-600 mt-1">✓ Terunggah</p>}
           </div>
@@ -340,18 +341,12 @@ function PengajuanActionForm({ item, phone, onDone }: { item: any; phone: string
     }
     setSubmitting(true)
     try {
-      const body = new FormData()
-      body.append('file', file)
-      const uploadRes = await fetch('/api/upload', { method: 'POST', body })
-      const uploadData = await uploadRes.json()
-      if (!uploadRes.ok || !uploadData.success) {
-        throw new Error(uploadData.message || 'Gagal mengunggah bukti transfer')
-      }
+      const uploadUrl = await uploadFotoBukti(file)
 
       const res = await fetch('/api/public/track/action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, gadaiId: item.gadaiId, aksi, nominal, bukti: uploadData.url })
+        body: JSON.stringify({ phone, gadaiId: item.gadaiId, aksi, nominal, bukti: uploadUrl })
       })
       const data = await res.json()
       if (!data.success) {
@@ -398,7 +393,7 @@ function PengajuanActionForm({ item, phone, onDone }: { item: any; phone: string
       />
       <input
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/heic"
+        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
         onChange={(e) => setFile(e.target.files?.[0] || null)}
         className="w-full text-xs"
       />

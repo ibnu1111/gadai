@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { kirimFoto } from '@/lib/uploadFoto'
 
 const KATEGORI_BARANG = ['HP', 'Laptop', 'Motor', 'Mobil', 'Elektronik', 'Perhiasan', 'Lainnya']
 
@@ -44,12 +45,8 @@ export default function AdminGadaiCreatePage() {
     setUploading((prev) => ({ ...prev, [field]: true }))
     setError('')
     try {
-      const body = new FormData()
-      body.append('file', file)
-      const res = await fetch('/api/upload', { method: 'POST', body })
-      const data = await res.json()
-      if (!res.ok || !data.success) throw new Error(data.message || 'Gagal mengunggah file')
-      setFormData((prev) => ({ ...prev, [field]: data.url }))
+      const { url } = await kirimFoto(file)
+      setFormData((prev) => ({ ...prev, [field]: url }))
     } catch (err: any) {
       setError(err.message || 'Gagal mengunggah file')
     } finally {
@@ -149,7 +146,7 @@ export default function AdminGadaiCreatePage() {
             <label className="block text-sm font-medium text-stone-700 mb-1.5">Foto KTP <span className="text-stone-400 font-normal">(opsional)</span></label>
             <input
               type="file"
-              accept="image/jpeg,image/png,image/webp,image/heic"
+              accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
               onChange={(e) => e.target.files?.[0] && uploadFile('fotoKtp', e.target.files[0])}
               className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-amber-100 file:text-amber-700 file:text-sm"
             />
@@ -189,7 +186,7 @@ export default function AdminGadaiCreatePage() {
               <label className="block text-sm font-medium text-stone-700 mb-1.5">Foto STNK</label>
               <input
                 type="file"
-                accept="image/jpeg,image/png,image/webp,image/heic"
+                accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
                 onChange={(e) => e.target.files?.[0] && uploadFile('fotoPendukung', e.target.files[0])}
                 className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-amber-100 file:text-amber-700 file:text-sm"
               />
@@ -202,7 +199,7 @@ export default function AdminGadaiCreatePage() {
             <label className="block text-sm font-medium text-stone-700 mb-1.5">Foto Barang <span className="text-stone-400 font-normal">(opsional)</span></label>
             <input
               type="file"
-              accept="image/jpeg,image/png,image/webp,image/heic"
+              accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
               onChange={(e) => e.target.files?.[0] && uploadFile('fotoBarang', e.target.files[0])}
               className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-amber-100 file:text-amber-700 file:text-sm"
             />

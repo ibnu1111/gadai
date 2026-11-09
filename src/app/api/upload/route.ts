@@ -25,9 +25,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (file.size > MAX_FILE_SIZE) {
+      const maksMb = Math.round(MAX_FILE_SIZE / (1024 * 1024))
       return NextResponse.json({
         success: false,
-        message: 'Ukuran file maksimal 5MB'
+        message: `Ukuran file maksimal ${maksMb}MB. Foto terlalu besar, mohon foto ulang dengan resolusi lebih rendah.`
       }, { status: 400 })
     }
 
