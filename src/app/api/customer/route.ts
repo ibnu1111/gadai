@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getAdminDenganScope } from '@/lib/adminAuth'
-import { predicateCustomer, terapkanScope } from '@/lib/adminScope'
+import { adminTerbatas, predicateCustomer, terapkanScope } from '@/lib/adminScope'
 
 const ACTIVE_STATUSES = new Set(['AKTIF', 'JATUH_TEMPO', 'OVERDUE'])
 
@@ -30,17 +30,36 @@ export async function GET(request: NextRequest) {
 
     const whereScope = terapkanScope(where, predicateCustomer(scope))
     const skip = (page - 1) * limit
+    const sumberDanaId = scope.sumberDanaId
+    const terbatas = adminTerbatas(scope)
 
     const [customers, total] = await Promise.all([
       prisma.customer.findMany({
         where: whereScope,
         include: {
+          // Gadai yang belum pernah dicairkan belum punya sumber dana, jadi
+          // tetap terlihat oleh semua admin (funnel pengajuan bersifat bersama).
           gadais: {
+            where: terbatas
+              ? {
+                  OR: [
+                    { pinjaman: { is: null } },
+                    {
+                      pinjaman: {
+                        is: { pendanaan: { some: { sumberDanaId: sumberDanaId as number } } }
+                      }
+                    }
+                  ]
+                }
+              : {},
             select: { gadaiID: true, nominalPinjam: true, status: true, createdAt: true }
           },
           // Data pinjaman buku besar (transaksi walk-in) - sumber utama bisnis nyata,
           // terpisah dari funnel pengajuan online di atas.
           pinjaman: {
+            where: terbatas
+              ? { pendanaan: { some: { sumberDanaId: sumberDanaId as number } } }
+              : {},
             select: { id: true, pokok: true, status: true, createdAt: true, tanggalCair: true }
           }
         },

@@ -6,9 +6,10 @@ import { guardMutasi } from '@/lib/adminAuth'
 // GET /api/pengeluaran?bulan=YYYY-MM - Daftar pengeluaran bulan tsb (default bulan berjalan).
 export async function GET(request: NextRequest) {
   try {
-    const guard = await guardMutasi(request, 'mencatat pengeluaran')
+    // Pengeluaran tidak terikat sumber dana, jadi admin terkunci tidak
+    // boleh melihat pengeluaran.
+    const guard = await guardMutasi(request, 'melihat pengeluaran')
     if ('response' in guard) return guard.response
-    const { admin } = guard
 
     const bulanParam = request.nextUrl.searchParams.get('bulan')
     const cocok = bulanParam ? /^(\d{4})-(\d{2})$/.exec(bulanParam) : null

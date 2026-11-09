@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getAdminDenganScope } from '@/lib/adminAuth'
 import { akhirHariWib } from '@/lib/bukuBesar'
-import { predicatePinjaman, terapkanScope } from '@/lib/adminScope'
+import { predicatePinjaman, predicateSiklus, terapkanScope } from '@/lib/adminScope'
 
 // GET /api/pinjaman?status=AKTIF|LUNAS|LELANG|WRITEOFF&hari=&search=&page=&limit=
 // Daftar pinjaman terpadu: status=AKTIF menampilkan siklus berjalan (dengan tanggal
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
           },
           ...(hari !== null ? { tanggalJatuhTempo: { lte: akhirHariWib(hari) } } : {})
         },
-        predicatePinjaman(scope)
+        predicateSiklus(scope)
       )
 
       const [data, total] = await Promise.all([

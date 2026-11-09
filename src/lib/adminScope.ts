@@ -46,10 +46,38 @@ export function terapkanScope<T extends object>(
 
 /**
  * Pinjaman yang pendanaannya berasal dari sumber dana milik admin terbatas.
+ *
+ * Hanya berlaku untuk query terhadap model `Pinjaman`. Model lain harus pakai
+ * predicate-nya sendiri (lihat di bawah) karena nama relasi `pendanaan` hanya
+ * ada pada `Pinjaman`.
  */
 export function predicatePinjaman(scope: AdminScope): object | null {
   if (!adminTerbatas(scope)) return null
   return { pendanaan: { some: { sumberDanaId: scope.sumberDanaId as number } } }
+}
+
+/**
+ * Siklus dari pinjaman yang pendanaannya berasal dari sumber dana admin
+ * terbatas. `Siklus` tidak punya relasi `pendanaan` sendiri, jadi harus lewat
+ * relasi ke `Pinjaman`.
+ */
+export function predicateSiklus(scope: AdminScope): object | null {
+  if (!adminTerbatas(scope)) return null
+  return {
+    pinjaman: { pendanaan: { some: { sumberDanaId: scope.sumberDanaId as number } } }
+  }
+}
+
+/**
+ * Rincian pendanaan dari sumber dana milik admin terbatas.
+ *
+ * Dibatasi pada `sumberDanaId` miliknya sendiri, bukan lewat relasi ke
+ * pinjaman: satu pinjaman bisa didanai beberapa sumber, dan admin terkunci
+ * hanya berhak melihat modal dari sumber miliknya.
+ */
+export function predicatePinjamanDana(scope: AdminScope): object | null {
+  if (!adminTerbatas(scope)) return null
+  return { sumberDanaId: scope.sumberDanaId as number }
 }
 
 /**

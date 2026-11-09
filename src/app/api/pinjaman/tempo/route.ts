@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getAdminDenganScope } from '@/lib/adminAuth'
 import { akhirHariWib } from '@/lib/bukuBesar'
-import { predicatePinjaman, terapkanScope } from '@/lib/adminScope'
+import { predicateSiklus, terapkanScope } from '@/lib/adminScope'
 
 // GET /api/pinjaman/tempo?hari=0 - Siklus berjalan yang sudah lewat tempo atau
 // jatuh tempo dalam N hari ke depan.
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
           tanggalJatuhTempo: { lte: akhirHariWib(hari) },
           pinjaman: { status: 'AKTIF' }
         },
-        predicatePinjaman(scope)
+        predicateSiklus(scope)
       ),
       orderBy: [{ tanggalJatuhTempo: 'asc' }, { id: 'asc' }],
       select: {

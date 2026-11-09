@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getAdminDenganScope } from '@/lib/adminAuth'
 import { akhirHariWib } from '@/lib/bukuBesar'
-import { predicateGadai, predicatePinjaman, terapkanScope } from '@/lib/adminScope'
+import { predicateGadai, predicatePinjaman, predicateSiklus, terapkanScope } from '@/lib/adminScope'
 
 // GET /api/pinjaman/summary - statistik ringkas berbasis buku besar (Pinjaman/Siklus),
 // dipakai dashboard supaya nyambung dengan data yang sama dengan daftar pinjaman.
@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
     const awalBulanDepan = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1))
 
     const scopePinjaman = predicatePinjaman(scope)
+    const scopeSiklus = predicateSiklus(scope)
     const scopeGadai = predicateGadai(scope)
 
     const [
@@ -40,19 +41,19 @@ export async function GET(request: NextRequest) {
       prisma.siklus.count({
         where: terapkanScope(
           { status: 'BERJALAN', pinjaman: { status: 'AKTIF' }, tanggalJatuhTempo: { lte: akhirHariWib(0) } },
-          scopePinjaman
+          scopeSiklus
         )
       }),
       prisma.siklus.count({
         where: terapkanScope(
           { status: 'BERJALAN', pinjaman: { status: 'AKTIF' }, tanggalJatuhTempo: { lte: akhirHariWib(7) } },
-          scopePinjaman
+          scopeSiklus
         )
       }),
       prisma.siklus.count({
         where: terapkanScope(
           { status: 'BERJALAN', pinjaman: { status: 'AKTIF' }, tanggalJatuhTempo: { lt: akhirHariWib(-1) } },
-          scopePinjaman
+          scopeSiklus
         )
       }),
       prisma.pinjaman.count({
@@ -64,7 +65,7 @@ export async function GET(request: NextRequest) {
       prisma.siklus.aggregate({
         where: terapkanScope(
           { tanggalJatuhTempo: { gte: awalBulan, lt: awalBulanDepan } },
-          scopePinjaman
+          scopeSiklus
         ),
         _sum: { nominalBunga: true }
       }),

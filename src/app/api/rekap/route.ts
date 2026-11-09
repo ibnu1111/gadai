@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getAdminDenganScope } from '@/lib/adminAuth'
 import { formatAngka, isoWib, tanggalRekap, bulanPanjang, bulanSingkat, nomorBaris } from '@/lib/rekap'
-import { predicatePinjaman, terapkanScope, type AdminScope } from '@/lib/adminScope'
+import { predicatePinjaman, predicatePinjamanDana, predicateSiklus, terapkanScope, type AdminScope } from '@/lib/adminScope'
 
 const TIPE_VALID = new Set(['harian', 'modal', 'closing'])
 
@@ -28,7 +28,7 @@ async function rekapHarian(scope: AdminScope): Promise<string> {
   const data = await prisma.siklus.findMany({
     where: terapkanScope(
       { status: 'BERJALAN', pinjaman: { status: 'AKTIF' } },
-      predicatePinjaman(scope)
+      predicateSiklus(scope)
     ),
     orderBy: [{ tanggalMulai: 'asc' }, { nomorUrut: 'asc' }, { id: 'asc' }],
     select: {
@@ -75,7 +75,7 @@ async function rekapModal(scope: AdminScope): Promise<string> {
   const data = await prisma.pinjamanDana.findMany({
     where: terapkanScope(
       { pinjaman: { status: 'AKTIF', jenis: 'GADAI' } },
-      predicatePinjaman(scope)
+      predicatePinjamanDana(scope)
     ),
     orderBy: [{ sumberDana: { urutan: 'asc' } }, { sumberDanaId: 'asc' }, { id: 'asc' }],
     select: {
@@ -123,6 +123,8 @@ async function rekapClosing(tahun: number, bulan: number, scope: AdminScope): Pr
   const awal = new Date(Date.UTC(tahun, bulan - 1, 1))
   const akhir = new Date(Date.UTC(tahun, bulan, 1))
   const scopePinjaman = predicatePinjaman(scope)
+  const scopeSiklus = predicateSiklus(scope)
+  const scopePinjamanDana = predicatePinjamanDana(scope)
 
   const [terputar, perSumber, keuntungan, sumberDana, pengeluaran] = await Promise.all([
     prisma.pinjaman.aggregate({
@@ -131,13 +133,13 @@ async function rekapClosing(tahun: number, bulan: number, scope: AdminScope): Pr
     }),
     prisma.pinjamanDana.groupBy({
       by: ['sumberDanaId'],
-      where: terapkanScope({ pinjaman: { status: 'AKTIF' } }, scopePinjaman),
+      where: terapkanScope({ pinjaman: { status: 'AKTIF' } }, scopePinjamanDana),
       _sum: { nominal: true }
     }),
     prisma.siklus.aggregate({
       where: terapkanScope(
         { tanggalJatuhTempo: { gte: awal, lt: akhir } },
-        scopePinjaman
+        scopeSiklus
       ),
       _sum: { nominalBunga: true }
     }),

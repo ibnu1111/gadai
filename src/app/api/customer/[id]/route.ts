@@ -17,11 +17,31 @@ export async function GET(
     const { scope } = auth
 
     const { id } = await params
+    const sumberDanaId = scope.sumberDanaId
+    const terbatas = adminTerbatas(scope)
+
     const customer = await prisma.customer.findUnique({
       where: { id: Number.parseInt(id) },
       include: {
+        // Admin terkunci hanya melihat gadai miliknya sendiri. Gadai yang belum
+        // pernah dicairkan belum punya sumber dana dan tetap terlihat karena
+        // funnel pengajuan bersifat bersama.
         gadais: {
-          orderBy: { createdAt: 'desc' }
+          orderBy: { createdAt: 'desc' },
+          ...(terbatas
+            ? {
+                where: {
+                  OR: [
+                    { pinjaman: { is: null } },
+                    {
+                      pinjaman: {
+                        is: { pendanaan: { some: { sumberDanaId: sumberDanaId as number } } }
+                      }
+                    }
+                  ]
+                }
+              }
+            : {})
         },
         // Riwayat pinjaman buku besar (transaksi walk-in nyata), terpisah dari
         // funnel pengajuan online di atas.
@@ -29,7 +49,10 @@ export async function GET(
           orderBy: { tanggalCair: 'desc' },
           include: {
             siklus: { orderBy: { siklusKe: 'desc' }, take: 1 }
-          }
+          },
+          ...(terbatas
+            ? { where: { pendanaan: { some: { sumberDanaId: sumberDanaId as number } } } }
+            : {})
         }
       }
     })
@@ -39,7 +62,7 @@ export async function GET(
     }
 
     // Admin terkunci hanya boleh membuka customer yang relevan baginya.
-    if (adminTerbatas(scope)) {
+    if (terbatas) {
       const relevan = await prisma.customer.count({
         where: { AND: [{ id: customer.id }, predicateCustomer(scope)] } as Prisma.CustomerWhereInput
       })
