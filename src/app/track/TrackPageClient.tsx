@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import BreadcrumbSchema from '@/components/BreadcrumbSchema'
-import { FINANCE_WA_NUMBER } from '@/lib/helpers'
+import { FINANCE_WA_NUMBER, PENGAJUAN_WA_NUMBER } from '@/lib/helpers'
 import { ASSET_VERSION } from '@/lib/business'
 import { kirimFoto } from '@/lib/uploadFoto'
 
@@ -310,6 +310,68 @@ function KelengkapanForm({ item, phone, onDone }: { item: any; phone: string; on
           {submitting ? 'Menyimpan...' : 'Simpan Kelengkapan'}
         </button>
       </form>
+    </div>
+  )
+}
+
+function tempoLabel(bungaPersentase: number): string {
+  if (bungaPersentase === 10) return '2 Minggu (10%)'
+  if (bungaPersentase === 20) return '1 Bulan (20%)'
+  return `${bungaPersentase}%`
+}
+
+/**
+ * Tombol kirim ulang form pengajuan ke WhatsApp. Dipakai untuk customer yang
+ * waktu pengajuan awal tidak jadi mengirim form ke WhatsApp, supaya mereka
+ * bisa mengirim ulang tanpa harus mengisi form dari awal di /create.
+ */
+function KirimUlangForm({ item, customer }: { item: any; customer: any }) {
+  const [terkirim, setTerkirim] = useState(false)
+
+  if (item.status !== 'PENDING') return null
+
+  const phone = String(customer.phone || '')
+  const trackLink = `https://gadaijogja.com/track?phone=${phone}`
+  const totalBayar = item.nominalPengambilan
+
+  const waMessage = encodeURIComponent(
+    `\u{1F4CB} *Pengajuan Gadai Baru*\n\n` +
+    `\u{1F464} Nama: ${customer.customerName}\n` +
+    `\u{1F4F1} No. HP: ${customer.phone}\n` +
+    `\u{1F4E6} Barang: ${item.namaBarang}\n` +
+    `\u{1F4C2} Kategori: ${item.kategoriBarang}\n` +
+    `\u{1F4B0} Nominal: Rp ${item.nominalPinjam.toLocaleString('id-ID')}\n` +
+    `\u{1F4CA} Tempo: ${tempoLabel(item.bungaPersentase)}\n` +
+    `\u{1F4B5} Total Bayar: Rp ${totalBayar.toLocaleString('id-ID')}\n` +
+    (item.nomorPolisi ? `\u{1F522} Plat Nomor: ${item.nomorPolisi}\n` : '') +
+    `\n\u{1F517} Lacak pengajuan: ${trackLink}`
+  )
+
+  const handleClick = () => {
+    window.open(`https://wa.me/${PENGAJUAN_WA_NUMBER}?text=${waMessage}`, '_blank', 'noopener,noreferrer')
+    setTerkirim(true)
+  }
+
+  return (
+    <div className="mt-3 pt-3 border-t border-gray-100 bg-green-50 -mx-5 px-5 py-3">
+      <p className="text-xs font-semibold text-green-800 mb-2">
+        Belum mengirim form pengajuan ke WhatsApp? Kirim ulang di sini:
+      </p>
+      <button
+        type="button"
+        onClick={handleClick}
+        className="w-full flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium py-2 rounded-lg transition"
+      >
+        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+        </svg>
+        Kirim Ulang Form Pengajuan
+      </button>
+      {terkirim && (
+        <p className="text-xs text-green-700 mt-2">
+          WhatsApp dibuka di tab baru. Kirim pesannya di sana ya.
+        </p>
+      )}
     </div>
   )
 }
@@ -635,6 +697,7 @@ export default function TrackPageClient() {
                             </div>
                           )}
 
+                          <KirimUlangForm item={item} customer={result.customer} />
                           <KelengkapanForm item={item} phone={phone} onDone={() => handleSearch(phone)} />
                           <RekeningForm item={item} phone={phone} onDone={() => handleSearch(phone)} />
                           <PengajuanActionForm item={item} phone={phone} onDone={() => handleSearch(phone)} />

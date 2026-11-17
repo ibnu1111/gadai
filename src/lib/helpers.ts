@@ -209,3 +209,6 @@ export function getMissingCustomerRekening(gadai: {
 
 /** Nomor WA bagian keuangan yang menerima link upload bukti transfer pencairan */
 export const FINANCE_WA_NUMBER = '62819676216'
+
+/** Nomor WA yang menerima form pengajuan gadai baru dari customer */
+export const PENGAJUAN_WA_NUMBER = '62819676216'

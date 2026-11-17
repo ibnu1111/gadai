@@ -75,6 +75,7 @@ export async function GET(request: NextRequest) {
       totalPembayaran: parseFloat(g.totalPembayaran.toString()),
       bungaTerbayar: parseFloat(g.bungaTerbayar.toString()),
       isDue: isDueOrOverdue(g.status, g.tanggalKembali),
+      nomorPolisi: g.nomorPolisi,
       pendingAksi: g.pendingAksi,
       pendingAksiNominal: g.pendingAksiNominal ? parseFloat(g.pendingAksiNominal.toString()) : null,
       pendingAksiCreatedAt: g.pendingAksiCreatedAt,
